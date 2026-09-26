@@ -1,16 +1,21 @@
 import {Platform} from 'react-native';
-import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithCredential,
-  signOut as firebaseSignOut,
-} from '@react-native-firebase/auth';
+  GoogleSignin,
+  isCancelledResponse,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import {GOOGLE_WEB_CLIENT_ID} from '../../config/google';
+import {supabaseConfigProblem} from '../../config/supabase';
+import {getSupabaseClient} from '../../supabase/client';
 
-export async function signInWithGoogle() {
-  if (GOOGLE_WEB_CLIENT_ID.startsWith('PASTE_')) {
-    throw new Error('Додайте Web Client ID у src/shared/core/config/google.ts.');
+export type SignInResult = 'signed-in' | 'cancelled';
+
+export async function signInWithGoogle(): Promise<SignInResult> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error(`Supabase не налаштовано: ${supabaseConfigProblem}.`);
+  if (!GOOGLE_WEB_CLIENT_ID) {
+    throw new Error('Додайте GOOGLE_WEB_CLIENT_ID у .env і перезберіть застосунок.');
   }
 
   GoogleSignin.configure({webClientId: GOOGLE_WEB_CLIENT_ID});
@@ -18,17 +23,43 @@ export async function signInWithGoogle() {
     await GoogleSignin.hasPlayServices({showPlayServicesUpdateDialog: true});
   }
 
-  const result = await GoogleSignin.signIn();
-  const idToken = result.data?.idToken;
+  const response = await GoogleSignin.signIn();
+  // Closing the Google sheet resolves as "cancelled" instead of throwing.
+  if (isCancelledResponse(response)) return 'cancelled';
+  const idToken = response.data.idToken;
   if (!idToken) {
-    throw new Error('Google не повернув токен входу. Перевірте Web Client ID.');
+    throw new Error('Google не повернув токен входу. Перевірте GOOGLE_WEB_CLIENT_ID.');
   }
 
-  const credential = GoogleAuthProvider.credential(idToken);
-  return signInWithCredential(getAuth(), credential);
+  // Supabase creates the user on first sign-in; a database trigger adds the profile row.
+  const {error} = await supabase.auth.signInWithIdToken({provider: 'google', token: idToken});
+  if (error) throw error;
+  return 'signed-in';
+}
+
+// A short Ukrainian message for the sign-in screen, or null when nothing should be shown.
+export function signInErrorMessage(error: unknown): string | null {
+  if (isErrorWithCode(error)) {
+    if (error.code === statusCodes.SIGN_IN_CANCELLED || error.code === statusCodes.IN_PROGRESS) {
+      return null;
+    }
+    if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      return 'Оновіть сервіси Google Play і спробуйте ще раз.';
+    }
+  }
+  if (error instanceof Error && /network request failed|failed to fetch/i.test(error.message)) {
+    return 'Немає зв’язку з інтернетом. Перевірте мережу й спробуйте ще раз.';
+  }
+  // Setup problems (.env, the Google provider in Supabase) are spelled out for the developer only.
+  if (__DEV__ && error instanceof Error) return error.message;
+  return 'Не вдалося увійти. Спробуйте ще раз.';
 }
 
 export async function signOutOfGoogle() {
-  await firebaseSignOut(getAuth());
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    const {error} = await supabase.auth.signOut();
+    if (error) throw error;
+  }
   await GoogleSignin.signOut().catch(() => undefined);
 }

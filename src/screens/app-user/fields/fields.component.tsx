@@ -1,6 +1,6 @@
 import React from 'react';
 import {ActivityIndicator, Pressable, Text, View} from 'react-native';
-import {AppButton, FieldsSyncStatus, InfoCard, Page} from '../../../shared/components/ui';
+import {AppButton, AppIcon, InfoCard, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
@@ -16,7 +16,6 @@ const createStyles = (theme: AppTheme) => ({
   rowBody: {flex: 1, gap: 3},
   name: {color: theme.colors.text, fontSize: 19, fontWeight: '600' as const},
   area: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
-  arrow: {color: theme.colors.textMuted, fontSize: 26},
 });
 
 export function FieldsScreen() {
@@ -27,11 +26,10 @@ export function FieldsScreen() {
   const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
 
   return <Page title="Ділянки" subtitle="Ваша земля і її площа">
-    {loadState === 'ready' && <FieldsSyncStatus />}
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
-      <Text style={styles.emptyTitle}>Не вдалося відкрити ділянки</Text>
-      <Text style={styles.muted}>Локальні дані залишилися на телефоні. Спробуйте ще раз.</Text>
+      <Text style={styles.emptyTitle}>Не вдалося завантажити ділянки</Text>
+      <Text style={styles.muted}>Перевірте інтернет і спробуйте ще раз.</Text>
       <AppButton label="Повторити" onPress={reload} />
     </InfoCard>}
     {loadState === 'ready' && <>
@@ -52,7 +50,7 @@ export function FieldsScreen() {
               <Text style={styles.muted}>{fieldTypeLabels[field.type]}{field.crop ? ` · ${field.crop}` : ''}</Text>
             </View>
             <Text style={styles.area}>{formatArea(selectedAreaM2(field))}</Text>
-            <Text style={styles.arrow}>›</Text>
+            <AppIcon name="chevronRight" color={theme.colors.textMuted} size={24} strokeWidth={2.2} />
           </View>
         </InfoCard>
       </Pressable>)}

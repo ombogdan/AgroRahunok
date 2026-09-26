@@ -4,5 +4,5 @@ export {FieldDetailScreen} from './field-detail';
 export {JournalScreen} from './journal';
 export {InsightsScreen} from './insights';
 export {MoneyScreen} from './money';
-export {ProfileScreen} from './profile';
+export {SettingsScreen} from './settings';
 export {QuickEntryScreen} from './quick-entry';

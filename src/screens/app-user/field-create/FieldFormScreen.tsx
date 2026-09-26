@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Alert, Pressable, ScrollView, Text, TextInput, View} from 'react-native';
+import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
@@ -7,6 +7,7 @@ import {AppButton} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import type {AreaSource, FieldType} from '../../../shared/core/fields/model';
 import {fieldTypeLabels, formatArea, parseAreaInput} from '../../../shared/core/fields/model';
+import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 import {FieldFlowHeader} from './FieldFlowHeader';
@@ -18,6 +19,8 @@ const nameSuggestions: {name: string; type: FieldType}[] = [
 ];
 const types: FieldType[] = ['field', 'garden', 'berries', 'orchard', 'greenhouse'];
 const crops = ['Пшениця озима', 'Соняшник', 'Кукурудза', 'Картопля', 'Малина'];
+// The iOS decimal pad has no return key, so the area field gets a «Готово» bar above it.
+const AREA_KEYBOARD_BAR = 'field-area-keyboard-bar';
 
 const createStyles = (theme: AppTheme) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
@@ -42,6 +45,10 @@ const createStyles = (theme: AppTheme) => ({
   radioTitle: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
   radioValue: {color: theme.colors.textMuted, fontSize: 15},
   save: {marginTop: 2},
+  keyboardBar: {flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingHorizontal: 12,
+    backgroundColor: theme.colors.surface, borderTopWidth: 1, borderTopColor: theme.colors.border},
+  keyboardDone: {minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' as const},
+  keyboardDoneText: {color: theme.colors.primary, fontSize: 17, fontWeight: '600' as const},
 });
 
 export function FieldFormScreen({route, navigation}: Props) {
@@ -72,20 +79,22 @@ export function FieldFormScreen({route, navigation}: Props) {
         documentAreaM2, measuredAreaM2, areaSource, polygon,
       });
       navigation.reset({index: 0, routes: [{name: 'Tabs', params: {screen: 'Home'}}]});
-    } catch {
-      Alert.alert('Не вдалося зберегти ділянку', 'Перевірте вільне місце на телефоні та спробуйте ще раз.');
+    } catch (error) {
+      logSupabaseError('Не вдалося зберегти ділянку', error);
+      Alert.alert('Не вдалося зберегти ділянку', 'Перевірте інтернет і спробуйте ще раз.');
       setSaving(false);
     }
   };
 
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
+      automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
       <FieldFlowHeader backLabel={isMap ? 'Карта' : 'Назад'} onBack={() => navigation.goBack()} />
       <Text style={styles.title}>Про ділянку</Text>
       <View style={styles.section}>
         <Text style={styles.label}>Назва</Text>
         <TextInput value={name} onChangeText={setName} placeholder="Наприклад, Малинник"
-          placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} />
+          placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
         <View style={styles.chips}>
           {nameSuggestions.map(suggestion => <Pressable key={suggestion.name} onPress={() => {setName(suggestion.name); setType(suggestion.type);}} style={styles.chip}>
             <Text style={styles.chipText}>{suggestion.name}</Text>
@@ -104,7 +113,7 @@ export function FieldFormScreen({route, navigation}: Props) {
       <View style={styles.section}>
         <Text style={styles.label}>Культура цього сезону · необов’язково</Text>
         <TextInput value={crop} onChangeText={setCrop} placeholder="Вкажіть культуру"
-          placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} />
+          placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
         <View style={styles.chips}>
           {crops.map(value => <Pressable key={value} onPress={() => setCrop(value)} style={styles.chip}>
             <Text style={styles.chipText}>{value}</Text>
@@ -118,7 +127,7 @@ export function FieldFormScreen({route, navigation}: Props) {
           if (isMap && areaSource === 'document' && parseAreaInput(value, unit) === null) {
             setAreaSource('measured');
           }
-        }} keyboardType="decimal-pad"
+        }} keyboardType="decimal-pad" inputAccessoryViewID={AREA_KEYBOARD_BAR}
           placeholder={unit === 'sotka' ? 'Наприклад, 20' : 'Наприклад, 2,2'}
           placeholderTextColor={theme.colors.textMuted} style={styles.input} />
         {!documentInputValid && <Text style={styles.note}>Введіть додатне число, наприклад 20 або 0,5.</Text>}
@@ -149,5 +158,12 @@ export function FieldFormScreen({route, navigation}: Props) {
         <AppButton label={saving ? 'Зберігаємо…' : 'Зберегти ділянку'} disabled={!canSave} onPress={() => { save(); }} />
       </View>
     </ScrollView>
+    {Platform.OS === 'ios' && <InputAccessoryView nativeID={AREA_KEYBOARD_BAR}>
+      <View style={styles.keyboardBar}>
+        <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>
+          <Text style={styles.keyboardDoneText}>Готово</Text>
+        </Pressable>
+      </View>
+    </InputAccessoryView>}
   </SafeAreaView>;
 }

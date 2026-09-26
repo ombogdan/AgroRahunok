@@ -3,7 +3,7 @@ import {ActivityIndicator, View} from 'react-native';
 import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {FieldDetailScreen, FieldsScreen, HomeScreen, JournalScreen, MoneyScreen} from '../screens/app-user';
+import {FieldDetailScreen, FieldsScreen, HomeScreen, JournalScreen, MoneyScreen, SettingsScreen} from '../screens/app-user';
 import {FieldFormScreen, FieldMapScreen, FieldMethodScreen} from '../screens/app-user/field-create';
 import {SignInScreen} from '../screens/app-auth';
 import {AppIcon} from '../shared/components/ui';
@@ -98,6 +98,7 @@ export function RootNavigator() {
             <Stack.Screen name="FieldMap" component={FieldMapScreen} />
             <Stack.Screen name="FieldForm" component={FieldFormScreen} />
             <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
           </>
         ) : (
           <Stack.Screen name="SignIn" component={SignInScreen} />

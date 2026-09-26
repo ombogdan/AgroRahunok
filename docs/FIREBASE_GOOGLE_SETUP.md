@@ -25,9 +25,9 @@
 2. Завантажити `GoogleService-Info.plist` і покласти в `ios/AgroRahunok/GoogleService-Info.plist`. Xcode project уже посилається на цей шлях і додає файл у Resources.
 3. Відкрити цей plist і знайти `REVERSED_CLIENT_ID`. У `ios/AgroRahunok/Info.plist` замінити `PASTE_REVERSED_CLIENT_ID` на точне значення. Воно потрібне для повернення з Google входу в застосунок.
 
-## 4. Web Client ID для Firebase credential
+## 4. Web Client ID
 
-Після увімкнення Google знайти OAuth **Web application client ID** (закінчується на `.apps.googleusercontent.com`) у Google Cloud Console → **APIs & Services → Credentials**, або в оновленому `google-services.json` серед `oauth_client` з `client_type: 3`. Замінити `PASTE_WEB_CLIENT_ID.apps.googleusercontent.com` у `src/shared/core/config/google.ts` на це значення. Це публічний ID, не Client Secret.
+Знайти OAuth **Web application client ID** (закінчується на `.apps.googleusercontent.com`) у Google Cloud Console → **APIs & Services → Credentials** («Web client (auto created by Google Service)»), або в `google-services.json` серед `oauth_client` з `client_type: 3`. Вписати його в `.env` як `GOOGLE_WEB_CLIENT_ID` і додати в Supabase → Google provider → Client IDs (див. [SUPABASE_SETUP.md](SUPABASE_SETUP.md)). Це публічний ID, не Client Secret.
 
 ## 5. Встановлення і перевірка — виконує власник проєкту
 
@@ -37,4 +37,4 @@
 
 ## Архітектурне рішення
 
-Для цього етапу **Firebase Auth — джерело користувача**. Supabase проєкт поки не підключений до застосунку. Коли дійдемо до синхронізації, окремо вирішимо зв'язок Firebase UID із даними та політиками доступу Supabase. Порожні екрани після входу ще не зберігають даних господарства.
+Користувач і сесія — у **Supabase Auth**, як у Libris: застосунок отримує токен Google і передає його в `supabase.auth.signInWithIdToken`. Firebase Auth для входу більше не використовується; Firebase проєкт потрібен лише як джерело OAuth-клієнтів Google і конфігураційних файлів вище.

@@ -16,6 +16,7 @@ export type RootStackParamList = {
   FieldMap: undefined;
   FieldForm: {mode: 'manual'} | {mode: 'map'; polygon: GeoPoint[]; measuredAreaM2: number};
   FieldDetail: {fieldId: string};
+  Settings: undefined;
   QuickEntry: {kind: EntryKind} | undefined;
   SignIn: undefined;
 };

@@ -1,89 +1,76 @@
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import type {PropsWithChildren} from 'react';
-import {AppState} from 'react-native';
 import {useAuth} from '../providers/auth/AuthProvider';
+import {logSupabaseError} from '../supabase/errors';
 import type {Field, NewField} from './model';
-import {FieldsStore} from './FieldsStore';
-import type {FieldsSyncState} from './FieldsStore';
+import {deleteField, fetchFields, insertField} from './fieldsRepository';
 
 type LoadState = 'loading' | 'ready' | 'error';
 type FieldsContextValue = {
   fields: Field[];
   loadState: LoadState;
-  syncState: FieldsSyncState;
   reload: () => void;
-  retrySync: () => void;
   addField: (input: NewField) => Promise<Field>;
   removeField: (id: string) => Promise<void>;
 };
 
 const FieldsContext = createContext<FieldsContextValue | null>(null);
+const NO_FIELDS: Field[] = [];
 
 export function FieldsProvider({children}: PropsWithChildren) {
   const {session} = useAuth();
   const userId = session?.kind === 'authenticated' ? session.userId : null;
   const [fields, setFields] = useState<Field[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('loading');
-  const [syncState, setSyncState] = useState<FieldsSyncState>('pending');
+  // The user the state above belongs to. Until the effect catches up with a new session,
+  // report "loading" instead of flashing the previous user's list or the empty state.
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const storeRef = useRef<FieldsStore | null>(null);
 
   useEffect(() => {
     let active = true;
+    setOwnerId(userId);
     setFields([]);
-    setLoadState('loading');
-    setSyncState('pending');
     if (!userId) {
-      storeRef.current = null;
       setLoadState('ready');
       return;
     }
-
-    const store = new FieldsStore(userId, {onFields: setFields, onSyncState: setSyncState});
-    storeRef.current = store;
-    store.load()
-      .then(() => { if (active) setLoadState('ready'); })
-      .catch(() => { if (active) setLoadState('error'); });
-
-    const appState = AppState.addEventListener('change', state => {
-      if (state === 'active') store.sync();
-    });
-    const retryTimer = setInterval(() => {
-      if (store.hasPendingChanges()) store.sync();
-    }, 60_000);
-
-    return () => {
-      active = false;
-      store.close();
-      appState.remove();
-      clearInterval(retryTimer);
-      if (storeRef.current === store) storeRef.current = null;
-    };
+    setLoadState('loading');
+    fetchFields()
+      .then(list => {
+        if (!active) return;
+        setFields(list);
+        setLoadState('ready');
+      })
+      .catch(error => {
+        logSupabaseError('Не вдалося завантажити ділянки', error);
+        if (active) setLoadState('error');
+      });
+    return () => { active = false; };
   }, [userId, reloadToken]);
 
-  const addField = useCallback((input: NewField) => {
-    if (!storeRef.current || loadState !== 'ready') {
-      return Promise.reject(new Error('Fields are not ready'));
-    }
-    return storeRef.current.addField(input);
-  }, [loadState]);
+  const isCurrent = ownerId === userId;
+  const visibleLoadState: LoadState = isCurrent ? loadState : 'loading';
+  const visibleFields = isCurrent ? fields : NO_FIELDS;
 
-  const removeField = useCallback((id: string) => {
-    if (!storeRef.current || loadState !== 'ready') {
-      return Promise.reject(new Error('Fields are not ready'));
-    }
-    return storeRef.current.removeField(id);
-  }, [loadState]);
+  const addField = useCallback(async (input: NewField) => {
+    const field = await insertField(input);
+    setFields(current => [...current, field]);
+    return field;
+  }, []);
+
+  const removeField = useCallback(async (id: string) => {
+    await deleteField(id);
+    setFields(current => current.filter(field => field.id !== id));
+  }, []);
 
   const value = useMemo<FieldsContextValue>(() => ({
-    fields,
-    loadState,
-    syncState,
+    fields: visibleFields,
+    loadState: visibleLoadState,
     reload: () => setReloadToken(current => current + 1),
-    retrySync: () => { storeRef.current?.sync(); },
     addField,
     removeField,
-  }), [fields, loadState, syncState, addField, removeField]);
+  }), [visibleFields, visibleLoadState, addField, removeField]);
   return <FieldsContext.Provider value={value}>{children}</FieldsContext.Provider>;
 }
 

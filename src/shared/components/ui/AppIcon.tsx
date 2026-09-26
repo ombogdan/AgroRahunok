@@ -1,18 +1,22 @@
 import React from 'react';
 import Svg, {Circle, Line, Path, Polyline, Rect} from 'react-native-svg';
 
-export type AppIconName = 'home' | 'plots' | 'journal' | 'money' | 'plus' | 'map';
+export type AppIconName =
+  | 'home' | 'plots' | 'journal' | 'money' | 'plus' | 'map'
+  | 'chevronLeft' | 'chevronRight' | 'locate' | 'draw' | 'ruler';
 
 export function AppIcon({
   name,
   color,
   size = 26,
+  strokeWidth = 2,
 }: {
   name: AppIconName;
   color: string;
   size?: number;
+  strokeWidth?: number;
 }) {
-  const common = {stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const};
+  const common = {stroke: color, strokeWidth, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const};
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {name === 'home' && <>
@@ -40,6 +44,11 @@ export function AppIcon({
         <Line x1="12" y1="4" x2="12" y2="20" {...common} />
         <Line x1="4" y1="12" x2="20" y2="12" {...common} />
       </>}
+      {name === 'chevronLeft' && <Path d="M15 5l-7 7 7 7" {...common} />}
+      {name === 'chevronRight' && <Path d="M9 5l7 7-7 7" {...common} />}
+      {name === 'locate' && <Path d="M12 2v3M12 19v3M2 12h3M19 12h3M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z" {...common} />}
+      {name === 'draw' && <Path d="M5 18 7.5 6l10.5 3 1.5 8.5zM5 18h.01M7.5 6h.01M18 9h.01" {...common} />}
+      {name === 'ruler' && <Path d="M3 16 16 3l5 5L8 21zM7.5 11.5l2 2M10.5 8.5l2 2M13.5 5.5l2 2" {...common} />}
     </Svg>
   );
 }

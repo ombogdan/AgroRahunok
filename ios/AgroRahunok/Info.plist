@@ -5,7 +5,11 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>uk</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>uk</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>АгроРахунок</string>
 	<key>CFBundleExecutable</key>

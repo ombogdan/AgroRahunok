@@ -23,8 +23,6 @@ const createStyles = (theme: AppTheme) => ({
   tileBody: {flex: 1, gap: 3},
   tileTitle: {color: theme.colors.text, fontSize: 21, fontWeight: '600' as const},
   tileDetail: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 21},
-  arrow: {color: theme.colors.textMuted, fontSize: 30},
-  iconGlyph: {color: theme.colors.primary, fontSize: 30},
 });
 
 export function FieldMethodScreen({navigation}: Props) {
@@ -38,20 +36,20 @@ export function FieldMethodScreen({navigation}: Props) {
         <Text style={styles.subtitle}>Як зручніше визначити площу?</Text>
       </View>
       <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FieldMap')} style={styles.tile}>
-        <View style={styles.icon}><AppIcon name="map" color={theme.colors.primary} size={28} /></View>
+        <View style={styles.icon}><AppIcon name="draw" color={theme.colors.primary} size={28} /></View>
         <View style={styles.tileBody}>
           <Text style={styles.tileTitle}>Обвести на карті</Text>
           <Text style={styles.tileDetail}>Торкніться кутів ділянки на супутниковій карті</Text>
         </View>
-        <Text style={styles.arrow}>›</Text>
+        <AppIcon name="chevronRight" color={theme.colors.textMuted} size={24} strokeWidth={2.2} />
       </Pressable>
       <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FieldForm', {mode: 'manual'})} style={styles.tile}>
-        <View style={styles.icon}><Text style={styles.iconGlyph}>▱</Text></View>
+        <View style={styles.icon}><AppIcon name="ruler" color={theme.colors.primary} size={28} /></View>
         <View style={styles.tileBody}>
           <Text style={styles.tileTitle}>Ввести вручну</Text>
           <Text style={styles.tileDetail}>Площа з документів у сотках або гектарах</Text>
         </View>
-        <Text style={styles.arrow}>›</Text>
+        <AppIcon name="chevronRight" color={theme.colors.textMuted} size={24} strokeWidth={2.2} />
       </Pressable>
     </ScrollView>
   </SafeAreaView>;

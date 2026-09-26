@@ -3,6 +3,7 @@ import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
 import {useAuth} from '../../../shared/core/providers/auth/AuthProvider';
+import {signInErrorMessage} from '../../../shared/core/services/auth/googleAuth';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 
@@ -33,12 +34,11 @@ export function SignInScreen() {
     setError(null);
     setBusy(true);
     try {
+      // A cancelled sheet just returns to this screen without an error.
       await signInWithGoogle();
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : 'Не вдалося увійти. Спробуйте ще раз.';
-      if (!/cancel|скасовано/i.test(message)) {
-        setError(message);
-      }
+      if (__DEV__) console.warn('Вхід через Google не вдався', cause);
+      setError(signInErrorMessage(cause));
     } finally {
       setBusy(false);
     }

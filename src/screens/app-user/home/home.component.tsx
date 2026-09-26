@@ -1,10 +1,9 @@
 import React from 'react';
-import {ActivityIndicator, Alert, ScrollView, Text, View} from 'react-native';
+import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {AppButton, AppIcon, FieldsSyncStatus, InfoCard} from '../../../shared/components/ui';
-import {useAuth} from '../../../shared/core/providers/auth/AuthProvider';
+import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
-import {fieldTypeLabels, formatArea, formatHectares, formatSotkas, selectedAreaM2} from '../../../shared/core/fields/model';
+import {fieldTypeLabels, formatArea, formatHectares, formatSotky, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
@@ -37,7 +36,6 @@ export function HomeScreen() {
   const styles = useThemedStyles(createStyles);
   const {theme} = useTheme();
   const navigation = useRootNavigation();
-  const {signOut} = useAuth();
   const {fields, loadState, reload} = useFields();
   const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
   const date = new Intl.DateTimeFormat('uk-UA', {
@@ -50,11 +48,10 @@ export function HomeScreen() {
         <Text style={styles.date}>{date.charAt(0).toUpperCase() + date.slice(1)}</Text>
         <Text style={styles.title}>Моє господарство</Text>
       </View>
-      {loadState === 'ready' && <FieldsSyncStatus />}
       {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
       {loadState === 'error' && <InfoCard>
-        <Text style={styles.emptyTitle}>Не вдалося відкрити ділянки</Text>
-        <Text style={styles.emptyText}>Локальні записи залишилися на телефоні.</Text>
+        <Text style={styles.emptyTitle}>Не вдалося завантажити ділянки</Text>
+        <Text style={styles.emptyText}>Перевірте інтернет і спробуйте ще раз.</Text>
         <AppButton label="Повторити" onPress={reload} />
       </InfoCard>}
       {loadState === 'ready' && fields.length === 0 && <>
@@ -72,7 +69,7 @@ export function HomeScreen() {
         <InfoCard>
           <Text style={styles.summaryLabel}>Уся земля</Text>
           <Text style={styles.total}>{formatHectares(totalM2)}</Text>
-          <Text style={styles.subTotal}>{formatSotkas(totalM2)}</Text>
+          <Text style={styles.subTotal}>{formatSotky(totalM2)}</Text>
           {fields.map(field => <View key={field.id} style={styles.fieldRow}>
             <View style={styles.dot} />
             <View style={styles.rowBody}>
@@ -85,8 +82,7 @@ export function HomeScreen() {
         <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')} />
         <Text style={styles.hint}>Роботи, урожай і гроші з’являться тут після перших записів.</Text>
       </>}
-      <AppButton label="Вийти з акаунта" variant="danger"
-        onPress={() => signOut().catch(() => Alert.alert('Не вдалося вийти з акаунта'))} />
+      <AppButton label="Налаштування" variant="quiet" onPress={() => navigation.navigate('Settings')} />
     </ScrollView>
   </SafeAreaView>;
 }

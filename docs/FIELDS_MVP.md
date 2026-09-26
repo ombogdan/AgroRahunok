@@ -4,11 +4,11 @@
 
 ## Дані
 
-Firebase використовується для входу. Профіль і ділянки синхронізуються з Supabase за Firebase UID; локальні записи та черга змін зберігаються в AsyncStorage для офлайн-роботи. Старі локальні ділянки `v1` переносяться в Supabase після першої успішної синхронізації. До неї видалення застосунку може призвести до втрати локальних даних. Налаштування Supabase описано в [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
+Ділянки зберігаються прямо в Supabase (таблиця `fields`) під акаунтом Google, з яким увійшли через Supabase Auth. Локальної копії немає: без інтернету ділянки не завантажуються й не зберігаються. Ділянки, які раніше лежали лише на телефоні, у базу не переносяться. Налаштування Supabase описано в [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
 ## Що потрібно зробити на своєму комп'ютері
 
-1. Запустити `yarn install` у корені проєкту. Це встановить `react-native-maps`, `@react-native-async-storage/async-storage` і `@turf/area`; наявний `postinstall` також виконає `pod install`.
+1. Запустити `yarn install` у корені проєкту. Це встановить `react-native-maps` і `@turf/area`; наявний `postinstall` також виконає `pod install`.
 2. Для Android створити `android/maps.properties` за зразком `android/maps.properties.example`. За [інструкцією Google](https://developers.google.com/maps/documentation/android-sdk/get-api-key) у Google Cloud Console увімкнути **Maps SDK for Android**, створити API key і вписати `GOOGLE_MAPS_API_KEY=...`. Обмежити ключ Android застосунком `com.agrorahunok.mobile` та SHA-1 підпису. Файл ключа ігнорується Git.
 3. Для iOS використовується Apple Maps, окремий ключ для базової карти не потрібен. Кнопка «Моє місце» запитує дозвіл на геолокацію тільки після натискання.
 4. Після встановлення нових нативних залежностей перебудувати застосунок. Якщо Metro тримає старий список модулів, перезапустити його з `--reset-cache`.

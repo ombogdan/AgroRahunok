@@ -23,26 +23,44 @@ export const fieldTypeLabels: Record<FieldType, string> = {
   orchard: 'Сад', greenhouse: 'Теплиця',
 };
 
-const numberFormat = (digits: number) => new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: digits,
-});
+const NBSP = ' ';
+// Plots under half a hectare read more naturally in sotky, as in the design.
+const SOTKY_THRESHOLD_M2 = 5000;
+
+const formatNumber = (value: number, minDigits: number, maxDigits: number) =>
+  new Intl.NumberFormat('uk-UA', {
+    minimumFractionDigits: minDigits,
+    maximumFractionDigits: maxDigits,
+  }).format(value);
 
 export function selectedAreaM2(field: Field): number {
   return (field.areaSource === 'document' ? field.documentAreaM2 : field.measuredAreaM2) ?? 0;
 }
 
+// Ukrainian agreement: 1/21 сотка, 2–4/22–24 сотки, 5–20/25 соток; fractions take «сотки».
+export function sotkyWord(value: number): string {
+  if (!Number.isInteger(value)) return 'сотки';
+  const lastTwo = Math.abs(value) % 100;
+  const last = lastTwo % 10;
+  if (last === 1 && lastTwo !== 11) return 'сотка';
+  if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) return 'сотки';
+  return 'соток';
+}
+
+// Whole sotky from 10 up; a decimal below that so a small bed never shows as «0 соток».
+export function formatSotky(areaM2: number): string {
+  const sotky = areaM2 / 100;
+  const rounded = sotky >= 10 ? Math.round(sotky) : Math.round(sotky * 10) / 10;
+  return `${formatNumber(rounded, 0, 1)}${NBSP}${sotkyWord(rounded)}`;
+}
+
+// `exact` keeps two decimals («2,00 га») for rows and the live map area; totals trim zeros («2,2 га»).
+export function formatHectares(areaM2: number, {exact = false}: {exact?: boolean} = {}): string {
+  return `${formatNumber(areaM2 / 10000, exact ? 2 : 0, 2)}${NBSP}га`;
+}
+
 export function formatArea(areaM2: number): string {
-  return areaM2 < 10000
-    ? `${numberFormat(2).format(areaM2 / 100)} соток`
-    : `${numberFormat(2).format(areaM2 / 10000)} га`;
-}
-
-export function formatHectares(areaM2: number): string {
-  return `${numberFormat(2).format(areaM2 / 10000)} га`;
-}
-
-export function formatSotkas(areaM2: number): string {
-  return `${numberFormat(2).format(areaM2 / 100)} соток`;
+  return areaM2 < SOTKY_THRESHOLD_M2 ? formatSotky(areaM2) : formatHectares(areaM2, {exact: true});
 }
 
 export function parseAreaInput(value: string, unit: 'sotka' | 'hectare'): number | null {

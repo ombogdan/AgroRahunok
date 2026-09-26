@@ -5,6 +5,7 @@ import type {RootStackParamList} from '../../../navigation/types';
 import {AppButton, InfoCard, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, selectedAreaM2} from '../../../shared/core/fields/model';
+import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useScreenStyles} from '../screen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldDetail'>;
@@ -17,11 +18,14 @@ export function FieldDetailScreen({route, navigation}: Props) {
   if (!field) return <Page title="Ділянку не знайдено" onBack={() => navigation.goBack()} />;
 
   const confirmDelete = () => Alert.alert('Видалити ділянку?',
-    `«${field.name}» буде видалено з цього телефону.`, [
+    `«${field.name}» буде видалено назавжди.`, [
       {text: 'Скасувати', style: 'cancel'},
       {text: 'Видалити', style: 'destructive', onPress: () => {
         removeField(field.id).then(() => navigation.goBack())
-          .catch(() => Alert.alert('Не вдалося видалити ділянку'));
+          .catch(error => {
+            logSupabaseError('Не вдалося видалити ділянку', error);
+            Alert.alert('Не вдалося видалити ділянку', 'Перевірте інтернет і спробуйте ще раз.');
+          });
       }},
     ]);
 

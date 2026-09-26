@@ -1,0 +1,63 @@
+import type {AreaSource, Field, FieldType, GeoPoint, NewField} from './model';
+import {getSupabaseClient} from '../supabase/client';
+
+type FieldRow = {
+  id: string;
+  name: string;
+  type: FieldType;
+  crop: string | null;
+  document_area_m2: number | null;
+  measured_area_m2: number | null;
+  area_source: AreaSource;
+  polygon: GeoPoint[];
+  created_at: string;
+};
+
+// owner_id is filled in by the database from the signed-in user, and RLS limits every query to it.
+const COLUMNS = 'id, name, type, crop, document_area_m2, measured_area_m2, area_source, polygon, created_at';
+
+function fromRow(row: FieldRow): Field {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    crop: row.crop,
+    documentAreaM2: row.document_area_m2,
+    measuredAreaM2: row.measured_area_m2,
+    areaSource: row.area_source,
+    polygon: row.polygon,
+    createdAt: row.created_at,
+  };
+}
+
+function requireClient() {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase is not configured');
+  return supabase;
+}
+
+export async function fetchFields(): Promise<Field[]> {
+  const {data, error} = await requireClient().from('fields').select(COLUMNS)
+    .order('created_at', {ascending: true});
+  if (error) throw error;
+  return (data as FieldRow[]).map(fromRow);
+}
+
+export async function insertField(input: NewField): Promise<Field> {
+  const {data, error} = await requireClient().from('fields').insert({
+    name: input.name,
+    type: input.type,
+    crop: input.crop,
+    document_area_m2: input.documentAreaM2,
+    measured_area_m2: input.measuredAreaM2,
+    area_source: input.areaSource,
+    polygon: input.polygon,
+  }).select(COLUMNS).single();
+  if (error) throw error;
+  return fromRow(data as FieldRow);
+}
+
+export async function deleteField(id: string): Promise<void> {
+  const {error} = await requireClient().from('fields').delete().eq('id', id);
+  if (error) throw error;
+}
