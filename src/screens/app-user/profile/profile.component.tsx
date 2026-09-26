@@ -16,7 +16,7 @@ export function ProfileScreen() {
     <Page title="Профіль" subtitle="Доступ і налаштування застосунку">
       <InfoCard>
         <Text style={styles.sectionTitle}>
-          {session.kind === 'guest' ? 'Без акаунта' : session.displayName || 'Акаунт'}
+          {session?.kind === 'authenticated' ? session.displayName || 'Акаунт' : 'Без акаунта'}
         </Text>
         <Text style={styles.muted}>
           Зараз працює локальний режим. Вхід Google й Apple підключимо разом із

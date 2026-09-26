@@ -23,12 +23,13 @@ const createStyles = (theme: AppTheme) => ({
   title: {
     color: theme.colors.text,
     fontSize: theme.typography.title,
+    lineHeight: 41,
     fontWeight: '700' as const,
   },
   subtitle: {
     color: theme.colors.textMuted,
     fontSize: theme.typography.body,
-    lineHeight: 23,
+    lineHeight: 24,
   },
 });
 

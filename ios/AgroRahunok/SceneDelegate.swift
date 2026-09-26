@@ -1,5 +1,6 @@
 import UIKit
 import React
+import GoogleSignIn
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
   var window: UIWindow?
@@ -33,7 +34,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       return
     }
 
-    _ = RCTLinkingManager.application(UIApplication.shared, open: url, options: [:])
+    let googleHandled = GIDSignIn.sharedInstance.handle(url)
+    let linkingHandled = RCTLinkingManager.application(
+      UIApplication.shared, open: url, options: [:]
+    )
+    _ = googleHandled || linkingHandled
   }
 
   func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {

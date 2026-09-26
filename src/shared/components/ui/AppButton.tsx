@@ -12,24 +12,25 @@ type Props = {
 
 const createStyles = (theme: AppTheme) => ({
   button: {
-    minHeight: 52,
+    minHeight: 56,
     paddingHorizontal: theme.spacing.lg,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    borderRadius: theme.radii.md,
+    borderRadius: theme.radii.full,
   },
   primary: {backgroundColor: theme.colors.primary},
+  pressed: {backgroundColor: theme.colors.primaryPressed},
   secondary: {
-    backgroundColor: theme.colors.primarySoft,
-    borderWidth: 1,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
     borderColor: theme.colors.border,
   },
-  quiet: {backgroundColor: theme.colors.surfaceAlt},
+  quiet: {backgroundColor: theme.colors.primarySoft},
   disabled: {opacity: 0.5},
   primaryText: {color: theme.colors.onPrimary},
   secondaryText: {color: theme.colors.primary},
-  quietText: {color: theme.colors.text},
-  label: {fontSize: theme.typography.body, fontWeight: '700' as const},
+  quietText: {color: theme.colors.primary},
+  label: {fontSize: theme.typography.button, fontWeight: '600' as const},
 });
 
 export function AppButton({
@@ -49,7 +50,8 @@ export function AppButton({
         styles.button,
         styles[variant],
         disabled && styles.disabled,
-        pressed && !disabled && {opacity: 0.82},
+        pressed && !disabled && variant === 'primary' && {backgroundColor: styles.pressed.backgroundColor},
+        pressed && !disabled && variant !== 'primary' && {opacity: 0.82},
       ]}>
       <Text style={[styles.label, styles[`${variant}Text`]]}>{label}</Text>
     </Pressable>

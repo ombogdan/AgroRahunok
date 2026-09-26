@@ -1,45 +1,42 @@
 import React from 'react';
+import {ActivityIndicator, View} from 'react-native';
 import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StyleSheet, Text} from 'react-native';
-import {
-  FieldDetailScreen,
-  FieldsScreen,
-  HomeScreen,
-  InsightsScreen,
-  JournalScreen,
-  ProfileScreen,
-  QuickEntryScreen,
-} from '../screens/app-user';
+import {FieldsScreen, HomeScreen, JournalScreen, MoneyScreen} from '../screens/app-user';
 import {SignInScreen} from '../screens/app-auth';
+import {AppIcon} from '../shared/components/ui';
+import type {AppIconName} from '../shared/components/ui/AppIcon';
+import {useAuth} from '../shared/core/providers/auth/AuthProvider';
 import {useTheme} from '../shared/theme';
+import {useThemedStyles} from '../shared/theme';
+import type {AppTheme} from '../shared/theme/theme';
 import type {MainTabParamList, RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const tabs = {
-  Home: {label: 'Головна', symbol: '⌂'},
-  Fields: {label: 'Ділянки', symbol: '▧'},
-  Journal: {label: 'Журнал', symbol: '≡'},
-  Insights: {label: 'Підсумки', symbol: '▥'},
-  Profile: {label: 'Профіль', symbol: '◯'},
-} as const;
-
-const styles = StyleSheet.create({tabSymbol: {fontSize: 22}});
-
-function TabSymbol({name, color}: {name: keyof MainTabParamList; color: string}) {
-  return <Text style={[styles.tabSymbol, {color}]}>{tabs[name].symbol}</Text>;
-}
+const tabs: Record<keyof MainTabParamList, {label: string; icon: AppIconName}> = {
+  Home: {label: 'Головна', icon: 'home'},
+  Fields: {label: 'Ділянки', icon: 'plots'},
+  Journal: {label: 'Журнал', icon: 'journal'},
+  Money: {label: 'Гроші', icon: 'money'},
+};
 
 const tabIcons = {
-  Home: ({color}: {color: string}) => <TabSymbol name="Home" color={color} />,
-  Fields: ({color}: {color: string}) => <TabSymbol name="Fields" color={color} />,
-  Journal: ({color}: {color: string}) => <TabSymbol name="Journal" color={color} />,
-  Insights: ({color}: {color: string}) => <TabSymbol name="Insights" color={color} />,
-  Profile: ({color}: {color: string}) => <TabSymbol name="Profile" color={color} />,
+  Home: ({color}: {color: string}) => <AppIcon name="home" color={color} size={26} />,
+  Fields: ({color}: {color: string}) => <AppIcon name="plots" color={color} size={26} />,
+  Journal: ({color}: {color: string}) => <AppIcon name="journal" color={color} size={26} />,
+  Money: ({color}: {color: string}) => <AppIcon name="money" color={color} size={26} />,
 };
+
+const createLoadingStyles = (theme: AppTheme) => ({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    justifyContent: 'center' as const,
+  },
+});
 
 function MainTabs() {
   const {theme} = useTheme();
@@ -50,24 +47,35 @@ function MainTabs() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
+          height: 83,
+          paddingTop: 8,
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
         },
-        tabBarLabelStyle: {fontSize: 12, fontWeight: '600'},
+        tabBarLabelStyle: {fontSize: 13, fontWeight: '700'},
         tabBarIcon: tabIcons[route.name],
         tabBarLabel: tabs[route.name].label,
       })}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Fields" component={FieldsScreen} />
       <Tab.Screen name="Journal" component={JournalScreen} />
-      <Tab.Screen name="Insights" component={InsightsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Money" component={MoneyScreen} />
     </Tab.Navigator>
   );
 }
 
 export function RootNavigator() {
   const {theme} = useTheme();
+  const {session} = useAuth();
+  const loadingStyles = useThemedStyles(createLoadingStyles);
+  if (session === null) {
+    return (
+      <View style={loadingStyles.container}>
+        <ActivityIndicator color={theme.colors.primary} size="large" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer
       theme={{
@@ -81,32 +89,12 @@ export function RootNavigator() {
           primary: theme.colors.primary,
         },
       }}>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: {backgroundColor: theme.colors.surface},
-          headerTintColor: theme.colors.text,
-          contentStyle: {backgroundColor: theme.colors.background},
-        }}>
-        <Stack.Screen
-          name="Tabs"
-          component={MainTabs}
-          options={{headerShown: false}}
-        />
-        <Stack.Screen
-          name="FieldDetail"
-          component={FieldDetailScreen}
-          options={{title: 'Ділянка'}}
-        />
-        <Stack.Screen
-          name="QuickEntry"
-          component={QuickEntryScreen}
-          options={{title: 'Швидкий запис'}}
-        />
-        <Stack.Screen
-          name="SignIn"
-          component={SignInScreen}
-          options={{title: 'Вхід'}}
-        />
+      <Stack.Navigator screenOptions={{headerShown: false}}>
+        {session.kind === 'authenticated' ? (
+          <Stack.Screen name="Tabs" component={MainTabs} />
+        ) : (
+          <Stack.Screen name="SignIn" component={SignInScreen} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

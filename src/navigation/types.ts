@@ -4,8 +4,7 @@ export type MainTabParamList = {
   Home: undefined;
   Fields: undefined;
   Journal: undefined;
-  Insights: undefined;
-  Profile: undefined;
+  Money: undefined;
 };
 
 export type EntryKind = 'work' | 'harvest' | 'sale';

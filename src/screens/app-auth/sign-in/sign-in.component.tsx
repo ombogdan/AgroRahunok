@@ -1,43 +1,69 @@
-import React from 'react';
-import {Text} from 'react-native';
-import {AppButton, InfoCard, Page} from '../../../shared/components/ui';
-import {useThemedStyles} from '../../../shared/theme';
+import React, {useState} from 'react';
+import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
+import {useAuth} from '../../../shared/core/providers/auth/AuthProvider';
+import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 
 const createStyles = (theme: AppTheme) => ({
-  title: {
-    color: theme.colors.text,
-    fontSize: theme.typography.heading,
-    fontWeight: '700' as const,
+  safe: {flex: 1, backgroundColor: theme.colors.background},
+  content: {flexGrow: 1, padding: 20, justifyContent: 'center' as const, gap: 32},
+  brand: {gap: 16},
+  iconCircle: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: theme.colors.primarySoft,
+    alignItems: 'center' as const, justifyContent: 'center' as const,
   },
-  description: {
-    color: theme.colors.textMuted,
-    fontSize: theme.typography.body,
-    lineHeight: 23,
-  },
+  title: {color: theme.colors.text, fontSize: 34, lineHeight: 41, fontWeight: '700' as const},
+  subtitle: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24},
+  cardTitle: {color: theme.colors.text, fontSize: 22, lineHeight: 28, fontWeight: '700' as const},
+  fine: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 20},
+  error: {color: theme.colors.danger, fontSize: 15, lineHeight: 20},
 });
 
 export function SignInScreen() {
   const styles = useThemedStyles(createStyles);
+  const {theme} = useTheme();
+  const {signInWithGoogle} = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setBusy(true);
+    try {
+      await signInWithGoogle();
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Не вдалося увійти. Спробуйте ще раз.';
+      if (!/cancel|скасовано/i.test(message)) {
+        setError(message);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <Page title="Вхід" subtitle="Акаунт для майбутньої синхронізації" withHeader>
-      <InfoCard>
-        <Text style={styles.title}>Продовжити з акаунтом</Text>
-        <Text style={styles.description}>
-          Зараз застосунок працює без реєстрації. Кнопки входу запрацюють після
-          налаштування Google, Apple та сервера синхронізації.
-        </Text>
-        <AppButton label="Продовжити з Apple" onPress={() => {}} disabled />
-        <AppButton
-          label="Продовжити з Google"
-          variant="secondary"
-          onPress={() => {}}
-          disabled
-        />
-      </InfoCard>
-      <Text style={styles.description}>
-        Базові можливості залишаться доступними без входу й без підписки.
-      </Text>
-    </Page>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.brand}>
+          <View style={styles.iconCircle}>
+            <AppIcon name="plots" color={theme.colors.primary} size={48} />
+          </View>
+          <Text style={styles.title}>АгроРахунок</Text>
+          <Text style={styles.subtitle}>
+            Ваша земля, роботи, урожай і гроші — в одному місці.
+          </Text>
+        </View>
+        <InfoCard>
+          <Text style={styles.cardTitle}>Увійдіть у господарство</Text>
+          <Text style={styles.fine}>Почніть з акаунта Google. Вхід Apple додамо згодом.</Text>
+          <AppButton label={busy ? 'Входимо…' : 'Продовжити з Google'} onPress={handleGoogleSignIn} disabled={busy} />
+          {busy && <ActivityIndicator color={theme.colors.primary} />}
+          {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
+        </InfoCard>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
