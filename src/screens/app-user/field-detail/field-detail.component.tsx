@@ -1,52 +1,41 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {Alert, Text} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, DemoBadge, InfoCard, Page} from '../../../shared/components/ui';
-import {demoFields, formatArea} from '../../../shared/data/demoFarm';
+import {AppButton, InfoCard, Page} from '../../../shared/components/ui';
+import {useFields} from '../../../shared/core/fields/FieldsProvider';
+import {fieldTypeLabels, formatArea, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useScreenStyles} from '../screen.styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldDetail'>;
 
 export function FieldDetailScreen({route, navigation}: Props) {
   const common = useScreenStyles();
-  const field = demoFields.find(item => item.id === route.params.fieldId);
+  const {fields, removeField} = useFields();
+  const field = fields.find(item => item.id === route.params.fieldId);
 
-  if (!field) {
-    return <Page title="Ділянку не знайдено" withHeader />;
-  }
+  if (!field) return <Page title="Ділянку не знайдено" onBack={() => navigation.goBack()} />;
 
-  return (
-    <Page title={field.name} subtitle={`${field.type} · ${formatArea(field.areaM2)}`} withHeader>
-      <DemoBadge />
-      <InfoCard>
-        <Text style={common.label}>Площа для розрахунків</Text>
-        <Text style={common.metric}>{formatArea(field.areaM2)}</Text>
-        <Text style={common.muted}>
-          У робочій версії тут будуть площа за документами та виміряна площа.
-        </Text>
-      </InfoCard>
-      <View style={common.group}>
-        <Text style={common.sectionTitle}>Історія посадок</Text>
-        <InfoCard>
-          <View style={common.row}>
-            <Text style={common.body}>{field.crop}</Text>
-            <Text style={common.pillText}>2027</Text>
-          </View>
-          <Text style={common.muted}>{field.note}</Text>
-        </InfoCard>
-      </View>
-      <InfoCard>
-        <Text style={common.sectionTitle}>Роботи й урожай</Text>
-        <Text style={common.muted}>
-          Після додавання журналу тут буде хронологія робіт, зборів і продажів
-          цієї ділянки.
-        </Text>
-        <AppButton
-          label="Записати роботу"
-          onPress={() => navigation.navigate('QuickEntry', {kind: 'work'})}
-        />
-      </InfoCard>
-    </Page>
-  );
+  const confirmDelete = () => Alert.alert('Видалити ділянку?',
+    `«${field.name}» буде видалено з цього телефону.`, [
+      {text: 'Скасувати', style: 'cancel'},
+      {text: 'Видалити', style: 'destructive', onPress: () => {
+        removeField(field.id).then(() => navigation.goBack())
+          .catch(() => Alert.alert('Не вдалося видалити ділянку'));
+      }},
+    ]);
+
+  return <Page title={field.name} subtitle={`${fieldTypeLabels[field.type]} · ${formatArea(selectedAreaM2(field))}`} onBack={() => navigation.goBack()}>
+    <InfoCard>
+      <Text style={common.label}>Площа для розрахунків</Text>
+      <Text style={common.metric}>{formatArea(selectedAreaM2(field))}</Text>
+      {field.documentAreaM2 !== null && <Text style={common.muted}>За документами: {formatArea(field.documentAreaM2)}</Text>}
+      {field.measuredAreaM2 !== null && <Text style={common.muted}>Виміряна на карті: {formatArea(field.measuredAreaM2)}</Text>}
+    </InfoCard>
+    {field.crop && <InfoCard>
+      <Text style={common.label}>Культура цього сезону</Text>
+      <Text style={common.sectionTitle}>{field.crop}</Text>
+    </InfoCard>}
+    <AppButton label="Видалити ділянку" variant="danger" onPress={confirmDelete} />
+  </Page>;
 }

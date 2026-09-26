@@ -34,6 +34,7 @@ local.properties
 *.keystore
 *.jks
 android/key.properties
+android/maps.properties
 android/app/google-services.json
 ios/AgroRahunok/GoogleService-Info.plist
 .kotlin/

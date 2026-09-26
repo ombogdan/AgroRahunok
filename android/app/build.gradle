@@ -92,6 +92,13 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // Supply GOOGLE_MAPS_API_KEY in the ignored android/maps.properties file.
+        def mapsProps = new Properties()
+        def mapsPropsFile = rootProject.file("maps.properties")
+        if (mapsPropsFile.exists()) {
+            mapsPropsFile.withInputStream { mapsProps.load(it) }
+        }
+        manifestPlaceholders = [googleMapsApiKey: mapsProps.getProperty("GOOGLE_MAPS_API_KEY", "")]
     }
     signingConfigs {
         debug {

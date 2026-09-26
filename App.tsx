@@ -4,6 +4,7 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {RootNavigator} from './src/navigation/RootNavigator';
 import {AuthProvider} from './src/shared/core/providers/auth/AuthProvider';
+import {FieldsProvider} from './src/shared/core/fields/FieldsProvider';
 import {SubscriptionProvider} from './src/shared/core/providers/subscription/SubscriptionProvider';
 import {ThemeProvider, useTheme} from './src/shared/theme';
 
@@ -29,9 +30,11 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <SubscriptionProvider>
-              <AppContent />
-            </SubscriptionProvider>
+            <FieldsProvider>
+              <SubscriptionProvider>
+                <AppContent />
+              </SubscriptionProvider>
+            </FieldsProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

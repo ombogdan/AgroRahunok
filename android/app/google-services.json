@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "740798943877",
+    "project_id": "agrocalc-855b9",
+    "storage_bucket": "agrocalc-855b9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740798943877:android:4ccaf8404aaf2c39544fec",
+        "android_client_info": {
+          "package_name": "com.agrorahunok.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "740798943877-57to556li4as3e5q3pd801co0sfvjrq6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.agrorahunok.mobile",
+            "certificate_hash": "cf6aa13bc5a569c29695c7e249a3ff710e0057a1"
+          }
+        },
+        {
+          "client_id": "740798943877-dbl7u1agfrfo5o7t9s8u1n7ho8hltbjs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSAx5Z67d8RGnWiYEmUK9O7E6e5YE6lB4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "740798943877-dbl7u1agfrfo5o7t9s8u1n7ho8hltbjs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

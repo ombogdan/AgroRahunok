@@ -6,7 +6,7 @@ import type {AppTheme} from '../../theme/theme';
 type Props = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'quiet';
+  variant?: 'primary' | 'secondary' | 'quiet' | 'danger';
   disabled?: boolean;
 };
 
@@ -26,10 +26,12 @@ const createStyles = (theme: AppTheme) => ({
     borderColor: theme.colors.border,
   },
   quiet: {backgroundColor: theme.colors.primarySoft},
+  danger: {backgroundColor: theme.colors.danger},
   disabled: {opacity: 0.5},
   primaryText: {color: theme.colors.onPrimary},
   secondaryText: {color: theme.colors.primary},
   quietText: {color: theme.colors.primary},
+  dangerText: {color: '#FFFFFF'},
   label: {fontSize: theme.typography.button, fontWeight: '600' as const},
 });
 

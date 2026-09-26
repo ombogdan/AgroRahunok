@@ -1,14 +1,61 @@
 import React from 'react';
-import {EmptyFeature, Page} from '../../../shared/components/ui';
+import {ActivityIndicator, Pressable, Text, View} from 'react-native';
+import {AppButton, InfoCard, Page} from '../../../shared/components/ui';
+import {useFields} from '../../../shared/core/fields/FieldsProvider';
+import {fieldTypeLabels, formatArea, formatHectares, selectedAreaM2} from '../../../shared/core/fields/model';
+import {useRootNavigation} from '../../../navigation/useRootNavigation';
+import {useTheme, useThemedStyles} from '../../../shared/theme';
+import type {AppTheme} from '../../../shared/theme/theme';
+
+const createStyles = (theme: AppTheme) => ({
+  label: {color: theme.colors.textMuted, fontSize: 17, fontWeight: '600' as const},
+  total: {color: theme.colors.text, fontSize: 38, fontWeight: '700' as const},
+  emptyTitle: {color: theme.colors.text, fontSize: 22, fontWeight: '700' as const},
+  muted: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24},
+  row: {minHeight: 72, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12},
+  rowBody: {flex: 1, gap: 3},
+  name: {color: theme.colors.text, fontSize: 19, fontWeight: '600' as const},
+  area: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
+  arrow: {color: theme.colors.textMuted, fontSize: 26},
+});
 
 export function FieldsScreen() {
-  return (
-    <Page title="Ділянки">
-      <EmptyFeature
-        icon="plots"
-        title="Ділянок ще немає"
-        detail="Тут з’являться ваша земля, площа й культури. Додавання ділянки — наступний функціональний крок."
-      />
-    </Page>
-  );
+  const styles = useThemedStyles(createStyles);
+  const {theme} = useTheme();
+  const navigation = useRootNavigation();
+  const {fields, loadState, reload} = useFields();
+  const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
+
+  return <Page title="Ділянки" subtitle="Ваша земля і її площа">
+    {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
+    {loadState === 'error' && <InfoCard>
+      <Text style={styles.emptyTitle}>Не вдалося відкрити ділянки</Text>
+      <Text style={styles.muted}>Локальні дані залишилися на телефоні. Спробуйте ще раз.</Text>
+      <AppButton label="Повторити" onPress={reload} />
+    </InfoCard>}
+    {loadState === 'ready' && <>
+      {fields.length > 0 && <InfoCard>
+        <Text style={styles.label}>Уся земля</Text>
+        <Text style={styles.total}>{formatHectares(totalM2)}</Text>
+      </InfoCard>}
+      {fields.length === 0 && <InfoCard>
+        <Text style={styles.emptyTitle}>Ділянок ще немає</Text>
+        <Text style={styles.muted}>Додайте першу ділянку на карті або введіть площу вручну.</Text>
+      </InfoCard>}
+      {fields.map(field => <Pressable key={field.id} accessibilityRole="button"
+        onPress={() => navigation.navigate('FieldDetail', {fieldId: field.id})}>
+        <InfoCard>
+          <View style={styles.row}>
+            <View style={styles.rowBody}>
+              <Text style={styles.name}>{field.name}</Text>
+              <Text style={styles.muted}>{fieldTypeLabels[field.type]}{field.crop ? ` · ${field.crop}` : ''}</Text>
+            </View>
+            <Text style={styles.area}>{formatArea(selectedAreaM2(field))}</Text>
+            <Text style={styles.arrow}>›</Text>
+          </View>
+        </InfoCard>
+      </Pressable>)}
+      <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')} />
+    </>}
+  </Page>;
 }
