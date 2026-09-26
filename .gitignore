@@ -39,6 +39,12 @@ android/app/google-services.json
 ios/AgroRahunok/GoogleService-Info.plist
 .kotlin/
 
+# Local Supabase config (public values, but specific to each environment)
+.env
+.env.*
+!.env.example
+firebase-service-account*.json
+
 # node.js
 #
 node_modules/

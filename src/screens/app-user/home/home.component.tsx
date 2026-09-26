@@ -1,7 +1,7 @@
 import React from 'react';
 import {ActivityIndicator, Alert, ScrollView, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
+import {AppButton, AppIcon, FieldsSyncStatus, InfoCard} from '../../../shared/components/ui';
 import {useAuth} from '../../../shared/core/providers/auth/AuthProvider';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, formatSotkas, selectedAreaM2} from '../../../shared/core/fields/model';
@@ -50,6 +50,7 @@ export function HomeScreen() {
         <Text style={styles.date}>{date.charAt(0).toUpperCase() + date.slice(1)}</Text>
         <Text style={styles.title}>Моє господарство</Text>
       </View>
+      {loadState === 'ready' && <FieldsSyncStatus />}
       {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
       {loadState === 'error' && <InfoCard>
         <Text style={styles.emptyTitle}>Не вдалося відкрити ділянки</Text>

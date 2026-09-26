@@ -7,6 +7,6 @@
 - `src/shared/core/providers/auth` і `services/auth` — стан Firebase сесії, вхід та вихід.
 - `src/shared/core/providers/subscription` — майбутній шар платних прав; зараз усі базові можливості безкоштовні.
 
-Поки немає реальних полів і записів. Firebase Auth є джерелом ідентичності; Supabase ще не підключений. Подальша синхронізація вимагатиме окремого рішення щодо доступу до даних за Firebase UID.
+Реальними даними зараз є профіль користувача та ділянки. Firebase Auth є джерелом ідентичності; Supabase зберігає профіль і ділянки з RLS за Firebase UID. Локальна черга змін забезпечує офлайн-додавання й видалення ділянок. Журнал і гроші поки порожні; їхні таблиці додамо разом із робочими екранами. Налаштування — у [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
 Налаштування власного Firebase проєкту описане в [FIREBASE_GOOGLE_SETUP.md](FIREBASE_GOOGLE_SETUP.md). Візуальний референс — у [DESIGN_REFERENCE.md](DESIGN_REFERENCE.md).

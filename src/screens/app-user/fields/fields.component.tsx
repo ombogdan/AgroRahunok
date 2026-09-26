@@ -1,6 +1,6 @@
 import React from 'react';
 import {ActivityIndicator, Pressable, Text, View} from 'react-native';
-import {AppButton, InfoCard, Page} from '../../../shared/components/ui';
+import {AppButton, FieldsSyncStatus, InfoCard, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
@@ -27,6 +27,7 @@ export function FieldsScreen() {
   const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
 
   return <Page title="Ділянки" subtitle="Ваша земля і її площа">
+    {loadState === 'ready' && <FieldsSyncStatus />}
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
       <Text style={styles.emptyTitle}>Не вдалося відкрити ділянки</Text>
