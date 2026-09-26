@@ -1,0 +1,26 @@
+{
+  "today": "2026-09-26",
+  "plots": [
+    {"id":"pole","name":"Поле","type":"field","crop":"Пшениця озима","docHa":2.0,"measuredHa":1.96,"useArea":"doc",
+     "cropsByYear":{"2025":"Соняшник","2026":"Пшениця озима","2027":"Пшениця озима"}},
+    {"id":"mal","name":"Малинник","type":"berry","crop":"Малина","plantedYear":2021,"docHa":0.2,"measuredHa":null,"useArea":"doc"}
+  ],
+  "records": [
+    {"id":1,"date":"2026-09-26","plotId":"pole","kind":"work","workType":"sowing","title":"Посів","amount":-7200,"detail":"Насіння 450 кг × 16 грн","season":2027},
+    {"id":2,"date":"2026-09-24","plotId":"pole","kind":"work","workType":"cultivation","title":"Культивація","amount":-1600,"season":2027},
+    {"id":3,"date":"2026-09-12","plotId":"pole","kind":"work","workType":"ploughing","title":"Оранка","amount":-3000,"ratePerHa":1500,"detail":"1 500 грн/га × 2 га","season":2027},
+    {"id":4,"date":"2026-07-18","plotId":"mal","kind":"sale","title":"Продаж малини","amount":960,"qtyKg":12,"pricePerKg":80,"buyer":"Ринок","season":2026},
+    {"id":5,"date":"2026-07-18","plotId":"mal","kind":"harvest","title":"Збір малини","qty":4,"unit":"bucket","qtyKg":20,"seasonTotalKg":600,"season":2026}
+  ],
+  "seasons": {
+    "2027": {"status":"ongoing","income":0,"expenses":11800},
+    "2026": {"status":"finished","income":107160,"expenses":39300,"profit":67860,
+      "crops":[
+        {"crop":"Пшениця озима","plotId":"pole","harvestKg":9000,"yieldPerHa":"45 ц","soldKg":8200,"pricePerKg":7.8,"income":63960,"expenses":30200,"profit":33760,"costPerKg":3.36,"minPrice":3.4},
+        {"crop":"Малина","plotId":"mal","harvests":31,"harvestKg":620,"buckets":124,"bucketKg":5,"yieldPerSotka":"31 кг","soldKg":540,"pricePerKg":80,"income":43200,"expenses":8400,"profit":34800,"costPerKg":13.55,"minPrice":14}
+      ],
+      "general":[{"title":"Податок на землю","amount":-700}]},
+    "2025": {"status":"finished","profit":41200,"_note":"умовна цифра лише для порівняння — замінити справжньою"}
+  },
+  "unitWeights": {"bucket":5}
+}

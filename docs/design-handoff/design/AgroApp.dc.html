@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.ar{--bg:#F5F8F2;--sf:#FFFFFF;--tx:#193327;--mu:#607367;--bd:#DCE7DC;--pr:#26734D;--prp:#1D5A3C;--on:#FFFFFF;--ac:#E3A43B;--ok:#2E8B57;--wa:#B87816;--dg:#C5483B;--prs:#E4F0E7;--acs:#FBEFD6;--aci:#7A4E0C;--seg:#E6EDE4;--scrim:rgba(16,32,24,.38);--sh:0 1px 2px rgba(25,51,39,.05),0 6px 20px rgba(25,51,39,.06)}
+.ar-dark{--bg:#102018;--sf:#1A3023;--tx:#EEF7EF;--mu:#B1C5B6;--bd:#345542;--pr:#73C995;--prp:#58B67E;--on:#102018;--ac:#E9B45C;--ok:#73C995;--wa:#E9B45C;--dg:#F08478;--prs:#21412F;--acs:#3A3120;--aci:#F2CD8C;--seg:#0C1912;--scrim:rgba(0,0,0,.55);--sh:none}
+.ar input:focus{outline:2px solid var(--pr);outline-offset:1px}
+.ar input::placeholder{color:var(--mu)}
+.ar button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.ar *::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div class="ar {{ darkClass }}" data-screen-label="{{ screenLabel }}" style="position:relative;width:393px;height:852px;overflow:hidden;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;-webkit-font-smoothing:antialiased;">
+
+<div style="position:absolute;top:0;left:0;right:0;height:54px;z-index:60;pointer-events:none;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 50px;color:var(--tx);">
+<span style="font-size:17px;font-weight:600;">9:41</span>
+<div style="display:flex;align-items:center;gap:6px;">
+<svg width="18" height="12" viewBox="0 0 18 12"><path d="M0 9h3v3H0zM5 6h3v6H5zM10 3h3v9h-3zM15 0h3v12h-3z" style="fill:currentColor"></path></svg>
+<svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.6c2.2 0 4.2.8 5.7 2.2l1.2-1.2A10 10 0 0 0 8 1 10 10 0 0 0 1.1 3.6l1.2 1.2A8.3 8.3 0 0 1 8 2.6zm0 3.2c1.3 0 2.5.5 3.4 1.3l1.2-1.2a6.6 6.6 0 0 0-9.2 0l1.2 1.2c.9-.8 2.1-1.3 3.4-1.3zM8 9c.5 0 .9.2 1.2.5L8 10.8 6.8 9.5C7.1 9.2 7.5 9 8 9z" style="fill:currentColor"></path></svg>
+<svg width="27" height="13" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" style="fill:none;stroke:currentColor;opacity:.4"></rect><rect x="2" y="2" width="20" height="9" rx="2" style="fill:currentColor"></rect><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" style="fill:currentColor;opacity:.45"></path></svg>
+</div>
+</div>
+<div style="position:absolute;top:11px;left:50%;margin-left:-62px;width:124px;height:36px;border-radius:20px;background:#000;z-index:61;"></div>
+
+<sc-if value="{{ isTabScreen }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;top:0;left:0;right:0;bottom:83px;overflow-y:auto;padding:58px 0 108px;box-sizing:border-box;">
+
+<sc-if value="{{ isHomeFull }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 20px 0;display:flex;flex-direction:column;gap:2px;">
+<div style="font-size:15px;color:var(--mu);">Субота, 26 вересня</div>
+<h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Моє господарство</h1>
+</div>
+<div style="margin:20px 20px 0;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:20px;box-shadow:var(--sh);">
+<div style="font-size:17px;font-weight:600;color:var(--mu);">Уся земля</div>
+<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:2px;"><span style="font-size:40px;line-height:48px;font-weight:700;">{{ totalHa }}</span><span style="font-size:17px;color:var(--mu);">{{ totalSot }}</span></div>
+<div style="display:flex;gap:3px;height:12px;margin:16px 0 8px;">
+<sc-for list="{{ plotRows }}" as="p" hint-placeholder-count="2"><div style="flex:{{ p.flex }};min-width:10px;border-radius:999px;background:{{ p.color }};"></div></sc-for>
+</div>
+<sc-for list="{{ plotRows }}" as="p" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:52px;border-top:1px solid var(--bd);">
+<div style="width:12px;height:12px;border-radius:999px;background:{{ p.color }};flex:none;"></div>
+<div style="flex:1;min-width:0;"><div style="font-size:17px;font-weight:600;">{{ p.name }}</div><div style="font-size:15px;color:var(--mu);">{{ p.crop }}</div></div>
+<div style="font-size:17px;font-weight:600;text-align:right;">{{ p.areaShort }}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="margin:12px 20px 0;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:20px;box-shadow:var(--sh);">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+<div style="font-size:17px;font-weight:600;color:var(--mu);">Сезон 2027</div>
+<div style="font-size:15px;font-weight:600;color:var(--aci);background:var(--acs);padding:4px 12px;border-radius:999px;">Іде зараз</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span style="font-size:17px;">Витрачено</span><span style="font-size:28px;line-height:34px;font-weight:700;">{{ spent27 }}</span></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span style="font-size:17px;">Доходи</span><span style="font-size:17px;color:var(--mu);">ще немає</span></div>
+</div>
+<button onClick="{{ goMoney }}" style="margin-top:12px;min-height:44px;width:100%;border:none;background:var(--prs);color:var(--pr);border-radius:999px;font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">Відкрити «Гроші»<svg width="20" height="20" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"></path></svg></button>
+</div>
+
+<div style="margin:32px 20px 8px;display:flex;align-items:center;justify-content:space-between;">
+<h2 style="margin:0;font-size:22px;line-height:28px;font-weight:700;">Останні записи</h2>
+<button onClick="{{ goJournal }}" style="min-height:44px;padding:0 4px;border:none;background:none;color:var(--pr);font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;">Усі записи</button>
+</div>
+<div style="margin:0 20px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:0 16px;box-shadow:var(--sh);">
+<sc-for list="{{ recent }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:72px;border-top:{{ r.border }};">
+<div style="width:44px;height:44px;border-radius:999px;background:var(--prs);color:var(--pr);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="24" height="24" viewBox="0 0 24 24"><path d="{{ r.icon }}" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div style="flex:1;min-width:0;"><div style="font-size:17px;font-weight:600;">{{ r.title }}</div><div style="font-size:15px;color:var(--mu);">{{ r.sub }}</div></div>
+<div style="font-size:17px;font-weight:600;color:{{ r.amtColor }};text-align:right;">{{ r.amt }}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHomeEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 20px 0;display:flex;flex-direction:column;gap:2px;">
+<div style="font-size:15px;color:var(--mu);">Субота, 26 вересня</div>
+<h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Моє господарство</h1>
+</div>
+<div style="margin:32px 20px 0;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:32px 20px 20px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:12px;">
+<div style="width:112px;height:112px;border-radius:999px;background:var(--prs);color:var(--pr);display:flex;align-items:center;justify-content:center;"><svg width="56" height="56" viewBox="0 0 24 24"><path d="M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5zM9 4v13.5M15 6.5V20" style="fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<h2 style="margin:8px 0 0;font-size:28px;line-height:34px;font-weight:700;">Додайте першу ділянку</h2>
+<p style="margin:0;font-size:17px;line-height:24px;color:var(--mu);text-wrap:pretty;">Обведіть її на карті, обійдіть з телефоном або введіть площу з документів. Це займе хвилину.</p>
+<button onClick="{{ startAddPlot }}" style="margin-top:12px;height:56px;width:100%;border:none;border-radius:999px;background:var(--pr);color:var(--on);font-family:inherit;font-size:19px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;" style-active="background:var(--prp)"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round"></path></svg>Додати ділянку</button>
+</div>
+<p style="margin:20px 20px 0;font-size:15px;line-height:20px;color:var(--mu);text-wrap:pretty;">Після цього тут з’являться ваша земля, роботи й гроші за сезон.</p>
+</sc-if>
+
+<sc-if value="{{ isPlots }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 20px 0;"><h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Ділянки</h1><div style="font-size:17px;color:var(--mu);margin-top:4px;">Разом {{ totalHa }} · {{ totalSot }}</div></div>
+<div style="display:flex;flex-direction:column;gap:12px;margin:20px 20px 0;">
+<sc-for list="{{ plotRows }}" as="p" hint-placeholder-count="2">
+<button onClick="{{ stageB }}" style="display:flex;align-items:center;gap:16px;text-align:left;width:100%;padding:16px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;box-shadow:var(--sh);font-family:inherit;color:var(--tx);cursor:pointer;">
+<div style="width:64px;height:64px;border-radius:16px;background:{{ p.iconBg }};color:{{ p.iconFg }};display:flex;align-items:center;justify-content:center;flex:none;"><svg width="32" height="32" viewBox="0 0 24 24"><path d="{{ p.icon }}" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div style="flex:1;min-width:0;"><div style="font-size:20px;font-weight:600;">{{ p.name }}</div><div style="font-size:15px;color:var(--mu);">{{ p.crop }}</div><div style="font-size:17px;font-weight:600;margin-top:4px;">{{ p.areaLong }}</div></div>
+<svg width="22" height="22" viewBox="0 0 24 24" style="color:var(--mu);flex:none;"><path d="M9 6l6 6-6 6" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"></path></svg>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isJournal }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 20px 0;"><h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Журнал</h1></div>
+<div style="display:flex;gap:8px;overflow-x:auto;padding:16px 20px 4px;">
+<sc-for list="{{ jFilters }}" as="f" hint-placeholder-count="3"><button onClick="{{ f.on }}" style="flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid {{ f.bd }};background:{{ f.bg }};color:{{ f.fg }};font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;">{{ f.label }}</button></sc-for>
+</div>
+<sc-for list="{{ jGroups }}" as="g" hint-placeholder-count="2">
+<div style="margin:20px 20px 8px;font-size:17px;font-weight:700;">{{ g.label }}</div>
+<div style="margin:0 20px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:0 16px;">
+<sc-for list="{{ g.items }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:72px;border-top:{{ r.border }};">
+<div style="width:44px;height:44px;border-radius:999px;background:var(--prs);color:var(--pr);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="24" height="24" viewBox="0 0 24 24"><path d="{{ r.icon }}" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div style="flex:1;min-width:0;"><div style="font-size:17px;font-weight:600;">{{ r.title }}</div><div style="font-size:15px;color:var(--mu);">{{ r.sub2 }}</div></div>
+<div style="font-size:17px;font-weight:600;color:{{ r.amtColor }};text-align:right;">{{ r.amt }}</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ isMoney }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 20px 0;"><h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Гроші</h1></div>
+<div style="margin:16px 20px 0;display:flex;padding:3px;background:var(--seg);border-radius:12px;gap:3px;">
+<sc-for list="{{ seasonSeg }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.on }}" style="flex:1;min-height:44px;border:none;border-radius:10px;background:{{ o.bg }};box-shadow:{{ o.sh }};color:var(--tx);font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;">{{ o.label }}</button></sc-for>
+</div>
+
+<sc-if value="{{ is2026 }}" hint-placeholder-val="{{ true }}">
+<div style="margin:16px 20px 0;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:20px;box-shadow:var(--sh);">
+<div style="font-size:15px;color:var(--mu);">Сезон завершено</div>
+<div style="font-size:20px;font-weight:600;margin-top:8px;">Прибуток</div>
+<div style="font-size:40px;line-height:48px;font-weight:700;color:var(--pr);">+67 860 грн</div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
+<div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;"><span style="font-size:17px;">Доходи</span><span style="font-size:28px;line-height:34px;font-weight:700;">107 160 грн</span></div><div style="height:12px;border-radius:999px;background:var(--pr);margin-top:6px;"></div></div>
+<div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;"><span style="font-size:17px;">Витрати</span><span style="font-size:28px;line-height:34px;font-weight:700;">39 300 грн</span></div><div style="height:12px;width:37%;border-radius:999px;background:var(--ac);margin-top:6px;"></div></div>
+</div>
+</div>
+
+<h2 style="margin:32px 20px 12px;font-size:22px;line-height:28px;font-weight:700;">За культурами</h2>
+<div style="margin:0 20px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:20px;box-shadow:var(--sh);">
+<div style="display:flex;align-items:center;gap:12px;">
+<div style="width:48px;height:48px;border-radius:999px;background:var(--acs);color:var(--aci);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 21V8M12 8c-2-1-3-2.5-3-5 2 .8 3 2.5 3 5zM12 8c2-1 3-2.5 3-5-2 .8-3 2.5-3 5zM12 13c-2.2-.6-4-2-4-4.6 2.2.2 4 2 4 4.6zM12 13c2.2-.6 4-2 4-4.6-2.2.2-4 2-4 4.6zM12 18c-2.2-.6-4-2-4-4.6 2.2.2 4 2 4 4.6zM12 18c2.2-.6 4-2 4-4.6-2.2.2-4 2-4 4.6z" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div><div style="font-size:20px;font-weight:600;">Пшениця озима</div><div style="font-size:15px;color:var(--mu);">Поле · 2 га</div></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:16px;">
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">9 000 кг</div><div style="font-size:15px;color:var(--mu);">урожай</div></div>
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">45 ц</div><div style="font-size:15px;color:var(--mu);">з гектара</div></div>
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">8 200 кг</div><div style="font-size:15px;color:var(--mu);">продано по 7,80 грн</div></div>
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">3,36 грн</div><div style="font-size:15px;color:var(--mu);">витрати на 1 кг</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;font-size:17px;"><span>Доходи</span><span style="font-weight:600;">63 960 грн</span></div>
+<div style="height:10px;border-radius:999px;background:var(--pr);"></div>
+<div style="display:flex;justify-content:space-between;font-size:17px;margin-top:4px;"><span>Витрати</span><span style="font-weight:600;">30 200 грн</span></div>
+<div style="height:10px;width:47%;border-radius:999px;background:var(--ac);"></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid var(--bd);"><span style="font-size:20px;font-weight:600;">Прибуток</span><span style="font-size:28px;line-height:34px;font-weight:700;color:var(--pr);">+33 760 грн</span></div>
+<div style="margin-top:12px;background:var(--acs);border-radius:12px;padding:12px 16px;"><div style="font-size:17px;font-weight:700;color:var(--aci);">Продавати не дешевше за 3,40 грн/кг</div><div style="font-size:15px;color:var(--aci);margin-top:2px;">Тоді витрати точно окупляться</div></div>
+</div>
+
+<div style="margin:12px 20px 0;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:20px;box-shadow:var(--sh);">
+<div style="display:flex;align-items:center;gap:12px;">
+<div style="width:48px;height:48px;border-radius:999px;background:var(--prs);color:var(--pr);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M7.3 11a2.2 2.2 0 1 0 4.4 0 2.2 2.2 0 1 0-4.4 0M12.3 11a2.2 2.2 0 1 0 4.4 0 2.2 2.2 0 1 0-4.4 0M9.8 15a2.2 2.2 0 1 0 4.4 0 2.2 2.2 0 1 0-4.4 0M7.3 18.5a2.2 2.2 0 1 0 4.4 0M12.3 18.5a2.2 2.2 0 1 0 4.4 0M12 8.8V4M9 5.5l3 2 3-2" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div><div style="font-size:20px;font-weight:600;">Малина</div><div style="font-size:15px;color:var(--mu);">Малинник · 20 соток</div></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:16px;">
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">620 кг</div><div style="font-size:15px;color:var(--mu);">урожай, 31 збір</div></div>
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">31 кг</div><div style="font-size:15px;color:var(--mu);">з сотки</div></div>
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">540 кг</div><div style="font-size:15px;color:var(--mu);">продано по 80 грн</div></div>
+<div style="background:var(--bg);border-radius:12px;padding:12px;"><div style="font-size:24px;font-weight:700;">13,55 грн</div><div style="font-size:15px;color:var(--mu);">витрати на 1 кг</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;font-size:17px;"><span>Доходи</span><span style="font-weight:600;">43 200 грн</span></div>
+<div style="height:10px;width:68%;border-radius:999px;background:var(--pr);"></div>
+<div style="display:flex;justify-content:space-between;font-size:17px;margin-top:4px;"><span>Витрати</span><span style="font-weight:600;">8 400 грн</span></div>
+<div style="height:10px;width:13%;border-radius:999px;background:var(--ac);"></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid var(--bd);"><span style="font-size:20px;font-weight:600;">Прибуток</span><span style="font-size:28px;line-height:34px;font-weight:700;color:var(--pr);">+34 800 грн</span></div>
+<div style="margin-top:12px;background:var(--acs);border-radius:12px;padding:12px 16px;"><div style="font-size:17px;font-weight:700;color:var(--aci);">Продавати не дешевше за 14 грн/кг</div><div style="font-size:15px;color:var(--aci);margin-top:2px;">Тоді витрати точно окупляться</div></div>
+</div>
+
+<div style="margin:12px 20px 0;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+<div><div style="font-size:17px;font-weight:600;">Загальні витрати</div><div style="font-size:15px;color:var(--mu);">Податок на землю</div></div>
+<div style="font-size:17px;font-weight:600;">700 грн</div>
+</div>
+
+<h2 style="margin:32px 20px 12px;font-size:22px;line-height:28px;font-weight:700;">Порівняно з минулим роком</h2>
+<div style="margin:0 20px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:20px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:12px;">
+<div><div style="display:flex;justify-content:space-between;font-size:17px;gap:8px;"><span>2025 · соняшник і малина</span><span style="font-weight:600;">+41 200 грн</span></div><div style="height:12px;width:61%;border-radius:999px;background:var(--bd);margin-top:6px;"></div></div>
+<div><div style="display:flex;justify-content:space-between;font-size:17px;gap:8px;"><span>2026 · пшениця і малина</span><span style="font-weight:600;">+67 860 грн</span></div><div style="height:12px;border-radius:999px;background:var(--pr);margin-top:6px;"></div></div>
+<div style="font-size:17px;font-weight:600;color:var(--pr);">Прибуток більший на 26 660 грн</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is2027 }}" hint-placeholder-val="{{ false }}">
+<div style="margin:16px 20px 0;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:20px;box-shadow:var(--sh);">
+<div style="font-size:15px;color:var(--mu);">Сезон іде · урожай буде влітку 2027</div>
+<div style="font-size:20px;font-weight:600;margin-top:8px;">Витрачено</div>
+<div style="font-size:40px;line-height:48px;font-weight:700;">{{ spent27 }}</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);"><span style="font-size:17px;">Доходи</span><span style="font-size:17px;color:var(--mu);">ще немає</span></div>
+<p style="margin:12px 0 0;font-size:15px;line-height:20px;color:var(--mu);text-wrap:pretty;">Коли продасте урожай, тут з’явиться прибуток і ціна, дешевше за яку продавати не варто.</p>
+</div>
+<h2 style="margin:32px 20px 12px;font-size:22px;line-height:28px;font-weight:700;">Пшениця озима · Поле</h2>
+<div style="margin:0 20px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:0 16px;box-shadow:var(--sh);">
+<sc-for list="{{ works27 }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:72px;border-top:{{ r.border }};">
+<div style="width:44px;height:44px;border-radius:999px;background:var(--prs);color:var(--pr);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="24" height="24" viewBox="0 0 24 24"><path d="{{ r.icon }}" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div style="flex:1;min-width:0;"><div style="font-size:17px;font-weight:600;">{{ r.title }}</div><div style="font-size:15px;color:var(--mu);">{{ r.sub2 }}</div></div>
+<div style="font-size:17px;font-weight:600;text-align:right;">{{ r.amt }}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ showDock }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:0;right:0;bottom:83px;padding:12px 20px;background:var(--bg);z-index:20;">
+<button onClick="{{ dockAction }}" style="height:56px;width:100%;border:none;border-radius:999px;background:var(--pr);color:var(--on);font-family:inherit;font-size:19px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 4px 14px rgba(38,115,77,.25);" style-active="background:var(--prp)"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round"></path></svg>{{ dockLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTabScreen }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:0;right:0;bottom:0;height:83px;background:var(--sf);border-top:1px solid var(--bd);display:flex;padding:0 8px 30px;box-sizing:border-box;z-index:30;">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+<button onClick="{{ t.on }}" style="flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:{{ t.color }};font-family:inherit;font-size:13px;font-weight:{{ t.weight }};cursor:pointer;min-height:52px;">
+<svg width="26" height="26" viewBox="0 0 24 24"><path d="{{ t.icon }}" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"></path></svg>{{ t.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAddMethod }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;padding:106px 20px 40px;box-sizing:border-box;">
+<h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Нова ділянка</h1>
+<p style="margin:4px 0 20px;font-size:17px;color:var(--mu);">Як зручніше виміряти площу?</p>
+<div style="display:flex;flex-direction:column;gap:12px;">
+<sc-for list="{{ methods }}" as="m" hint-placeholder-count="3">
+<button onClick="{{ m.on }}" style="display:flex;align-items:center;gap:16px;text-align:left;width:100%;padding:20px 16px;background:var(--sf);border:1px solid var(--bd);border-radius:20px;box-shadow:var(--sh);font-family:inherit;color:var(--tx);cursor:pointer;">
+<div style="width:56px;height:56px;border-radius:999px;background:var(--prs);color:var(--pr);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="30" height="30" viewBox="0 0 24 24"><path d="{{ m.icon }}" style="fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div style="flex:1;min-width:0;"><div style="font-size:20px;font-weight:600;">{{ m.title }}</div><div style="font-size:15px;line-height:20px;color:var(--mu);margin-top:2px;">{{ m.sub }}</div></div>
+<svg width="22" height="22" viewBox="0 0 24 24" style="color:var(--mu);flex:none;"><path d="M9 6l6 6-6 6" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"></path></svg>
+</button>
+</sc-for>
+</div>
+</div>
+<div style="position:absolute;top:54px;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:var(--bg);">
+<button onClick="{{ cancelFlow }}" style="min-height:44px;padding:0 12px;border:none;background:none;color:var(--pr);font-family:inherit;font-size:17px;display:flex;align-items:center;gap:2px;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"></path></svg>Назад</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMap }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ mapTap }}" style="position:absolute;inset:0;cursor:crosshair;background:#56643F;">
+<svg width="393" height="852" viewBox="0 0 393 852" style="position:absolute;inset:0;display:block;">
+<defs>
+<pattern id="arPl" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)"><rect width="7" height="7" style="fill:#7B6444"></rect><rect width="7" height="2.5" style="fill:#6A5539"></rect></pattern>
+<pattern id="arRows" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-5)"><rect width="9" height="9" style="fill:#6F7F45"></rect><rect width="9" height="4" style="fill:#4E6031"></rect></pattern>
+<pattern id="arWh" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(80)"><rect width="10" height="10" style="fill:#9C9058"></rect><rect width="10" height="2" style="fill:#8C8150"></rect></pattern>
+</defs>
+<path d="M-10 60 L180 40 L200 250 L-10 270Z" style="fill:url(#arWh)"></path>
+<path d="M205 36 L410 20 L410 240 L222 256Z" style="fill:#63744A"></path>
+<path d="M-10 285 L118 272 L130 520 L-10 532Z" style="fill:url(#arPl)"></path>
+<path d="M130 318 L278 302 L286 458 L140 472Z" style="fill:url(#arRows)"></path>
+<path d="M292 300 L410 290 L410 470 L298 462Z" style="fill:#7A8A55"></path>
+<path d="M-10 548 L150 534 L160 800 L-10 812Z" style="fill:#6B7B4C"></path>
+<path d="M168 530 L410 505 L410 870 L176 870Z" style="fill:url(#arPl)"></path>
+<path d="M-20 278 C120 262 260 262 420 282" style="fill:none;stroke:#B8AC8A;stroke-width:12"></path>
+<path d="M124 -10 C132 300 150 600 164 870" style="fill:none;stroke:#A99E80;stroke-width:9"></path>
+<path d="M300 480a9 9 0 1 0 18 0 9 9 0 1 0-18 0M322 490a11 11 0 1 0 22 0 11 11 0 1 0-22 0M348 478a8 8 0 1 0 16 0 8 8 0 1 0-16 0M285 494a7 7 0 1 0 14 0 7 7 0 1 0-14 0M60 250a9 9 0 1 0 18 0 9 9 0 1 0-18 0M84 254a7 7 0 1 0 14 0 7 7 0 1 0-14 0" style="fill:#34422A"></path>
+<path d="{{ polyD }}" style="fill:rgba(233,180,92,.28);stroke:#F2C063;stroke-width:3;stroke-linejoin:round"></path>
+<path d="{{ markD }}" style="fill:#FFFFFF;stroke:#E3A43B;stroke-width:4"></path>
+<path d="M208 392a9 9 0 1 0 18 0 9 9 0 1 0-18 0" style="fill:#2F80ED;stroke:#fff;stroke-width:3"></path>
+</svg>
+</div>
+<div style="position:absolute;top:0;left:0;right:0;background:var(--sf);border-radius:0 0 20px 20px;padding:54px 20px 16px;box-shadow:0 4px 16px rgba(0,0,0,.16);z-index:10;">
+<div style="display:flex;align-items:center;justify-content:space-between;margin:0 -12px;">
+<button onClick="{{ mapBack }}" style="min-height:44px;padding:0 12px;border:none;background:none;color:var(--pr);font-family:inherit;font-size:17px;display:flex;align-items:center;gap:2px;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"></path></svg>Назад</button>
+<span style="font-size:17px;font-weight:600;">Обведіть ділянку</span>
+<span style="width:88px;"></span>
+</div>
+<div style="font-size:32px;line-height:40px;font-weight:700;margin-top:4px;">{{ areaBig }}</div>
+<div style="font-size:15px;line-height:20px;color:var(--mu);">{{ mapHint }}</div>
+</div>
+<button onClick="{{ stageB }}" style="position:absolute;right:16px;bottom:156px;min-height:44px;padding:0 16px;border:none;border-radius:999px;background:var(--sf);color:var(--tx);font-family:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(0,0,0,.2);cursor:pointer;z-index:10;"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z" style="fill:none;stroke:var(--pr);stroke-width:2.2;stroke-linecap:round"></path></svg>Моє місце</button>
+<div style="position:absolute;left:0;right:0;bottom:0;background:var(--sf);border-radius:20px 20px 0 0;padding:16px 20px 34px;display:flex;gap:12px;box-shadow:0 -4px 16px rgba(0,0,0,.14);z-index:10;">
+<button onClick="{{ undoPoint }}" style="flex:1;height:56px;border:2px solid var(--bd);border-radius:999px;background:var(--sf);color:var(--tx);font-family:inherit;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;opacity:{{ undoOpacity }};"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"></path></svg>Прибрати точку</button>
+<button onClick="{{ mapDone }}" style="flex:1;height:56px;border:none;border-radius:999px;background:var(--pr);color:var(--on);font-family:inherit;font-size:19px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;opacity:{{ doneOpacity }};"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" style="fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"></path></svg>Готово</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPlotForm }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;padding:106px 20px 120px;box-sizing:border-box;">
+<h1 style="margin:0 0 20px;font-size:34px;line-height:41px;font-weight:700;">Про ділянку</h1>
+<div style="display:flex;flex-direction:column;gap:8px;">
+<label style="font-size:17px;font-weight:600;">Назва</label>
+<input value="{{ fName }}" onChange="{{ onName }}" placeholder="Наприклад, Малинник" style="height:56px;border:1px solid var(--bd);border-radius:12px;background:var(--sf);color:var(--tx);padding:0 16px;font-family:inherit;font-size:17px;box-sizing:border-box;width:100%;"></input>
+<div style="display:flex;flex-wrap:wrap;gap:8px;">
+<sc-for list="{{ nameChips }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.on }}" style="min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);font-family:inherit;font-size:17px;cursor:pointer;">{{ c.label }}</button></sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:32px;">
+<label style="font-size:17px;font-weight:600;">Тип</label>
+<div style="display:flex;flex-wrap:wrap;gap:8px;">
+<sc-for list="{{ typeChips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.on }}" style="min-height:48px;padding:0 16px 0 12px;border-radius:999px;border:2px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font-family:inherit;font-size:17px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24"><path d="{{ c.icon }}" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"></path></svg>{{ c.label }}</button></sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:32px;">
+<label style="font-size:17px;font-weight:600;">Культура цього сезону</label>
+<div style="display:flex;flex-wrap:wrap;gap:8px;">
+<sc-for list="{{ cropChips }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.on }}" style="min-height:48px;padding:0 16px;border-radius:999px;border:2px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;">{{ c.label }}</button></sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:32px;">
+<label style="font-size:17px;font-weight:600;">Яку площу брати в розрахунки?</label>
+<div onClick="{{ useDoc }}" style="display:flex;gap:12px;align-items:center;padding:16px;border-radius:20px;border:2px solid {{ docBd }};background:{{ docBg }};cursor:pointer;">
+<div style="width:26px;height:26px;border-radius:999px;border:2px solid {{ docRing }};display:flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;"><sc-if value="{{ docSel }}"><div style="width:14px;height:14px;border-radius:999px;background:var(--pr);"></div></sc-if></div>
+<div style="flex:1;min-width:0;"><div style="font-size:17px;font-weight:600;">За документами</div><div style="font-size:15px;color:var(--mu);">з державного акта чи витягу</div></div>
+<div style="display:flex;align-items:center;gap:6px;"><input value="{{ fDoc }}" onChange="{{ onDoc }}" inputmode="decimal" placeholder="0,00" style="width:84px;height:48px;border:1px solid var(--bd);border-radius:12px;background:var(--sf);color:var(--tx);text-align:right;padding:0 10px;font-family:inherit;font-size:20px;font-weight:600;box-sizing:border-box;"></input><span style="font-size:17px;">га</span></div>
+</div>
+<sc-if value="{{ hasMeas }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ useMeas }}" style="display:flex;gap:12px;align-items:center;padding:16px;border-radius:20px;border:2px solid {{ measBd }};background:{{ measBg }};cursor:pointer;">
+<div style="width:26px;height:26px;border-radius:999px;border:2px solid {{ measRing }};display:flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;"><sc-if value="{{ measSel }}"><div style="width:14px;height:14px;border-radius:999px;background:var(--pr);"></div></sc-if></div>
+<div style="flex:1;min-width:0;"><div style="font-size:17px;font-weight:600;">Виміряна на карті</div><div style="font-size:15px;color:var(--mu);">{{ measSub }}</div></div>
+<div style="font-size:20px;font-weight:600;">{{ measHa }}</div>
+</div>
+</sc-if>
+<div style="font-size:15px;line-height:20px;color:var(--mu);text-wrap:pretty;">Обидві площі збережуться. Вибір можна змінити в картці ділянки.</div>
+</div>
+</div>
+<div style="position:absolute;top:54px;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:var(--bg);">
+<button onClick="{{ formBack }}" style="min-height:44px;padding:0 12px;border:none;background:none;color:var(--pr);font-family:inherit;font-size:17px;display:flex;align-items:center;gap:2px;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"></path></svg>Карта</button>
+<button onClick="{{ cancelFlow }}" style="min-height:44px;padding:0 12px;border:none;background:none;color:var(--pr);font-family:inherit;font-size:17px;cursor:pointer;">Скасувати</button>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 34px;background:var(--bg);">
+<button onClick="{{ savePlot }}" style="height:56px;width:100%;border:none;border-radius:999px;background:var(--pr);color:var(--on);font-family:inherit;font-size:19px;font-weight:600;cursor:pointer;" style-active="background:var(--prp)">Зберегти ділянку</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isWork }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;overflow-y:auto;padding:118px 20px 120px;box-sizing:border-box;">
+
+<sc-if value="{{ isW1 }}">
+<h1 style="margin:0 0 20px;font-size:34px;line-height:41px;font-weight:700;">Де працювали?</h1>
+<div style="display:flex;flex-direction:column;gap:12px;">
+<sc-for list="{{ plotRows }}" as="p" hint-placeholder-count="2">
+<button onClick="{{ p.pick }}" style="display:flex;align-items:center;gap:16px;text-align:left;width:100%;min-height:96px;padding:16px;background:var(--sf);border:2px solid {{ p.selBd }};border-radius:20px;box-shadow:var(--sh);font-family:inherit;color:var(--tx);cursor:pointer;">
+<div style="width:56px;height:56px;border-radius:999px;background:{{ p.iconBg }};color:{{ p.iconFg }};display:flex;align-items:center;justify-content:center;flex:none;"><svg width="30" height="30" viewBox="0 0 24 24"><path d="{{ p.icon }}" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div style="flex:1;min-width:0;"><div style="font-size:22px;font-weight:600;">{{ p.name }}</div><div style="font-size:15px;color:var(--mu);">{{ p.crop }} · {{ p.areaShort }}</div></div>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isW2 }}">
+<h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Що робили?</h1>
+<div style="font-size:17px;color:var(--mu);margin:4px 0 20px;">{{ wPlotName }}</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;">
+<sc-for list="{{ workTypes }}" as="w" hint-placeholder-count="10">
+<button onClick="{{ w.pick }}" style="min-height:96px;padding:12px 8px;background:var(--sf);border:2px solid {{ w.bd }};border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-family:inherit;color:var(--tx);font-size:17px;font-weight:600;cursor:pointer;">
+<svg width="34" height="34" viewBox="0 0 24 24" style="color:var(--pr);"><path d="{{ w.icon }}" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"></path></svg>{{ w.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isW3 }}">
+<h1 style="margin:0;font-size:34px;line-height:41px;font-weight:700;">Коли й скільки?</h1>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0;">
+<div style="min-height:36px;padding:0 14px;border-radius:999px;background:var(--prs);color:var(--pr);font-size:17px;font-weight:600;display:flex;align-items:center;">{{ wPlotName }}</div>
+<div style="min-height:36px;padding:0 14px;border-radius:999px;background:var(--prs);color:var(--pr);font-size:17px;font-weight:600;display:flex;align-items:center;">{{ wTypeName }}</div>
+</div>
+<div style="font-size:17px;font-weight:600;margin:32px 0 8px;">Коли</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+<sc-for list="{{ dateChips }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.on }}" style="min-height:48px;padding:0 18px;border-radius:999px;border:2px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;">{{ c.label }}</button></sc-for>
+</div>
+<div style="font-size:17px;font-weight:600;margin:32px 0 8px;">Скільки коштувало</div>
+<div style="display:flex;padding:3px;background:var(--seg);border-radius:12px;gap:3px;">
+<sc-for list="{{ modeSeg }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.on }}" style="flex:1;min-height:44px;border:none;border-radius:10px;background:{{ o.bg }};box-shadow:{{ o.sh }};color:var(--tx);font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;">{{ o.label }}</button></sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:12px;height:64px;border:1px solid var(--bd);border-radius:12px;background:var(--sf);padding:0 16px;">
+<input value="{{ wValue }}" onChange="{{ onValue }}" inputmode="decimal" placeholder="0" style="flex:1;min-width:0;border:none;background:none;color:var(--tx);font-family:inherit;font-size:28px;font-weight:700;outline:none;"></input>
+<span style="font-size:20px;font-weight:600;color:var(--mu);">{{ wUnit }}</span>
+</div>
+<sc-if value="{{ showCalc }}">
+<div style="margin-top:8px;background:var(--acs);color:var(--aci);border-radius:12px;padding:12px 16px;font-size:17px;font-weight:700;">{{ calcTxt }}</div>
+</sc-if>
+<div style="font-size:15px;color:var(--mu);margin-top:8px;">Можна залишити порожнім і дописати пізніше</div>
+<button onClick="{{ toggleDetails }}" style="margin-top:20px;width:100%;min-height:56px;padding:8px 16px;border:1px solid var(--bd);border-radius:20px;background:var(--sf);color:var(--tx);font-family:inherit;text-align:left;display:flex;align-items:center;gap:12px;cursor:pointer;">
+<div style="flex:1;"><div style="font-size:17px;font-weight:600;">Подробиці</div><div style="font-size:15px;color:var(--mu);">Хто робив, матеріали, нотатка — необов’язково</div></div>
+<svg width="22" height="22" viewBox="0 0 24 24" style="transform:rotate({{ detRot }});color:var(--mu);"><path d="M6 9l6 6 6-6" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"></path></svg>
+</button>
+<sc-if value="{{ detailsOpen }}">
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+<label style="font-size:15px;font-weight:600;color:var(--mu);">Хто робив</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+<sc-for list="{{ whoChips }}" as="c"><button onClick="{{ c.on }}" style="min-height:44px;padding:0 16px;border-radius:999px;border:2px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font-family:inherit;font-size:17px;cursor:pointer;">{{ c.label }}</button></sc-for>
+</div>
+<label style="font-size:15px;font-weight:600;color:var(--mu);margin-top:8px;">Матеріали</label>
+<input placeholder="Наприклад, насіння 450 кг" style="height:52px;border:1px solid var(--bd);border-radius:12px;background:var(--sf);color:var(--tx);padding:0 16px;font-family:inherit;font-size:17px;"></input>
+<label style="font-size:15px;font-weight:600;color:var(--mu);margin-top:8px;">Нотатка</label>
+<input placeholder="Що варто запам’ятати" style="height:52px;border:1px solid var(--bd);border-radius:12px;background:var(--sf);color:var(--tx);padding:0 16px;font-family:inherit;font-size:17px;"></input>
+</div>
+</sc-if>
+</sc-if>
+</div>
+
+<div style="position:absolute;top:54px;left:0;right:0;padding:0 8px 8px;background:var(--bg);">
+<div style="height:52px;display:flex;align-items:center;justify-content:space-between;">
+<button onClick="{{ workBack }}" style="min-height:44px;padding:0 12px;border:none;background:none;color:var(--pr);font-family:inherit;font-size:17px;display:flex;align-items:center;gap:2px;cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" style="fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"></path></svg>Назад</button>
+<span style="font-size:17px;font-weight:600;">Робота · крок {{ wStep }} з 3</span>
+<button onClick="{{ cancelFlow }}" style="min-height:44px;padding:0 12px;border:none;background:none;color:var(--pr);font-family:inherit;font-size:17px;cursor:pointer;">Скасувати</button>
+</div>
+<div style="display:flex;gap:6px;padding:0 12px;">
+<sc-for list="{{ stepBars }}" as="b" hint-placeholder-count="3"><div style="flex:1;height:6px;border-radius:999px;background:{{ b.bg }};"></div></sc-for>
+</div>
+</div>
+<sc-if value="{{ isW3 }}">
+<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 34px;background:var(--bg);">
+<button onClick="{{ saveWork }}" style="height:56px;width:100%;border:none;border-radius:999px;background:var(--pr);color:var(--on);font-family:inherit;font-size:19px;font-weight:600;cursor:pointer;" style-active="background:var(--prp)">{{ saveLabel }}</button>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:var(--scrim);z-index:70;"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;background:var(--sf);border-radius:20px 20px 0 0;padding:8px 20px 34px;z-index:71;display:flex;flex-direction:column;gap:12px;">
+<div style="width:40px;height:5px;border-radius:999px;background:var(--bd);margin:0 auto 4px;"></div>
+<h2 style="margin:0;font-size:22px;line-height:28px;font-weight:700;">Що записати?</h2>
+<sc-for list="{{ sheetOpts }}" as="o" hint-placeholder-count="4">
+<button onClick="{{ o.on }}" style="display:flex;align-items:center;gap:16px;width:100%;min-height:76px;padding:12px 16px;border:none;border-radius:20px;background:var(--bg);color:var(--tx);font-family:inherit;text-align:left;cursor:pointer;">
+<div style="width:52px;height:52px;border-radius:999px;background:{{ o.bg }};color:{{ o.fg }};display:flex;align-items:center;justify-content:center;flex:none;"><svg width="28" height="28" viewBox="0 0 24 24"><path d="{{ o.icon }}" style="fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"></path></svg></div>
+<div style="flex:1;min-width:0;"><div style="font-size:19px;font-weight:600;">{{ o.label }}</div><div style="font-size:15px;color:var(--mu);">{{ o.sub }}</div></div>
+</button>
+</sc-for>
+<button onClick="{{ closeSheet }}" style="height:56px;width:100%;border:2px solid var(--bd);border-radius:999px;background:var(--sf);color:var(--tx);font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;">Скасувати</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:16px;right:16px;bottom:{{ toastBottom }};min-height:60px;background:var(--tx);color:var(--bg);border-radius:16px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:12px;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.25);box-sizing:border-box;">
+<svg width="22" height="22" viewBox="0 0 24 24" style="flex:none;"><path d="M5 12l5 5 9-10" style="fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"></path></svg>
+<div style="flex:1;font-size:17px;line-height:22px;">{{ toastText }}</div>
+<sc-if value="{{ toastHasUndo }}"><button onClick="{{ undoToast }}" style="min-height:44px;padding:0 14px;border:2px solid currentColor;border-radius:999px;background:none;color:inherit;font-family:inherit;font-size:17px;font-weight:700;cursor:pointer;">Скасувати</button></sc-if>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:393,&quot;height&quot;:852},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;sheet&quot;,&quot;plots&quot;,&quot;journal&quot;,&quot;money&quot;,&quot;addMethod&quot;,&quot;map&quot;,&quot;plotForm&quot;,&quot;work1&quot;,&quot;work2&quot;,&quot;work3&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;empty&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;season&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;2026&quot;,&quot;2027&quot;],&quot;default&quot;:&quot;2027&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const MONTHS=['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
+const NB='\u00A0';
+const grp=n=>Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g,NB);
+const money=n=>grp(n)+NB+'грн';
+const short=x=>String(Number(x.toFixed(2))).replace('.',',');
+const dec=(x,d)=>x.toFixed(d).replace('.',',');
+const sotW=n=>{const a=n%10,b=n%100;if(a===1&&b!==11)return'сотка';if(a>=2&&a<=4&&(b<12||b>14))return'сотки';return'соток';};
+const sot=ha=>{const n=Math.round(ha*100);return n+NB+sotW(n);};
+const num=v=>parseFloat(String(v||'').replace(',','.').replace(/\s/g,''))||0;
+const dateLbl=iso=>{if(iso==='2026-09-26')return'Сьогодні';if(iso==='2026-09-25')return'Вчора';const[y,m,d]=iso.split('-').map(Number);return d+NB+MONTHS[m-1]+(y!==2026?' '+y:'');};
+const I={
+home:'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+map:'M9 4 3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5zM9 4v13.5M15 6.5V20',
+book:'M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3v18M4 7.5h4M4 12h4M4 16.5h4M11 8h5M11 12h5',
+wallet:'M4 7h15a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2h11v3M16 13.5h.01',
+spade:'M14 3.5l6.5 6.5M17.2 6.8 10 14M8 10.5l5.5 5.5-2.8 2.8a3 3 0 0 1-4.2 0l-1.3-1.3a3 3 0 0 1 0-4.2z',
+basket:'M3.5 10h17l-1.6 9.1a1 1 0 0 1-1 .9H6.1a1 1 0 0 1-1-.9zM8 10l3-6M16 10l-3-6M9 14v3M12 14v3M15 14v3',
+cash:'M3 7h18v10H3zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM6.5 10v4M17.5 10v4',
+pm:'M4 7h6M7 4v6M14 17h6M18 5 6 19',
+oranka:'M3 20h18M6 20l3-7h6l3 7M12 13V5M9 5h6',
+kult:'M12 3v11M5 14h14M6 14v5M9.5 14v5M14.5 14v5M18 14v5',
+posiv:'M12 20v-7M12 13c0-3-2-5-6-5 0 3 2 5 6 5zM12 11c0-3 2-5 6-5 0 3-2 5-6 5zM6 20h12',
+sap:'M4 20 15 9M13 5.5l5.5 5.5-2.5 2-5-5z',
+obpr:'M9 9h6v11a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1zM10 9V6h4v3M14 6h3M19.5 4h.01M20.5 7h.01M19.5 10h.01',
+pidzh:'M7 4h10l1 4v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8zM6 8h12M12 11.5v6M9 14.5h6',
+poliv:'M12 3c3.5 4.5 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 2.5-6.5 6-11z',
+obriz:'M3 6a3 3 0 1 0 6 0 3 3 0 1 0-6 0M3 18a3 3 0 1 0 6 0 3 3 0 1 0-6 0M8.1 7.9 20 18M8.1 16.1 20 6',
+dots:'M5 12h.01M12 12h.01M19 12h.01',
+wheat:'M12 21V8M12 8c-2-1-3-2.5-3-5 2 .8 3 2.5 3 5zM12 8c2-1 3-2.5 3-5-2 .8-3 2.5-3 5zM12 13c-2.2-.6-4-2-4-4.6 2.2.2 4 2 4 4.6zM12 13c2.2-.6 4-2 4-4.6-2.2.2-4 2-4 4.6zM12 18c-2.2-.6-4-2-4-4.6 2.2.2 4 2 4 4.6zM12 18c2.2-.6 4-2 4-4.6-2.2.2-4 2-4 4.6z',
+berry:'M7.3 11a2.2 2.2 0 1 0 4.4 0 2.2 2.2 0 1 0-4.4 0M12.3 11a2.2 2.2 0 1 0 4.4 0 2.2 2.2 0 1 0-4.4 0M9.8 15a2.2 2.2 0 1 0 4.4 0 2.2 2.2 0 1 0-4.4 0M7.3 18.5a2.2 2.2 0 1 0 4.4 0M12.3 18.5a2.2 2.2 0 1 0 4.4 0M12 8.8V4M9 5.5l3 2 3-2',
+sprout:'M12 20v-8M12 12c0-3.5-2.5-6-7-6 0 3.5 2.5 6 7 6zM12 14c0-3 2-5.5 6-5.5 0 3-2 5.5-6 5.5z',
+field:'M3 19h18M3 15h18M4 15l3-8M10 15l1-8M14 15l-1-8M20 15l-3-8',
+tree:'M12 21v-6M7 11a5 5 0 1 1 10 0 5 5 0 0 1-10 0M9 21h6',
+green:'M3 20V11a9 9 0 0 1 18 0v9zM12 2.2V20M3.5 14h17',
+draw:'M5 18 7.5 6l10.5 3 1.5 8.5zM5 18h.01M7.5 6h.01M18 9h.01',
+feet:'M7 14c-1.5 0-2.5-1.8-2.5-4.5S5.5 4 7 4s2.5 2.8 2.5 5.5S8.5 14 7 14zM5.5 17.5h3M17 20c-1.5 0-2.5-1.8-2.5-4.5S15.5 10 17 10s2.5 2.8 2.5 5.5S18.5 20 17 20zM15.5 7h3',
+ruler:'M3 16 16 3l5 5L8 21zM7.5 11.5l2 2M10.5 8.5l2 2M13.5 5.5l2 2'
+};
+const WORK=[['oranka','Оранка'],['kult','Культивація'],['posiv','Посів'],['sap','Сапання'],['obpr','Обприскування'],['pidzh','Підживлення'],['poliv','Полив'],['obriz','Обрізка'],['zbir','Збір'],['inshe','Інше']];
+const WICON={zbir:I.basket,inshe:I.dots};
+const PTYPES=[['pole','Поле',I.field],['gorod','Город',I.sprout],['yagid','Ягідник',I.berry],['sad','Сад',I.tree],['tepl','Теплиця',I.green]];
+const CROPS=['Пшениця озима','Соняшник','Кукурудза','Картопля','Малина','Інша'];
+const DEMO_PTS=[[140,330],[262,318],[270,440],[150,452]];
+const PLOTS=[{id:'pole',name:'Поле',type:'pole',crop:'Пшениця озима',doc:2,meas:1.96,use:'doc'},{id:'mal',name:'Малинник',type:'yagid',crop:'Малина',doc:0.2,meas:null,use:'doc'}];
+const RECS=[
+{id:1,date:'2026-09-26',plot:'pole',kind:'work',type:'posiv',title:'Посів',amount:-7200,detail:'Насіння 450 кг × 16 грн',season:2027},
+{id:2,date:'2026-09-24',plot:'pole',kind:'work',type:'kult',title:'Культивація',amount:-1600,detail:'',season:2027},
+{id:3,date:'2026-09-12',plot:'pole',kind:'work',type:'oranka',title:'Оранка',amount:-3000,detail:'1 500 грн/га × 2 га',season:2027},
+{id:4,date:'2026-07-18',plot:'mal',kind:'sale',title:'Продаж малини',amount:960,detail:'12 кг по 80 грн',season:2026},
+{id:5,date:'2026-07-18',plot:'mal',kind:'harvest',title:'Збір малини',amount:null,qty:'20 кг',detail:'4 відра = 20 кг',season:2026}];
+const area=p=>(p.use==='doc'&&p.doc)?p.doc:(p.meas||p.doc||0);
+const cropIcon=c=>c==='Пшениця озима'?I.wheat:c==='Малина'?I.berry:I.sprout;
+const recIcon=r=>r.kind==='sale'?I.cash:r.kind==='harvest'?I.basket:(WICON[r.type]||I[r.type]||I.spade);
+const polyArea=pts=>{let s=0;for(let i=0;i<pts.length;i++){const[a,b]=pts[i],[c,d]=pts[(i+1)%pts.length];s+=a*d-c*b;}return Math.abs(s)/2*0.1444/10000;};
+
+class Component extends DCLogic {
+  state = this.init();
+  init(){
+    const p=this.props||{};const scr=p.screen||'home';const empty=!!p.empty;
+    const st={screen:'home',tab:'home',sheet:false,toast:null,plots:empty?[]:PLOTS.slice(),records:empty?[]:RECS.slice(),points:[],
+      form:{name:'',type:'',crop:'',doc:'',use:'meas'},work:{step:1,plotId:null,typeId:null,date:'2026-09-26',mode:'sum',value:'',details:false,who:''},season:p.season||'2027',jf:'all'};
+    if(['home','plots','journal','money'].includes(scr)){st.screen=scr;st.tab=scr;}
+    if(scr==='sheet'){st.sheet=true;}
+    if(scr==='addMethod')st.screen='addMethod';
+    if(scr==='map'){st.screen='map';st.points=DEMO_PTS.slice();}
+    if(scr==='plotForm'){st.screen='plotForm';st.form={name:'Поле',type:'pole',crop:'Пшениця озима',doc:'2,00',use:'doc',meas:1.96};}
+    if(scr.startsWith('work')){st.screen='work';st.work.step=+scr.slice(4)||1;st.work.plotId='pole';
+      if(st.work.step===1)st.work.plotId=null;
+      if(st.work.step===3){st.work.typeId='oranka';st.work.mode='perHa';st.work.value='1500';}}
+    return st;
+  }
+  componentWillUnmount(){clearTimeout(this.tt);}
+  toast(text,undo){clearTimeout(this.tt);this.setState({toast:{text,undo}});this.tt=setTimeout(()=>this.setState({toast:null}),6000);}
+  go=t=>this.setState({screen:t,tab:t,sheet:false});
+  stageB=()=>this.toast('Цей екран покажу на етапі Б');
+  openWork=()=>{const P=this.state.plots;const one=P.length===1;this.setState({sheet:false,screen:'work',work:{step:one?2:1,plotId:one?P[0].id:null,typeId:null,date:'2026-09-26',mode:'sum',value:'',details:false,who:''}});};
+  startAddPlot=()=>this.setState({screen:'addMethod',sheet:false,points:[]});
+  cancelFlow=()=>this.setState(s=>({screen:s.tab}));
+  mapTap=e=>{const r=e.currentTarget.getBoundingClientRect();const k=393/r.width;const x=Math.round((e.clientX-r.left)*k),y=Math.round((e.clientY-r.top)*k);this.setState(s=>({points:[...s.points,[x,y]]}));};
+  undoPoint=()=>this.setState(s=>({points:s.points.slice(0,-1)}));
+  mapDone=()=>{const s=this.state;if(s.points.length<3)return;const m=Math.round(polyArea(s.points)*100)/100;this.setState({screen:'plotForm',form:{name:'',type:'',crop:'',doc:'',use:'meas',meas:m}});};
+  setForm=o=>this.setState(s=>({form:{...s.form,...o}}));
+  savePlot=()=>{const f=this.state.form;const tl=(PTYPES.find(t=>t[0]===f.type)||[])[1];const d=num(f.doc);
+    const p={id:'p'+Date.now(),name:f.name||tl||'Ділянка',type:f.type||'pole',crop:f.crop||'Інша',doc:d||null,meas:f.meas||null,use:f.use==='doc'&&d?'doc':'meas'};
+    this.setState(s=>({plots:[...s.plots,p],screen:'home',tab:'home'}));this.toast('Ділянку «'+p.name+'» збережено',()=>this.setState(s=>({plots:s.plots.filter(x=>x.id!==p.id)})));};
+  setWork=o=>this.setState(s=>({work:{...s.work,...o}}));
+  workBack=()=>{const w=this.state.work;const one=this.state.plots.length===1;if(w.step===1||(w.step===2&&one))this.cancelFlow();else this.setWork({step:w.step-1});};
+  saveWork=()=>{const s=this.state,w=s.work;const p=s.plots.find(x=>x.id===w.plotId)||s.plots[0];const v=num(w.value);const a=area(p);
+    const amt=w.mode==='perHa'?Math.round(v*a):Math.round(v);const tl=(WORK.find(x=>x[0]===w.typeId)||[,'Робота'])[1];
+    const r={id:Date.now(),date:w.date,plot:p.id,kind:'work',type:w.typeId,title:tl,amount:amt?-amt:null,detail:w.mode==='perHa'&&v?grp(v)+' грн/га × '+short(a)+' га':'',season:2027};
+    this.setState(st=>({records:[r,...st.records],screen:st.tab}));
+    this.toast('Записано: '+tl+' · '+p.name+(amt?' · '+money(amt):''),()=>this.setState(st=>({records:st.records.filter(x=>x.id!==r.id)})));};
+  chip(sel){return sel?{bg:'var(--pr)',fg:'var(--on)',bd:'var(--pr)'}:{bg:'var(--sf)',fg:'var(--tx)',bd:'var(--bd)'};}
+  renderVals(){
+    const s=this.state,P=s.plots,w=s.work,f=s.form;
+    const total=P.reduce((a,p)=>a+area(p),0);
+    const plotName=id=>(P.find(p=>p.id===id)||{}).name||'';
+    const plotRows=P.map(p=>{const a=area(p);const wh=p.crop==='Пшениця озима';return{name:p.name,crop:p.crop,
+      areaShort:a<0.5?sot(a):dec(a,2)+NB+'га',areaLong:(a<0.5?sot(a)+' · '+short(a)+NB+'га':dec(a,2)+NB+'га')+(p.use==='doc'&&p.meas?' · за документами':''),
+      flex:String(a),color:wh?'var(--ac)':'var(--pr)',icon:cropIcon(p.crop),iconBg:wh?'var(--acs)':'var(--prs)',iconFg:wh?'var(--aci)':'var(--pr)',
+      selBd:w.plotId===p.id?'var(--pr)':'var(--bd)',pick:()=>this.setWork({plotId:p.id,step:2})};});
+    const sorted=[...s.records].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+    const recRow=(r,i)=>({title:r.title,icon:recIcon(r),sub:plotName(r.plot)+' · '+dateLbl(r.date),sub2:plotName(r.plot)+(r.detail?' · '+r.detail:''),
+      amt:r.amount==null?(r.qty||'—'):(r.amount>0?'+':'−')+money(r.amount),amtColor:r.amount>0?'var(--pr)':'var(--tx)',border:i?'1px solid var(--bd)':'none'});
+    const filtered=sorted.filter(r=>s.jf==='all'||r.plot===s.jf);
+    const groups=[];filtered.forEach(r=>{const l=dateLbl(r.date);let g=groups.find(x=>x.label===l);if(!g){g={label:l,items:[]};groups.push(g);}g.items.push(recRow(r,g.items.length));});
+    const r27=sorted.filter(r=>r.season===2027);
+    const spent=r27.reduce((a,r)=>a+(r.amount<0?-r.amount:0),0);
+    const isTab=['home','plots','journal','money'].includes(s.screen);
+    const pts=s.points;const pa=polyArea(pts);
+    const selPlot=P.find(p=>p.id===w.plotId);const wa=selPlot?area(selPlot):0;const v=num(w.value);
+    const seg=(opts,cur,set)=>opts.map(([id,label])=>({label,bg:cur===id?'var(--sf)':'transparent',sh:cur===id?'0 1px 3px rgba(0,0,0,.12)':'none',on:()=>set(id)}));
+    const docSel=f.use==='doc',measSel=f.use==='meas';
+    return {
+      darkClass:this.props.theme==='dark'?'ar-dark':'',screenLabel:s.screen,
+      isTabScreen:isTab,isHomeFull:s.screen==='home'&&P.length>0,isHomeEmpty:s.screen==='home'&&P.length===0,
+      isPlots:s.screen==='plots',isJournal:s.screen==='journal',isMoney:s.screen==='money',
+      isAddMethod:s.screen==='addMethod',isMap:s.screen==='map',isPlotForm:s.screen==='plotForm',isWork:s.screen==='work',
+      isW1:w.step===1,isW2:w.step===2,isW3:w.step===3,wStep:w.step,
+      showDock:isTab&&P.length>0,dockLabel:s.screen==='plots'?'Додати ділянку':'Записати',
+      dockAction:s.screen==='plots'?this.startAddPlot:()=>this.setState({sheet:true}),
+      totalHa:short(total)+NB+'га',totalSot:sot(total),plotRows,
+      spent27:money(spent),recent:sorted.slice(0,3).map(recRow),
+      works27:r27.map(recRow),
+      goMoney:()=>this.go('money'),goJournal:()=>this.go('journal'),startAddPlot:this.startAddPlot,stageB:this.stageB,cancelFlow:this.cancelFlow,
+      tabs:[['home','Головна',I.home],['plots','Ділянки',I.map],['journal','Журнал',I.book],['money','Гроші',I.wallet]].map(([id,label,icon])=>({label,icon,color:s.tab===id?'var(--pr)':'var(--mu)',weight:s.tab===id?'700':'500',on:()=>this.go(id)})),
+      jFilters:[['all','Усі ділянки'],...P.map(p=>[p.id,p.name])].map(([id,label])=>({label,...this.chip(s.jf===id),on:()=>this.setState({jf:id})})),
+      jGroups:groups,
+      seasonSeg:seg([['2026','Сезон 2026'],['2027','Сезон 2027']],s.season,id=>this.setState({season:id})),
+      is2026:s.season==='2026',is2027:s.season==='2027',
+      methods:[{title:'Обвести на карті',sub:'Торкніться кутів ділянки на знімку з супутника',icon:I.draw,on:()=>this.setState({screen:'map',points:[]})},
+        {title:'Обійти з телефоном',sub:'Пройдіть межею — площа порахується сама',icon:I.feet,on:this.stageB},
+        {title:'Ввести вручну',sub:'Площа з документів або довжина × ширина',icon:I.ruler,on:this.stageB}],
+      polyD:pts.length?'M'+pts.map(p=>p.join(' ')).join('L')+(pts.length>2?'Z':''):'',
+      markD:pts.map(([x,y])=>`M${x-9} ${y}a9 9 0 1 0 18 0a9 9 0 1 0-18 0`).join(''),
+      areaBig:pts.length>2?dec(pa,2)+NB+'га · '+sot(pa):'0'+NB+'га',
+      mapHint:pts.length===0?'Торкніться першого кута ділянки':pts.length<3?'Ще '+(3-pts.length)+(3-pts.length===1?' точка':' точки')+' — і з’явиться площа':'Точок: '+pts.length+'. Торкніться, щоб додати ще',
+      doneOpacity:pts.length>2?'1':'0.45',undoOpacity:pts.length?'1':'0.45',
+      mapTap:this.mapTap,undoPoint:this.undoPoint,mapDone:this.mapDone,mapBack:()=>this.setState({screen:'addMethod'}),
+      fName:f.name,onName:e=>this.setForm({name:e.target.value}),fDoc:f.doc,onDoc:e=>this.setForm({doc:e.target.value,use:'doc'}),
+      nameChips:['Поле','Город','Малинник','Сад'].map(n=>({label:n,on:()=>this.setForm({name:n})})),
+      typeChips:PTYPES.map(([id,label,icon])=>({label,icon,...this.chip(f.type===id),on:()=>this.setForm({type:id})})),
+      cropChips:CROPS.map(c=>({label:c,...this.chip(f.crop===c),on:()=>this.setForm({crop:c})})),
+      hasMeas:!!f.meas,measHa:f.meas?dec(f.meas,2)+NB+'га':'',measSub:f.meas?sot(f.meas):'',
+      docSel,measSel,docBd:docSel?'var(--pr)':'var(--bd)',docBg:docSel?'var(--prs)':'var(--sf)',docRing:docSel?'var(--pr)':'var(--mu)',
+      measBd:measSel?'var(--pr)':'var(--bd)',measBg:measSel?'var(--prs)':'var(--sf)',measRing:measSel?'var(--pr)':'var(--mu)',
+      useDoc:()=>this.setForm({use:'doc'}),useMeas:()=>this.setForm({use:'meas'}),savePlot:this.savePlot,formBack:()=>this.setState({screen:'map'}),
+      wPlotName:selPlot?selPlot.name+' · '+(wa<0.5?sot(wa):short(wa)+NB+'га'):'',wTypeName:(WORK.find(x=>x[0]===w.typeId)||[,''])[1],
+      workTypes:WORK.map(([id,label])=>({label,icon:WICON[id]||I[id],bd:w.typeId===id?'var(--pr)':'var(--bd)',pick:()=>this.setWork({typeId:id,step:3})})),
+      dateChips:[['2026-09-26','Сьогодні'],['2026-09-25','Вчора'],['other','Інша дата']].map(([id,label])=>({label,...this.chip(w.date===id),on:()=>id==='other'?this.stageB():this.setWork({date:id})})),
+      modeSeg:seg([['sum','Сумою'],['perHa','За гектар']],w.mode,id=>this.setWork({mode:id})),
+      wValue:w.value,onValue:e=>this.setWork({value:e.target.value}),wUnit:w.mode==='perHa'?'грн/га':'грн',
+      showCalc:w.mode==='perHa'&&v>0,calcTxt:money(v)+'/га × '+short(wa)+NB+'га = '+money(Math.round(v*wa)),
+      detailsOpen:w.details,detRot:w.details?'180deg':'0deg',toggleDetails:()=>this.setWork({details:!w.details}),
+      whoChips:['Сама','Родина','Сусід','Найняла техніку'].map(n=>({label:n,...this.chip(w.who===n),on:()=>this.setWork({who:n})})),
+      saveLabel:'Зберегти',saveWork:this.saveWork,workBack:this.workBack,
+      stepBars:[1,2,3].map(i=>({bg:i<=w.step?'var(--pr)':'var(--bd)'})),
+      sheetOpen:s.sheet,closeSheet:()=>this.setState({sheet:false}),
+      sheetOpts:[{label:'Робота',sub:'Оранка, посів, полив…',icon:I.spade,bg:'var(--prs)',fg:'var(--pr)',on:this.openWork},
+        {label:'Збір урожаю',sub:'Скільки зібрали',icon:I.basket,bg:'var(--acs)',fg:'var(--aci)',on:()=>{this.setState({sheet:false});this.stageB();}},
+        {label:'Продаж',sub:'Скільки продали й за скільки',icon:I.cash,bg:'var(--prs)',fg:'var(--pr)',on:()=>{this.setState({sheet:false});this.stageB();}},
+        {label:'Інша витрата чи дохід',sub:'Податок, пальне, допомога',icon:I.pm,bg:'var(--acs)',fg:'var(--aci)',on:()=>{this.setState({sheet:false});this.stageB();}}],
+      hasToast:!!s.toast,toastText:s.toast?s.toast.text:'',toastHasUndo:!!(s.toast&&s.toast.undo),
+      undoToast:()=>{const u=s.toast&&s.toast.undo;clearTimeout(this.tt);this.setState({toast:null});u&&u();},
+      toastBottom:isTab?(P.length?'171px':'99px'):(s.screen==='map'?'120px':'110px')
+    };
+  }
+}
+</script>
+</body>
+</html>
