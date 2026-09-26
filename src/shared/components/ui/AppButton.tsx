@@ -31,7 +31,8 @@ const createStyles = (theme: AppTheme) => ({
   primaryText: {color: theme.colors.onPrimary},
   secondaryText: {color: theme.colors.primary},
   quietText: {color: theme.colors.primary},
-  dangerText: {color: '#FFFFFF'},
+  // onPrimary is white in the light theme and dark ink in the dark one, readable on both reds.
+  dangerText: {color: theme.colors.onPrimary},
   label: {fontSize: theme.typography.button, fontWeight: '600' as const},
 });
 

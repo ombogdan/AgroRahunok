@@ -1,5 +1,5 @@
 import React from 'react';
-import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
+import {ActivityIndicator, Pressable, ScrollView, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
@@ -21,11 +21,14 @@ const createStyles = (theme: AppTheme) => ({
   emptyText: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24},
   hint: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 20},
   summaryLabel: {color: theme.colors.textMuted, fontSize: 17, fontWeight: '600' as const},
+  totalRow: {flexDirection: 'row' as const, alignItems: 'baseline' as const, flexWrap: 'wrap' as const, gap: 8},
   total: {color: theme.colors.text, fontSize: 40, lineHeight: 48, fontWeight: '700' as const},
   subTotal: {color: theme.colors.textMuted, fontSize: 17},
-  fieldRow: {borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 12,
+  bar: {flexDirection: 'row' as const, gap: 3, height: 12},
+  segment: {minWidth: 10, borderRadius: 999},
+  fieldRow: {minHeight: 44, borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 12,
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12},
-  dot: {width: 10, height: 10, borderRadius: 5, backgroundColor: theme.colors.primary},
+  dot: {width: 12, height: 12, borderRadius: 6},
   rowBody: {flex: 1, gap: 2},
   rowTitle: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
   rowDetail: {color: theme.colors.textMuted, fontSize: 15},
@@ -38,6 +41,9 @@ export function HomeScreen() {
   const navigation = useRootNavigation();
   const {fields, loadState, reload} = useFields();
   const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
+  // As in the design: wheat in the wheat colour, every other crop in green.
+  const cropColor = (crop: string | null) =>
+    (crop && /пшениц/i.test(crop) ? theme.colors.accent : theme.colors.primary);
   const date = new Intl.DateTimeFormat('uk-UA', {
     weekday: 'long', day: 'numeric', month: 'long',
   }).format(new Date());
@@ -59,7 +65,7 @@ export function HomeScreen() {
           <View style={styles.empty}>
             <View style={styles.iconCircle}><AppIcon name="map" color={theme.colors.primary} size={56} /></View>
             <Text style={styles.emptyTitle}>Додайте першу ділянку</Text>
-            <Text style={styles.emptyText}>Обведіть її на карті або введіть площу з документів. Це займе хвилину.</Text>
+            <Text style={styles.emptyText}>Обведіть її на карті, обійдіть з телефоном або введіть площу з документів. Це займе хвилину.</Text>
             <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')} />
           </View>
         </InfoCard>
@@ -68,16 +74,23 @@ export function HomeScreen() {
       {loadState === 'ready' && fields.length > 0 && <>
         <InfoCard>
           <Text style={styles.summaryLabel}>Уся земля</Text>
-          <Text style={styles.total}>{formatHectares(totalM2)}</Text>
-          <Text style={styles.subTotal}>{formatSotky(totalM2)}</Text>
-          {fields.map(field => <View key={field.id} style={styles.fieldRow}>
-            <View style={styles.dot} />
+          <View style={styles.totalRow}>
+            <Text style={styles.total}>{formatHectares(totalM2)}</Text>
+            <Text style={styles.subTotal}>{formatSotky(totalM2)}</Text>
+          </View>
+          <View style={styles.bar} accessible={false}>
+            {fields.map(field => <View key={field.id}
+              style={[styles.segment, {flex: selectedAreaM2(field), backgroundColor: cropColor(field.crop)}]} />)}
+          </View>
+          {fields.map(field => <Pressable key={field.id} accessibilityRole="button" style={styles.fieldRow}
+            onPress={() => navigation.navigate('FieldDetail', {fieldId: field.id})}>
+            <View style={[styles.dot, {backgroundColor: cropColor(field.crop)}]} />
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>{field.name}</Text>
               <Text style={styles.rowDetail}>{field.crop || fieldTypeLabels[field.type]}</Text>
             </View>
             <Text style={styles.rowArea}>{formatArea(selectedAreaM2(field))}</Text>
-          </View>)}
+          </Pressable>)}
         </InfoCard>
         <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')} />
         <Text style={styles.hint}>Роботи, урожай і гроші з’являться тут після перших записів.</Text>

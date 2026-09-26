@@ -3,6 +3,7 @@ import {StatusBar, StyleSheet} from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {RootNavigator} from './src/navigation/RootNavigator';
+import {ToastProvider} from './src/shared/components/ui';
 import {AuthProvider} from './src/shared/core/providers/auth/AuthProvider';
 import {FieldsProvider} from './src/shared/core/fields/FieldsProvider';
 import {SubscriptionProvider} from './src/shared/core/providers/subscription/SubscriptionProvider';
@@ -32,7 +33,9 @@ export default function App() {
           <AuthProvider>
             <FieldsProvider>
               <SubscriptionProvider>
-                <AppContent />
+                <ToastProvider>
+                  <AppContent />
+                </ToastProvider>
               </SubscriptionProvider>
             </FieldsProvider>
           </AuthProvider>

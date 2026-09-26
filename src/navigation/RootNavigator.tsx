@@ -4,7 +4,7 @@ import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {FieldDetailScreen, FieldsScreen, HomeScreen, JournalScreen, MoneyScreen, SettingsScreen} from '../screens/app-user';
-import {FieldFormScreen, FieldMapScreen, FieldMethodScreen} from '../screens/app-user/field-create';
+import {FieldFormScreen, FieldMapScreen, FieldMethodScreen, FieldWalkScreen} from '../screens/app-user/field-create';
 import {SignInScreen} from '../screens/app-auth';
 import {AppIcon} from '../shared/components/ui';
 import type {AppIconName} from '../shared/components/ui/AppIcon';
@@ -96,6 +96,7 @@ export function RootNavigator() {
             <Stack.Screen name="Tabs" component={MainTabs} />
             <Stack.Screen name="FieldMethod" component={FieldMethodScreen} />
             <Stack.Screen name="FieldMap" component={FieldMapScreen} />
+            <Stack.Screen name="FieldWalk" component={FieldWalkScreen} />
             <Stack.Screen name="FieldForm" component={FieldFormScreen} />
             <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />

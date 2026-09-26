@@ -5,3 +5,4 @@ export {EmptyFeature} from './EmptyFeature';
 export {DemoBadge} from './DemoBadge';
 export {InfoCard} from './InfoCard';
 export {Page} from './Page';
+export {ToastProvider, useToast} from './Toast';

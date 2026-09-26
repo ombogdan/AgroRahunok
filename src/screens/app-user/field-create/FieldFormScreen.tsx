@@ -3,24 +3,34 @@ import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Te
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton} from '../../../shared/components/ui';
+import {AppButton, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
-import type {AreaSource, FieldType} from '../../../shared/core/fields/model';
-import {fieldTypeLabels, formatArea, parseAreaInput} from '../../../shared/core/fields/model';
+import type {AreaSource, AreaUnit, FieldType} from '../../../shared/core/fields/model';
+import {
+  areaInputValue,
+  fieldTypeLabels,
+  formatArea,
+  formatHectares,
+  formatSotky,
+  parseAreaInput,
+  rectangleAreaM2,
+} from '../../../shared/core/fields/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 import {FieldFlowHeader} from './FieldFlowHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldForm'>;
+type ManualMethod = 'document' | 'dimensions';
+
 const nameSuggestions: {name: string; type: FieldType}[] = [
   {name: 'Поле', type: 'field'}, {name: 'Город', type: 'garden'},
   {name: 'Малинник', type: 'berries'}, {name: 'Сад', type: 'orchard'},
 ];
 const types: FieldType[] = ['field', 'garden', 'berries', 'orchard', 'greenhouse'];
 const crops = ['Пшениця озима', 'Соняшник', 'Кукурудза', 'Картопля', 'Малина'];
-// The iOS decimal pad has no return key, so the area field gets a «Готово» bar above it.
-const AREA_KEYBOARD_BAR = 'field-area-keyboard-bar';
+// The iOS decimal pad has no return key, so number fields get a «Готово» bar above it.
+const NUMBER_KEYBOARD_BAR = 'field-number-keyboard-bar';
 
 const createStyles = (theme: AppTheme) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
@@ -31,6 +41,9 @@ const createStyles = (theme: AppTheme) => ({
   input: {minHeight: 58, paddingHorizontal: 16, borderRadius: 12, borderWidth: 1,
     borderColor: theme.colors.border, backgroundColor: theme.colors.surface,
     color: theme.colors.text, fontSize: 19},
+  dimensions: {flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10},
+  dimensionInput: {flex: 1},
+  times: {color: theme.colors.textMuted, fontSize: 22, fontWeight: '600' as const},
   chips: {flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8},
   chip: {minHeight: 44, paddingHorizontal: 15, borderRadius: 999, borderWidth: 2,
     borderColor: theme.colors.border, backgroundColor: theme.colors.surface,
@@ -39,6 +52,8 @@ const createStyles = (theme: AppTheme) => ({
   chipText: {color: theme.colors.text, fontSize: 16, fontWeight: '600' as const},
   chipTextSelected: {color: theme.colors.onPrimary},
   note: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 21},
+  calcLine: {borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: theme.colors.accentSoft},
+  calcText: {color: theme.colors.accentInk, fontSize: 17, fontWeight: '700' as const},
   radio: {padding: 16, borderRadius: 20, borderWidth: 2, borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface, gap: 4},
   radioSelected: {borderColor: theme.colors.primary, backgroundColor: theme.colors.primarySoft},
@@ -51,34 +66,80 @@ const createStyles = (theme: AppTheme) => ({
   keyboardDoneText: {color: theme.colors.primary, fontSize: 17, fontWeight: '600' as const},
 });
 
+function Chip({label, selected, onPress}: {label: string; selected?: boolean; onPress: () => void}) {
+  const styles = useThemedStyles(createStyles);
+  return <Pressable accessibilityRole="button" accessibilityState={{selected: !!selected}} onPress={onPress}
+    style={[styles.chip, selected && styles.chipSelected]}>
+    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+  </Pressable>;
+}
+
 export function FieldFormScreen({route, navigation}: Props) {
   const styles = useThemedStyles(createStyles);
   const {theme} = useTheme();
-  const {addField, loadState} = useFields();
-  const isMap = route.params.mode === 'map';
-  const measuredAreaM2 = isMap ? route.params.measuredAreaM2 : null;
-  const polygon = isMap ? route.params.polygon : [];
-  const [name, setName] = useState('');
-  const [type, setType] = useState<FieldType>('field');
-  const [crop, setCrop] = useState('');
-  const [areaInput, setAreaInput] = useState('');
-  const [unit, setUnit] = useState<'sotka' | 'hectare'>('sotka');
-  const [areaSource, setAreaSource] = useState<AreaSource>(isMap ? 'measured' : 'document');
+  const {showToast} = useToast();
+  const {fields, addField, updateField, removeField, loadState} = useFields();
+  const {params} = route;
+  const editing = params.mode === 'edit' ? fields.find(item => item.id === params.fieldId) ?? null : null;
+  // Area measured before the form opened: on the map, by walking, or stored with the edited plot.
+  const presetMeasuredM2 = params.mode === 'map' || params.mode === 'walk'
+    ? params.measuredAreaM2 : editing?.measuredAreaM2 ?? null;
+  const polygon = params.mode === 'map' || params.mode === 'walk' ? params.polygon : editing?.polygon ?? [];
+  const isManual = params.mode === 'manual';
+  const canChooseSource = !isManual && presetMeasuredM2 !== null;
+  const measuredLabel = params.mode === 'walk' ? 'Виміряна обходом' : params.mode === 'map' ? 'Виміряна на карті' : 'Виміряна';
+  const backLabel = params.mode === 'map' ? 'Карта' : params.mode === 'walk' ? 'Обхід' : 'Назад';
+
+  const initialDocM2 = editing?.documentAreaM2 ?? null;
+  const initialUnit: AreaUnit = initialDocM2 !== null && initialDocM2 >= 5000 ? 'hectare' : 'sotka';
+  const [name, setName] = useState(editing?.name ?? '');
+  const [type, setType] = useState<FieldType>(editing?.type ?? 'field');
+  const [crop, setCrop] = useState(editing?.crop ?? '');
+  const [unit, setUnit] = useState<AreaUnit>(initialUnit);
+  const [areaInput, setAreaInput] = useState(initialDocM2 === null ? '' : areaInputValue(initialDocM2, initialUnit));
+  const [manualMethod, setManualMethod] = useState<ManualMethod>('document');
+  const [lengthInput, setLengthInput] = useState('');
+  const [widthInput, setWidthInput] = useState('');
+  const [areaSource, setAreaSource] = useState<AreaSource>(
+    editing?.areaSource ?? (presetMeasuredM2 !== null ? 'measured' : 'document'));
   const [saving, setSaving] = useState(false);
-  const documentAreaM2 = parseAreaInput(areaInput, unit);
-  const validArea = areaSource === 'measured' ? (measuredAreaM2 ?? 0) >= 1 : (documentAreaM2 ?? 0) >= 1;
-  const documentInputValid = areaInput.trim().length === 0 || documentAreaM2 !== null;
-  const canSave = name.trim().length > 0 && validArea && documentInputValid && !saving && loadState === 'ready';
+
+  const usesDimensions = isManual && manualMethod === 'dimensions';
+  const documentAreaM2 = usesDimensions ? null : parseAreaInput(areaInput, unit);
+  const dimensionsAreaM2 = rectangleAreaM2(lengthInput, widthInput);
+  const measuredAreaM2 = usesDimensions ? dimensionsAreaM2 : presetMeasuredM2;
+  const effectiveSource: AreaSource = usesDimensions ? 'measured' : canChooseSource ? areaSource : 'document';
+  const selectedAreaM2 = effectiveSource === 'measured' ? measuredAreaM2 : documentAreaM2;
+  const documentInputValid = usesDimensions || areaInput.trim().length === 0 || documentAreaM2 !== null;
+  const canSave = name.trim().length > 0 && (selectedAreaM2 ?? 0) >= 1 && documentInputValid && !saving &&
+    loadState === 'ready' && (params.mode !== 'edit' || editing !== null);
 
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
+    const input = {
+      name: name.trim(), type, crop: crop.trim() || null,
+      documentAreaM2, measuredAreaM2, areaSource: effectiveSource, polygon,
+    };
     try {
-      await addField({
-        name: name.trim(), type, crop: crop.trim() || null,
-        documentAreaM2, measuredAreaM2, areaSource, polygon,
-      });
+      if (editing) {
+        await updateField(editing.id, input);
+        navigation.goBack();
+        showToast({text: 'Зміни збережено'});
+        return;
+      }
+      const field = await addField(input);
       navigation.reset({index: 0, routes: [{name: 'Tabs', params: {screen: 'Home'}}]});
+      showToast({
+        text: `Ділянку «${field.name}» збережено`,
+        actionLabel: 'Скасувати',
+        onAction: () => {
+          removeField(field.id).catch(error => {
+            logSupabaseError('Не вдалося скасувати додавання ділянки', error);
+            Alert.alert('Не вдалося скасувати', 'Ділянку можна видалити в її картці.');
+          });
+        },
+      });
     } catch (error) {
       logSupabaseError('Не вдалося зберегти ділянку', error);
       Alert.alert('Не вдалося зберегти ділянку', 'Перевірте інтернет і спробуйте ще раз.');
@@ -86,28 +147,31 @@ export function FieldFormScreen({route, navigation}: Props) {
     }
   };
 
+  const numberInputProps = {
+    keyboardType: 'decimal-pad' as const,
+    inputAccessoryViewID: NUMBER_KEYBOARD_BAR,
+    placeholderTextColor: theme.colors.textMuted,
+  };
+
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
       automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
-      <FieldFlowHeader backLabel={isMap ? 'Карта' : 'Назад'} onBack={() => navigation.goBack()} />
-      <Text style={styles.title}>Про ділянку</Text>
+      <FieldFlowHeader backLabel={backLabel} onBack={() => navigation.goBack()} />
+      <Text style={styles.title}>{editing ? 'Змінити ділянку' : 'Про ділянку'}</Text>
       <View style={styles.section}>
         <Text style={styles.label}>Назва</Text>
         <TextInput value={name} onChangeText={setName} placeholder="Наприклад, Малинник"
           placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
         <View style={styles.chips}>
-          {nameSuggestions.map(suggestion => <Pressable key={suggestion.name} onPress={() => {setName(suggestion.name); setType(suggestion.type);}} style={styles.chip}>
-            <Text style={styles.chipText}>{suggestion.name}</Text>
-          </Pressable>)}
+          {nameSuggestions.map(suggestion => <Chip key={suggestion.name} label={suggestion.name}
+            onPress={() => { setName(suggestion.name); setType(suggestion.type); }} />)}
         </View>
       </View>
       <View style={styles.section}>
         <Text style={styles.label}>Тип</Text>
         <View style={styles.chips}>
-          {types.map(value => <Pressable key={value} onPress={() => setType(value)}
-            style={[styles.chip, type === value && styles.chipSelected]}>
-            <Text style={[styles.chipText, type === value && styles.chipTextSelected]}>{fieldTypeLabels[value]}</Text>
-          </Pressable>)}
+          {types.map(value => <Chip key={value} label={fieldTypeLabels[value]} selected={type === value}
+            onPress={() => setType(value)} />)}
         </View>
       </View>
       <View style={styles.section}>
@@ -115,39 +179,57 @@ export function FieldFormScreen({route, navigation}: Props) {
         <TextInput value={crop} onChangeText={setCrop} placeholder="Вкажіть культуру"
           placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
         <View style={styles.chips}>
-          {crops.map(value => <Pressable key={value} onPress={() => setCrop(value)} style={styles.chip}>
-            <Text style={styles.chipText}>{value}</Text>
-          </Pressable>)}
+          {crops.map(value => <Chip key={value} label={value} selected={crop.trim() === value}
+            onPress={() => setCrop(value)} />)}
         </View>
       </View>
-      <View style={styles.section}>
-        <Text style={styles.label}>{isMap ? 'Площа за документами · необов’язково' : 'Площа за документами'}</Text>
-        <TextInput value={areaInput} onChangeText={value => {
+      {isManual && <View style={styles.section}>
+        <Text style={styles.label}>Як знаєте площу?</Text>
+        <View style={styles.chips}>
+          <Chip label="З документів" selected={manualMethod === 'document'} onPress={() => setManualMethod('document')} />
+          <Chip label="Довжина × ширина" selected={manualMethod === 'dimensions'}
+            onPress={() => setManualMethod('dimensions')} />
+        </View>
+      </View>}
+      {usesDimensions ? <View style={styles.section}>
+        <Text style={styles.label}>Довжина і ширина, метри</Text>
+        <View style={styles.dimensions}>
+          <TextInput {...numberInputProps} value={lengthInput} onChangeText={setLengthInput}
+            placeholder="Довжина" accessibilityLabel="Довжина в метрах" style={[styles.input, styles.dimensionInput]} />
+          <Text style={styles.times}>×</Text>
+          <TextInput {...numberInputProps} value={widthInput} onChangeText={setWidthInput}
+            placeholder="Ширина" accessibilityLabel="Ширина в метрах" style={[styles.input, styles.dimensionInput]} />
+        </View>
+        {dimensionsAreaM2 !== null && <View style={styles.calcLine}>
+          <Text style={styles.calcText}>
+            {`${lengthInput.trim()} м × ${widthInput.trim()} м = ${formatSotky(dimensionsAreaM2)} · ${formatHectares(dimensionsAreaM2, {exact: true})}`}
+          </Text>
+        </View>}
+        <Text style={styles.note}>Для прямокутної ділянки. Якщо форма складніша, обведіть її на карті або обійдіть з телефоном.</Text>
+      </View> : <View style={styles.section}>
+        <Text style={styles.label}>{isManual ? 'Площа за документами' : 'Площа за документами · необов’язково'}</Text>
+        <TextInput {...numberInputProps} value={areaInput} onChangeText={value => {
           setAreaInput(value);
-          if (isMap && areaSource === 'document' && parseAreaInput(value, unit) === null) {
+          if (canChooseSource && areaSource === 'document' && parseAreaInput(value, unit) === null) {
             setAreaSource('measured');
           }
-        }} keyboardType="decimal-pad" inputAccessoryViewID={AREA_KEYBOARD_BAR}
-          placeholder={unit === 'sotka' ? 'Наприклад, 20' : 'Наприклад, 2,2'}
-          placeholderTextColor={theme.colors.textMuted} style={styles.input} />
+        }} placeholder={unit === 'sotka' ? 'Наприклад, 20' : 'Наприклад, 2,2'} style={styles.input} />
         {!documentInputValid && <Text style={styles.note}>Введіть додатне число, наприклад 20 або 0,5.</Text>}
         <View style={styles.chips}>
-          {(['sotka', 'hectare'] as const).map(value => <Pressable key={value} onPress={() => setUnit(value)}
-            style={[styles.chip, unit === value && styles.chipSelected]}>
-            <Text style={[styles.chipText, unit === value && styles.chipTextSelected]}>
-              {value === 'sotka' ? 'Сотки' : 'Гектари'}
-            </Text>
-          </Pressable>)}
+          <Chip label="Сотки" selected={unit === 'sotka'} onPress={() => setUnit('sotka')} />
+          <Chip label="Гектари" selected={unit === 'hectare'} onPress={() => setUnit('hectare')} />
         </View>
-      </View>
-      {isMap && <View style={styles.section}>
+      </View>}
+      {canChooseSource && <View style={styles.section}>
         <Text style={styles.label}>Яку площу брати в розрахунки?</Text>
-        <Pressable onPress={() => setAreaSource('measured')}
+        <Pressable accessibilityRole="radio" accessibilityState={{checked: areaSource === 'measured'}}
+          onPress={() => setAreaSource('measured')}
           style={[styles.radio, areaSource === 'measured' && styles.radioSelected]}>
-          <Text style={styles.radioTitle}>{areaSource === 'measured' ? '◉' : '◯'} Виміряна на карті</Text>
-          <Text style={styles.radioValue}>{formatArea(measuredAreaM2 ?? 0)}</Text>
+          <Text style={styles.radioTitle}>{areaSource === 'measured' ? '◉' : '◯'} {measuredLabel}</Text>
+          <Text style={styles.radioValue}>{formatArea(presetMeasuredM2 ?? 0)}</Text>
         </Pressable>
-        {documentAreaM2 !== null && <Pressable onPress={() => setAreaSource('document')}
+        {documentAreaM2 !== null && <Pressable accessibilityRole="radio"
+          accessibilityState={{checked: areaSource === 'document'}} onPress={() => setAreaSource('document')}
           style={[styles.radio, areaSource === 'document' && styles.radioSelected]}>
           <Text style={styles.radioTitle}>{areaSource === 'document' ? '◉' : '◯'} За документами</Text>
           <Text style={styles.radioValue}>{formatArea(documentAreaM2)}</Text>
@@ -155,10 +237,11 @@ export function FieldFormScreen({route, navigation}: Props) {
         <Text style={styles.note}>Збережемо обидві площі.</Text>
       </View>}
       <View style={styles.save}>
-        <AppButton label={saving ? 'Зберігаємо…' : 'Зберегти ділянку'} disabled={!canSave} onPress={() => { save(); }} />
+        <AppButton label={saving ? 'Зберігаємо…' : editing ? 'Зберегти зміни' : 'Зберегти ділянку'}
+          disabled={!canSave} onPress={() => { save(); }} />
       </View>
     </ScrollView>
-    {Platform.OS === 'ios' && <InputAccessoryView nativeID={AREA_KEYBOARD_BAR}>
+    {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
       <View style={styles.keyboardBar}>
         <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>
           <Text style={styles.keyboardDoneText}>Готово</Text>

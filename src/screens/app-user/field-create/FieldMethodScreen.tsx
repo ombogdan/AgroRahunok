@@ -43,6 +43,14 @@ export function FieldMethodScreen({navigation}: Props) {
         </View>
         <AppIcon name="chevronRight" color={theme.colors.textMuted} size={24} strokeWidth={2.2} />
       </Pressable>
+      <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FieldWalk')} style={styles.tile}>
+        <View style={styles.icon}><AppIcon name="feet" color={theme.colors.primary} size={28} /></View>
+        <View style={styles.tileBody}>
+          <Text style={styles.tileTitle}>Обійти з телефоном</Text>
+          <Text style={styles.tileDetail}>Пройдіть межею — площа порахується сама</Text>
+        </View>
+        <AppIcon name="chevronRight" color={theme.colors.textMuted} size={24} strokeWidth={2.2} />
+      </Pressable>
       <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FieldForm', {mode: 'manual'})} style={styles.tile}>
         <View style={styles.icon}><AppIcon name="ruler" color={theme.colors.primary} size={28} /></View>
         <View style={styles.tileBody}>

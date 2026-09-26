@@ -14,7 +14,11 @@ export type RootStackParamList = {
   Tabs: NavigatorScreenParams<MainTabParamList> | undefined;
   FieldMethod: undefined;
   FieldMap: undefined;
-  FieldForm: {mode: 'manual'} | {mode: 'map'; polygon: GeoPoint[]; measuredAreaM2: number};
+  FieldWalk: undefined;
+  FieldForm:
+    | {mode: 'manual'}
+    | {mode: 'map' | 'walk'; polygon: GeoPoint[]; measuredAreaM2: number}
+    | {mode: 'edit'; fieldId: string};
   FieldDetail: {fieldId: string};
   Settings: undefined;
   QuickEntry: {kind: EntryKind} | undefined;

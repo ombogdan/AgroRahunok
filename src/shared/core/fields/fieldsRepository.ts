@@ -43,8 +43,8 @@ export async function fetchFields(): Promise<Field[]> {
   return (data as FieldRow[]).map(fromRow);
 }
 
-export async function insertField(input: NewField): Promise<Field> {
-  const {data, error} = await requireClient().from('fields').insert({
+function toRow(input: NewField) {
+  return {
     name: input.name,
     type: input.type,
     crop: input.crop,
@@ -52,7 +52,19 @@ export async function insertField(input: NewField): Promise<Field> {
     measured_area_m2: input.measuredAreaM2,
     area_source: input.areaSource,
     polygon: input.polygon,
-  }).select(COLUMNS).single();
+  };
+}
+
+export async function insertField(input: NewField): Promise<Field> {
+  const {data, error} = await requireClient().from('fields').insert(toRow(input))
+    .select(COLUMNS).single();
+  if (error) throw error;
+  return fromRow(data as FieldRow);
+}
+
+export async function updateField(id: string, input: NewField): Promise<Field> {
+  const {data, error} = await requireClient().from('fields').update(toRow(input))
+    .eq('id', id).select(COLUMNS).single();
   if (error) throw error;
   return fromRow(data as FieldRow);
 }

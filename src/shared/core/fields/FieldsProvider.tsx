@@ -3,7 +3,7 @@ import type {PropsWithChildren} from 'react';
 import {useAuth} from '../providers/auth/AuthProvider';
 import {logSupabaseError} from '../supabase/errors';
 import type {Field, NewField} from './model';
-import {deleteField, fetchFields, insertField} from './fieldsRepository';
+import {deleteField, fetchFields, insertField, updateField as saveFieldChanges} from './fieldsRepository';
 
 type LoadState = 'loading' | 'ready' | 'error';
 type FieldsContextValue = {
@@ -11,6 +11,7 @@ type FieldsContextValue = {
   loadState: LoadState;
   reload: () => void;
   addField: (input: NewField) => Promise<Field>;
+  updateField: (id: string, input: NewField) => Promise<Field>;
   removeField: (id: string) => Promise<void>;
 };
 
@@ -59,6 +60,12 @@ export function FieldsProvider({children}: PropsWithChildren) {
     return field;
   }, []);
 
+  const updateField = useCallback(async (id: string, input: NewField) => {
+    const field = await saveFieldChanges(id, input);
+    setFields(current => current.map(item => (item.id === id ? field : item)));
+    return field;
+  }, []);
+
   const removeField = useCallback(async (id: string) => {
     await deleteField(id);
     setFields(current => current.filter(field => field.id !== id));
@@ -69,8 +76,9 @@ export function FieldsProvider({children}: PropsWithChildren) {
     loadState: visibleLoadState,
     reload: () => setReloadToken(current => current + 1),
     addField,
+    updateField,
     removeField,
-  }), [visibleFields, visibleLoadState, addField, removeField]);
+  }), [visibleFields, visibleLoadState, addField, updateField, removeField]);
   return <FieldsContext.Provider value={value}>{children}</FieldsContext.Provider>;
 }
 

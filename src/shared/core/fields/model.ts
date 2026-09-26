@@ -63,12 +63,48 @@ export function formatArea(areaM2: number): string {
   return areaM2 < SOTKY_THRESHOLD_M2 ? formatSotky(areaM2) : formatHectares(areaM2, {exact: true});
 }
 
-export function parseAreaInput(value: string, unit: 'sotka' | 'hectare'): number | null {
+export type AreaUnit = 'sotka' | 'hectare';
+
+// Reads «2,5», «2.5» or «1 000» typed on the decimal pad; null for anything else or ≤ 0.
+export function parsePositiveNumber(value: string): number | null {
   const normalized = value.replace(/\s/g, '').replace(',', '.');
   if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
   const numeric = Number(normalized);
-  if (!Number.isFinite(numeric) || numeric <= 0) return null;
-  return numeric * (unit === 'hectare' ? 10000 : 100);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+export function parseAreaInput(value: string, unit: AreaUnit): number | null {
+  const numeric = parsePositiveNumber(value);
+  return numeric === null ? null : numeric * (unit === 'hectare' ? 10000 : 100);
+}
+
+// The text to prefill an area field with, e.g. «20» sotky or «2,05» hectares.
+export function areaInputValue(areaM2: number, unit: AreaUnit): string {
+  const value = areaM2 / (unit === 'hectare' ? 10000 : 100);
+  return String(Number(value.toFixed(2))).replace('.', ',');
+}
+
+// Area of a rectangular plot from its length and width in metres.
+export function rectangleAreaM2(length: string, width: string): number | null {
+  const a = parsePositiveNumber(length);
+  const b = parsePositiveNumber(width);
+  return a === null || b === null ? null : a * b;
+}
+
+// A map region that fits the whole contour with a margin around it.
+export function regionForPoints(points: GeoPoint[]) {
+  const latitudes = points.map(point => point.latitude);
+  const longitudes = points.map(point => point.longitude);
+  const minLat = Math.min(...latitudes);
+  const maxLat = Math.max(...latitudes);
+  const minLon = Math.min(...longitudes);
+  const maxLon = Math.max(...longitudes);
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLon + maxLon) / 2,
+    latitudeDelta: Math.max((maxLat - minLat) * 1.6, 0.0008),
+    longitudeDelta: Math.max((maxLon - minLon) * 1.6, 0.0008),
+  };
 }
 
 export function polygonAreaM2(points: GeoPoint[]): number {

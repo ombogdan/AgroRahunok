@@ -1,5 +1,5 @@
 import React, {useMemo, useRef, useState} from 'react';
-import {Alert, Linking, PermissionsAndroid, Platform, Pressable, Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import MapView, {Marker, Polygon, Polyline} from 'react-native-maps';
 import type {MapPressEvent, UserLocationChangeEvent} from 'react-native-maps';
@@ -11,6 +11,7 @@ import {formatHectares, formatSotky, polygonAreaM2, polygonHasCrossingEdges} fro
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 import {FieldFlowHeader} from './FieldFlowHeader';
+import {requestLocationPermission, showLocationUnavailable} from './location';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldMap'>;
 const createStyles = (theme: AppTheme) => ({
@@ -39,17 +40,6 @@ function mapHint(count: number, crossing: boolean): string {
   return `Точок: ${count}. Торкніться, щоб додати ще, або утримуйте точку, щоб пересунути`;
 }
 
-function showLocationUnavailable() {
-  Alert.alert(
-    'Не вдалося визначити ваше місце',
-    'Перевірте, чи дозволено застосунку бачити геопозицію в параметрах телефону. Ділянку можна обвести й без цього — знайдіть її на карті вручну.',
-    [
-      {text: 'Не зараз', style: 'cancel'},
-      {text: 'Відкрити параметри', onPress: () => { Linking.openSettings().catch(() => undefined); }},
-    ],
-  );
-}
-
 export function FieldMapScreen({navigation}: Props) {
   const styles = useThemedStyles(createStyles);
   const {theme} = useTheme();
@@ -71,16 +61,9 @@ export function FieldMapScreen({navigation}: Props) {
       centerOn(lastLocation.current);
       return;
     }
-    if (Platform.OS === 'android') {
-      const result = await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-      ]);
-      if (result[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] !== PermissionsAndroid.RESULTS.GRANTED &&
-          result[PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION] !== PermissionsAndroid.RESULTS.GRANTED) {
-        showLocationUnavailable();
-        return;
-      }
+    if (!(await requestLocationPermission())) {
+      showLocationUnavailable();
+      return;
     }
     centeredOnLocation.current = false;
     locationFailed.current = false;

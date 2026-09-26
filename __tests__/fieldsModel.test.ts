@@ -1,10 +1,13 @@
 import {
+  areaInputValue,
   formatArea,
   formatHectares,
   formatSotky,
   parseAreaInput,
   polygonAreaM2,
   polygonHasCrossingEdges,
+  rectangleAreaM2,
+  regionForPoints,
   sotkyWord,
 } from '../src/shared/core/fields/model';
 
@@ -77,5 +80,31 @@ describe('polygon helpers', () => {
   it('detects a crossed contour', () => {
     expect(polygonHasCrossingEdges(square)).toBe(false);
     expect(polygonHasCrossingEdges([square[0], square[2], square[1], square[3]])).toBe(true);
+  });
+});
+
+describe('manual area helpers', () => {
+  it('multiplies length by width in metres', () => {
+    expect(rectangleAreaM2('40', '50')).toBe(2000);
+    expect(rectangleAreaM2('12,5', '8')).toBe(100);
+    expect(rectangleAreaM2('40', '')).toBeNull();
+    expect(rectangleAreaM2('0', '50')).toBeNull();
+  });
+
+  it('prefills the area field in the chosen unit', () => {
+    expect(areaInputValue(2000, 'sotka')).toBe('20');
+    expect(areaInputValue(20500, 'hectare')).toBe('2,05');
+    expect(areaInputValue(250, 'sotka')).toBe('2,5');
+  });
+
+  it('frames the whole contour with a margin', () => {
+    const region = regionForPoints([
+      {latitude: 49, longitude: 31},
+      {latitude: 49.001, longitude: 31.002},
+    ]);
+    expect(region.latitude).toBeCloseTo(49.0005, 6);
+    expect(region.longitude).toBeCloseTo(31.001, 6);
+    expect(region.latitudeDelta).toBeCloseTo(0.0016, 6);
+    expect(region.longitudeDelta).toBeCloseTo(0.0032, 6);
   });
 });
