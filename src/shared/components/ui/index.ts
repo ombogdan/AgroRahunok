@@ -7,3 +7,4 @@ export {DemoBadge} from './demo-badge/demo-badge.component';
 export {InfoCard} from './info-card/info-card.component';
 export {Page} from './page/page.component';
 export {ToastProvider, useToast} from './toast/toast.component';
+export {CalendarDatePicker} from './calendar-date-picker/calendar-date-picker.component';

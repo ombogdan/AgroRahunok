@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {Alert} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
@@ -6,7 +6,7 @@ import {AppButton, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import type {RowPlanting} from '../../../shared/core/rows/model';
-import {currentRows} from '../../../shared/core/rows/model';
+import {currentRows, parseRowRange} from '../../../shared/core/rows/model';
 import {RowCountCard} from './components/row-count-card/row-count-card.component';
 import {RowScheme} from './components/row-scheme/row-scheme.component';
 import {RowVarietyForm} from './components/row-variety-form/row-variety-form.component';
@@ -25,20 +25,14 @@ export function RowsSetupScreen({route, navigation}: Props) {
   const [yearInput, setYearInput] = useState(String(new Date().getFullYear()));
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (rows.length > 0) setLastInput(previous => previous || String(rows.length));
-  }, [rows.length]);
-
   if (!field) return <Page title="Ділянку не знайдено" onBack={() => navigation.goBack()} />;
 
   const requestedCount = Number(countInput);
   const canAdd = !!store && /^\d+$/.test(countInput) && requestedCount > rows.length &&
     requestedCount <= 200 && !saving;
-  const first = Number(firstInput);
-  const last = Number(lastInput);
+  const range = parseRowRange(firstInput, lastInput, rows.length);
   const year = Number(yearInput);
-  const canAssign = !!store && /^\d+$/.test(firstInput) && /^\d+$/.test(lastInput) &&
-    /^\d{4}$/.test(yearInput) && first >= 1 && last >= first && last <= rows.length &&
+  const canAssign = !!store && range !== null && /^\d{4}$/.test(yearInput) &&
     year >= 2000 && year <= new Date().getFullYear() + 1 && variety.trim().length > 0 && !saving;
   const lastRow = rows[rows.length - 1];
   const canRemoveLast = !!lastRow && lastRow.variety === null &&
@@ -56,10 +50,10 @@ export function RowsSetupScreen({route, navigation}: Props) {
   };
 
   const saveVariety = async () => {
-    if (!store || !canAssign) return;
+    if (!store || !canAssign || !range) return;
     setSaving(true);
     try {
-      await store.assignRowVariety(field.id, first, last, variety, year);
+      await store.assignRowVariety(field.id, range.first, range.last, variety, year);
       setFirstInput('');
       setLastInput('');
       setVariety('');
@@ -82,7 +76,7 @@ export function RowsSetupScreen({route, navigation}: Props) {
 
   const selectRow = (row: RowPlanting) => {
     setFirstInput(String(row.rowNumber));
-    setLastInput(String(row.rowNumber));
+    setLastInput('');
     setVariety(row.variety ?? '');
     setYearInput(String(row.plantedYear ?? new Date().getFullYear()));
   };

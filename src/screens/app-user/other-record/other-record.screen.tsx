@@ -4,7 +4,7 @@ import React, {useState} from 'react';
 import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, Page, useToast} from '../../../shared/components/ui';
+import {AppButton, CalendarDatePicker, Page, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import type {NewRecord} from '../../../shared/core/records/model';
@@ -42,9 +42,11 @@ export function OtherRecordScreen({route, navigation}: Props) {
   const [fieldId, setFieldId] = useState<string | null>(editing?.fieldId ?? null);
   const [category, setCategory] = useState(categories.includes(initialCategory) ? initialCategory : 'Інше');
   const [customCategory, setCustomCategory] = useState(categories.includes(initialCategory) ? '' : initialCategory);
-  const [amountInput, setAmountInput] = useState(editing?.amountKopecks ? String(Math.abs(editing.amountKopecks) / 100).replace('.', ',') : '');
+  const [amountInput, setAmountInput] = useState(editing?.amountKopecks !== null && editing?.amountKopecks !== undefined
+    ? String(Math.abs(editing.amountKopecks) / 100).replace('.', ',') : '');
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
   const [otherDate, setOtherDate] = useState(editing && initialDate === 'other' ? formatDateInput(editing.occurredOn) : '');
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
   const [saving, setSaving] = useState(false);
@@ -152,18 +154,9 @@ export function OtherRecordScreen({route, navigation}: Props) {
             setDateChoice('yesterday');
             setSeasonOverride(null);
           }}/>
-          <Chip label="Інша дата" selected={dateChoice === 'other'} onPress={() => {
-            setDateChoice('other');
-            setSeasonOverride(null);
-            if (!otherDate) setOtherDate(formatDateInput(today));
-          }}/>
+          <Chip label={dateChoice === 'other' ? `Інша дата · ${otherDate}` : 'Інша дата'}
+            selected={dateChoice === 'other'} onPress={() => { Keyboard.dismiss(); setCalendarOpen(true); }}/>
         </View>
-        {dateChoice === 'other' && <TextInput value={otherDate} onChangeText={value => {
-          setOtherDate(value);
-          setSeasonOverride(null);
-        }} placeholder="дд.мм.рррр" placeholderTextColor={theme.colors.textMuted}
-                                              accessibilityLabel="Дата запису" maxLength={10} style={styles.input}/>}
-        {dateChoice === 'other' && !occurredOn && <Text style={styles.error}>Введіть дату як 26.09.2026.</Text>}
       </View>
       <View style={styles.section}>
         <Text style={styles.label}>Сезон (рік урожаю)</Text>
@@ -172,14 +165,24 @@ export function OtherRecordScreen({route, navigation}: Props) {
                                            onPress={() => setSeasonOverride(year)}/>)}
         </View>
       </View>
-      <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
-                 placeholder="Нотатка · необов’язково" placeholderTextColor={theme.colors.textMuted}
-                 accessibilityLabel="Нотатка" style={styles.input}/>
+      <View style={styles.section}>
+        <Text style={styles.label}>Нотатка · необов’язково</Text>
+        <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
+                   placeholder="Додайте подробиці" placeholderTextColor={theme.colors.textMuted}
+                   accessibilityLabel="Нотатка" style={styles.input}/>
+      </View>
       <AppButton label={saving ? 'Зберігаємо…' : 'Зберегти'} disabled={!canSave} onPress={() => {
         save();
       }}/>
       {editing && <AppButton label="Видалити запис" variant="danger" onPress={confirmDelete}/>}
     </Page>
+    <CalendarDatePicker visible={calendarOpen} selectedDate={parseDateInput(otherDate) ?? today}
+      onClose={() => setCalendarOpen(false)} onSelect={date => {
+        setOtherDate(formatDateInput(date));
+        setDateChoice('other');
+        setSeasonOverride(null);
+        setCalendarOpen(false);
+      }} />
     {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
       <View style={styles.keyboardBar}>
         <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>

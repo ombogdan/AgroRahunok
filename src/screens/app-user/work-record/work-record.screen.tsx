@@ -8,7 +8,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, AppIcon, useToast} from '../../../shared/components/ui';
+import {AppButton, AppIcon, CalendarDatePicker, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, selectedAreaM2} from '../../../shared/core/fields/model';
 import type {CostMode, NewRecord, Performer, WorkType} from '../../../shared/core/records/model';
@@ -56,7 +56,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const initialCost = editing
     ? initialCostMode === 'perHa' && editing.details.ratePerHaKopecks
       ? moneyInputValue(editing.details.ratePerHaKopecks)
-      : editing.amountKopecks ? moneyInputValue(editing.amountKopecks) : ''
+      : editing.amountKopecks !== null ? moneyInputValue(editing.amountKopecks) : ''
     : '';
 
   const [step, setStep] = useState<Step>(editing ? 3 : singleField ? 2 : 1);
@@ -65,6 +65,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const [workType, setWorkType] = useState<WorkType | null>(editing?.workType ?? null);
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
   const [otherDate, setOtherDate] = useState(editing && initialDate === 'other' ? formatDateInput(editing.occurredOn) : '');
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [costMode, setCostMode] = useState<CostMode>(initialCostMode);
   const [costInput, setCostInput] = useState(initialCost);
   const [detailsOpen, setDetailsOpen] = useState(!!editing && (!!editing.note || !!editing.details.performer));
@@ -167,16 +168,17 @@ export function WorkRecordScreen({route, navigation}: Props) {
     ]);
   };
 
-  const headerTitle = editing ? 'Змінити запис' : `Робота · крок ${visibleStep} з ${visibleStepCount}`;
-
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
     <View style={styles.header}>
-      <FieldFlowHeader title={headerTitle} onBack={goBack}
+      <FieldFlowHeader title={editing ? 'Змінити запис' : undefined} onBack={goBack}
         rightLabel="Скасувати" onRight={() => navigation.goBack()} />
-      {!editing && <View style={styles.progress}>
-        {Array.from({length: visibleStepCount}, (_, index) => <View key={index}
-          style={[styles.progressBar, index < visibleStep && styles.progressDone]} />)}
-      </View>}
+      {!editing && <>
+        <Text style={styles.stepLabel}>Робота · крок {visibleStep} з {visibleStepCount}</Text>
+        <View style={styles.progress}>
+          {Array.from({length: visibleStepCount}, (_, index) => <View key={index}
+            style={[styles.progressBar, index < visibleStep && styles.progressDone]} />)}
+        </View>
+      </>}
       <Text style={styles.title} accessibilityRole="header">{stepTitles[step]}</Text>
     </View>
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
@@ -221,19 +223,9 @@ export function WorkRecordScreen({route, navigation}: Props) {
             <Chip label="Вчора" selected={dateChoice === 'yesterday'} onPress={() => {
               setDateChoice('yesterday'); setSeasonOverride(null);
             }} />
-            <Chip label="Інша дата" selected={dateChoice === 'other'} onPress={() => {
-              setDateChoice('other'); setSeasonOverride(null);
-              if (!otherDate) setOtherDate(formatDateInput(today));
-            }} />
+            <Chip label={dateChoice === 'other' ? `Інша дата · ${otherDate}` : 'Інша дата'}
+              selected={dateChoice === 'other'} onPress={() => { Keyboard.dismiss(); setCalendarOpen(true); }} />
           </View>
-          {dateChoice === 'other' && <>
-            <TextInput value={otherDate} onChangeText={value => {
-              setOtherDate(value); setSeasonOverride(null);
-            }} placeholder="дд.мм.рррр"
-              placeholderTextColor={theme.colors.textMuted} keyboardType="numbers-and-punctuation"
-              accessibilityLabel="Дата роботи, день, місяць і рік через крапку" maxLength={10} style={styles.input} />
-            {!occurredOn && <Text style={styles.error}>Введіть дату як 26.09.2026.</Text>}
-          </>}
         </View>
 
         <View style={styles.section}>
@@ -302,6 +294,13 @@ export function WorkRecordScreen({route, navigation}: Props) {
         {editing && <AppButton label="Видалити запис" variant="danger" onPress={confirmDelete} />}
       </>}
     </ScrollView>
+    <CalendarDatePicker visible={calendarOpen} selectedDate={parseDateInput(otherDate) ?? today}
+      onClose={() => setCalendarOpen(false)} onSelect={date => {
+        setOtherDate(formatDateInput(date));
+        setDateChoice('other');
+        setSeasonOverride(null);
+        setCalendarOpen(false);
+      }} />
     {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
       <View style={styles.keyboardBar}>
         <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>

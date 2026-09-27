@@ -22,6 +22,14 @@ export function rowsForSeason(rows: RowPlanting[], fieldId: string, season: numb
 
 export type VarietyGroup = {variety: string; rows: RowPlanting[]};
 
+export function parseRowRange(firstInput: string, lastInput: string, rowCount: number):
+  {first: number; last: number} | null {
+  if (!/^\d+$/.test(firstInput) || (lastInput.trim() !== '' && !/^\d+$/.test(lastInput))) return null;
+  const first = Number(firstInput);
+  const last = lastInput.trim() === '' ? first : Number(lastInput);
+  return first >= 1 && last >= first && last <= rowCount ? {first, last} : null;
+}
+
 export function varietyGroups(rows: RowPlanting[]): VarietyGroup[] {
   const groups = new Map<string, VarietyGroup>();
   for (const row of rows) {

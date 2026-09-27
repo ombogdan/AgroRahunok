@@ -1,5 +1,6 @@
 export type RecordKind = 'work' | 'harvest' | 'sale' | 'other';
-export type WorkType = 'oranka' | 'kult' | 'posiv' | 'sap' | 'obpr' | 'pidzh' | 'poliv' | 'obriz' | 'zbir' | 'inshe';
+export type WorkType = 'oranka' | 'dysk' | 'borona' | 'kult' | 'posiv' | 'posadka' | 'sap' |
+  'obpr' | 'pidzh' | 'poliv' | 'mulch' | 'obriz' | 'zbir' | 'inshe';
 export type CostMode = 'sum' | 'perHa';
 export type Performer = 'self' | 'family' | 'neighbour' | 'hired';
 
@@ -35,15 +36,18 @@ export type FarmRecord = {
 
 export type NewRecord = Omit<FarmRecord, 'id' | 'plantingId' | 'createdAt'>;
 
-export const workTypes: WorkType[] = ['oranka', 'kult', 'posiv', 'sap', 'obpr', 'pidzh', 'poliv', 'obriz', 'zbir', 'inshe'];
+// Keep 'poliv' in WorkType for existing records, but omit it from the quick work picker.
+export const workTypes: WorkType[] = ['oranka', 'dysk', 'borona', 'kult', 'posiv', 'posadka',
+  'sap', 'obpr', 'pidzh', 'mulch', 'obriz', 'zbir', 'inshe'];
 
 export const workTypeLabels: Record<WorkType, string> = {
-  oranka: 'Оранка', kult: 'Культивація', posiv: 'Посів', sap: 'Сапання', obpr: 'Обприскування',
-  pidzh: 'Підживлення', poliv: 'Полив', obriz: 'Обрізка', zbir: 'Збір', inshe: 'Інше',
+  oranka: 'Оранка', dysk: 'Дискування', borona: 'Боронування', kult: 'Культивація',
+  posiv: 'Посів', posadka: 'Посадка', sap: 'Сапання', obpr: 'Обприскування',
+  pidzh: 'Підживлення', poliv: 'Полив', mulch: 'Мульчування', obriz: 'Обрізка', zbir: 'Збір', inshe: 'Інше',
 };
 
 export const performerLabels: Record<Performer, string> = {
-  self: 'Сама', family: 'Родина', neighbour: 'Сусід', hired: 'Найняла техніку',
+  self: 'Самостійно', family: 'Родина', neighbour: 'Сусід', hired: 'Наймана техніка',
 };
 
 const NBSP = ' ';
@@ -94,12 +98,12 @@ export function formatDateInput(isoDate: string): string {
   return `${day}.${month}.${year}`;
 }
 
-// «3000», «3 000» or «2,50» hryvnias → kopecks; null for anything else or ≤ 0.
+// «3000», «3 000», «2,50» or «0» hryvnias → kopecks; null for empty or invalid input.
 export function parseMoneyInput(value: string): number | null {
   const normalized = value.replace(/\s/g, '').replace(',', '.');
   if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return null;
   const kopecks = Math.round(Number(normalized) * 100);
-  return kopecks > 0 ? kopecks : null;
+  return Number.isSafeInteger(kopecks) ? kopecks : null;
 }
 
 // «3 000 грн» or «2,50 грн»; the sign is left to the caller.

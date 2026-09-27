@@ -1,6 +1,6 @@
 import {useStyles} from './field-map.styles';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Pressable, Text, View} from 'react-native';
+import {Platform, Pressable, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import MapView, {Marker, Polygon, Polyline} from 'react-native-maps';
 import type {MapPressEvent, UserLocationChangeEvent} from 'react-native-maps';
@@ -126,6 +126,8 @@ export function FieldMapScreen({navigation}: Props) {
             coordinate={point}
             draggable
             pinColor={theme.colors.accent}
+            centerOffset={Platform.OS === 'ios' ? {x: 0, y: -scale(12)} : undefined}
+            anchor={{x: 0.5, y: 1}}
             onDragEnd={(event: {
               nativeEvent: { coordinate: GeoPoint }
             }) => movePoint(index, event.nativeEvent.coordinate)}/>)}

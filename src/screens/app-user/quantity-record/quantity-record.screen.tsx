@@ -8,7 +8,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, useToast} from '../../../shared/components/ui';
+import {AppButton, CalendarDatePicker, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {formatArea, parsePositiveNumber, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
@@ -60,11 +60,12 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const [fieldId, setFieldId] = useState<string | null>(initialFieldId);
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
   const [otherDate, setOtherDate] = useState(editing && initialDate === 'other' ? formatDateInput(editing.occurredOn) : '');
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
   const [unitName, setUnitName] = useState(editing?.details.unitName ?? previousRecord?.details.unitName ?? 'кг');
   const [quantityInput, setQuantityInput] = useState(inputNumber(editing?.details.enteredQuantity ?? editing?.quantityKg ?? undefined));
   const [priceInput, setPriceInput] = useState(inputNumber(
-    editing?.details.pricePerUnitKopecks ? editing.details.pricePerUnitKopecks / 100 : undefined));
+    editing?.details.pricePerUnitKopecks !== undefined ? editing.details.pricePerUnitKopecks / 100 : undefined));
   const [buyer, setBuyer] = useState(editing?.details.buyer ?? previousRecord?.details.buyer ?? '');
   const [note, setNote] = useState(editing?.note ?? '');
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
@@ -101,7 +102,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const priceKopecks = parseMoneyInput(priceInput);
   const saleTotal = quantity !== null && priceKopecks !== null ? saleAmountKopecks(quantity, priceKopecks) : null;
   const canSave = !!field && !!occurredOn && season >= 2000 && season <= 2100 &&
-    quantityKg !== null && quantityKg > 0 && (!isSale || (saleTotal !== null && saleTotal > 0)) && !saving;
+    quantityKg !== null && quantityKg > 0 && (!isSale || saleTotal !== null) && !saving;
   const newUnitKgRaw = parsePositiveNumber(newUnitWeight);
   const newUnitKg = newUnitKgRaw === null ? null : Math.round(newUnitKgRaw * 1000) / 1000;
   const newUnitValid = newUnitName.trim().length > 0 && newUnitKg !== null && newUnitKg > 0 &&
@@ -258,16 +259,9 @@ export function QuantityRecordScreen({route, navigation}: Props) {
           <Chip label="Вчора" selected={dateChoice === 'yesterday'} onPress={() => {
             setDateChoice('yesterday'); setSeasonOverride(null);
           }} />
-          <Chip label="Інша дата" selected={dateChoice === 'other'} onPress={() => {
-            setDateChoice('other'); setSeasonOverride(null);
-            if (!otherDate) setOtherDate(formatDateInput(today));
-          }} />
+          <Chip label={dateChoice === 'other' ? `Інша дата · ${otherDate}` : 'Інша дата'}
+            selected={dateChoice === 'other'} onPress={() => { Keyboard.dismiss(); setCalendarOpen(true); }} />
         </View>
-        {dateChoice === 'other' && <TextInput value={otherDate} onChangeText={value => {
-          setOtherDate(value); setSeasonOverride(null);
-        }} placeholder="дд.мм.рррр" placeholderTextColor={theme.colors.textMuted}
-          accessibilityLabel="Дата запису" style={styles.input} maxLength={10} />}
-        {dateChoice === 'other' && !occurredOn && <Text style={styles.error}>Введіть дату як 26.09.2026.</Text>}
       </View>
 
       <View style={styles.section}>
@@ -278,12 +272,22 @@ export function QuantityRecordScreen({route, navigation}: Props) {
         </View>
       </View>
 
-      <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
-        placeholder="Нотатка · необов’язково" placeholderTextColor={theme.colors.textMuted}
-        accessibilityLabel="Нотатка" style={styles.input} />
+      <View style={styles.section}>
+        <Text style={styles.label}>Нотатка · необов’язково</Text>
+        <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
+          placeholder="Додайте подробиці" placeholderTextColor={theme.colors.textMuted}
+          accessibilityLabel="Нотатка" style={styles.input} />
+      </View>
       <AppButton label={saving ? 'Зберігаємо…' : 'Зберегти'} disabled={!canSave} onPress={() => { save(); }} />
       {editing && <AppButton label="Видалити запис" variant="danger" onPress={confirmDelete} />}
     </ScrollView>
+    <CalendarDatePicker visible={calendarOpen} selectedDate={parseDateInput(otherDate) ?? today}
+      onClose={() => setCalendarOpen(false)} onSelect={date => {
+        setOtherDate(formatDateInput(date));
+        setDateChoice('other');
+        setSeasonOverride(null);
+        setCalendarOpen(false);
+      }} />
     {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
       <View style={styles.keyboardBar}>
         <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>

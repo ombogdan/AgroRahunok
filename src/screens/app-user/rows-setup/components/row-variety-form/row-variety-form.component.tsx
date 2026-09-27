@@ -25,12 +25,12 @@ export function RowVarietyForm(props: Props) {
   return <InfoCard>
     <Text style={styles.title}>Який сорт у яких рядах?</Text>
     <Text style={styles.muted}>Рядів: {props.rowCount}. Почніть з одного сорту для всіх рядів або змініть номери для кожного сорту.</Text>
-    <Text style={styles.muted}>Торкніться рядка нижче, щоб заповнити його номер. Для кількох сусідніх рядів вкажіть діапазон.</Text>
+    <Text style={styles.muted}>Для одного ряду вкажіть лише перший номер. Другий номер потрібен тільки для діапазону.</Text>
     <View style={styles.range}>
       <TextInput value={props.first} onChangeText={props.onFirstChange} keyboardType="number-pad"
         placeholder="Від ряду №" accessibilityLabel="Від ряду №" style={[styles.input, styles.half]} />
       <TextInput value={props.last} onChangeText={props.onLastChange} keyboardType="number-pad"
-        placeholder="До ряду №" accessibilityLabel="До ряду №" style={[styles.input, styles.half]} />
+        placeholder="До № · необов’язково" accessibilityLabel="До ряду №, необов’язково" style={[styles.input, styles.half]} />
     </View>
     <View style={styles.section}>
       <Text style={styles.label}>Сорт</Text>

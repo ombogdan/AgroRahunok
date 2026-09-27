@@ -10,10 +10,7 @@ type ToastOptions = {text: string; actionLabel?: string; onAction?: () => void};
 type ToastContextValue = {showToast: (options: ToastOptions) => void};
 
 const ToastContext = createContext<ToastContextValue | null>(null);
-const TOAST_DURATION_MS = 6000;
-// Tab bar content above the home indicator plus the «+ Записати» dock, so the toast floats over both.
-const TAB_BAR_CONTENT_HEIGHT = 49;
-const RECORD_DOCK_HEIGHT = 80;
+const TOAST_DURATION_MS = 4000;
 
 
 export function ToastProvider({children}: PropsWithChildren) {
@@ -46,17 +43,19 @@ export function ToastProvider({children}: PropsWithChildren) {
   };
 
   const value = useMemo(() => ({showToast}), [showToast]);
-  const bottom = insets.bottom + scale(TAB_BAR_CONTENT_HEIGHT + RECORD_DOCK_HEIGHT + 12);
+  const top = insets.top + scale(12);
 
   return <ToastContext.Provider value={value}>
     {children}
-    {toast && <View pointerEvents="box-none" style={[styles.wrap, {bottom}]}>
+    {toast && <View pointerEvents="box-none" style={[styles.wrap, {top}]}>
       <View style={styles.toast} accessibilityLiveRegion="polite">
         <AppIcon name="check" color={theme.colors.background} size={22} />
         <Text style={styles.text}>{toast.text}</Text>
         {toast.actionLabel && <Pressable accessibilityRole="button" onPress={runAction} style={styles.action}>
           <Text style={styles.actionText}>{toast.actionLabel}</Text>
         </Pressable>}
+        <Pressable accessibilityRole="button" accessibilityLabel="Закрити повідомлення" onPress={hide}
+          style={styles.close}><Text style={styles.closeText}>✕</Text></Pressable>
       </View>
     </View>}
   </ToastContext.Provider>;

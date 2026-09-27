@@ -1,5 +1,6 @@
 import {
-  dateLabel, formatMoney, parseDateInput, parseMoneyInput, seasonFor, toLocalIsoDate, workCostKopecks,
+  dateLabel, formatMoney, parseDateInput, parseMoneyInput, saleAmountKopecks, seasonFor, toLocalIsoDate,
+  workCostKopecks,
 } from '../src/shared/core/records/model';
 import {insertRecord} from '../src/shared/core/records/recordsRepository';
 
@@ -22,7 +23,8 @@ describe('money', () => {
     expect(parseMoneyInput('3 000')).toBe(300000);
     expect(parseMoneyInput('2,50')).toBe(250);
     expect(parseMoneyInput('2,555')).toBeNull();
-    expect(parseMoneyInput('0')).toBeNull();
+    expect(parseMoneyInput('0')).toBe(0);
+    expect(parseMoneyInput('0,00')).toBe(0);
     expect(parseMoneyInput('')).toBeNull();
   });
 
@@ -36,6 +38,8 @@ describe('money', () => {
     expect(workCostKopecks('perHa', 150000, 2000)).toBe(30000);
     expect(workCostKopecks('sum', 300000, 20000)).toBe(300000);
     expect(workCostKopecks('sum', null, 20000)).toBeNull();
+    expect(workCostKopecks('sum', 0, 20000)).toBe(0);
+    expect(saleAmountKopecks(12, 0)).toBe(0);
   });
 });
 

@@ -15,7 +15,7 @@ export function FieldFlowHeader({backLabel = 'Назад', title, onBack, rightL
     {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : null}
     <View style={styles.right}>
       {rightLabel && onRight ? <Pressable accessibilityRole="button" hitSlop={scale(8)} onPress={onRight} style={styles.rightButton}>
-        <Text style={styles.rightText}>{rightLabel}</Text>
+        <Text style={styles.rightText} numberOfLines={1}>{rightLabel}</Text>
       </Pressable> : null}
     </View>
   </View>;

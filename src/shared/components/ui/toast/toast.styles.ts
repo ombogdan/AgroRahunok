@@ -2,7 +2,7 @@ import {useThemedStyles} from '../../../theme';
 import type {AppTheme, Scale} from '../../../theme/theme';
 
 const createStyles = (theme: AppTheme, scale: Scale) => ({
-  wrap: {position: 'absolute' as const, left: scale(16), right: scale(16)},
+  wrap: {position: 'absolute' as const, left: scale(16), right: scale(16), zIndex: 1000, elevation: scale(12)},
   // Inverted colours, as in the design: dark in the light theme and light in the dark one.
   toast: {minHeight: scale(60), borderRadius: scale(16), paddingHorizontal: scale(16), paddingVertical: scale(10),
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: scale(10),
@@ -11,6 +11,8 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   action: {minHeight: scale(44), paddingHorizontal: scale(14), borderRadius: scale(999), borderWidth: scale(2),
     borderColor: theme.colors.background, justifyContent: 'center' as const},
   actionText: {color: theme.colors.background, fontSize: scale(17), fontWeight: '700' as const},
+  close: {width: scale(36), height: scale(44), justifyContent: 'center' as const, alignItems: 'center' as const},
+  closeText: {color: theme.colors.background, fontSize: scale(18), fontWeight: '700' as const},
 });
 
 export const useStyles = () => useThemedStyles(createStyles);

@@ -1,6 +1,13 @@
 import {FarmStore, applyChange} from '../src/shared/core/offline/farmStore';
 import type {FarmData, Remote, Storage} from '../src/shared/core/offline/farmStore';
-import {currentRows, rowsForSeason, varietyGroups} from '../src/shared/core/rows/model';
+import {currentRows, parseRowRange, rowsForSeason, varietyGroups} from '../src/shared/core/rows/model';
+
+test('a blank ending row means one row', () => {
+  expect(parseRowRange('2', '', 5)).toEqual({first: 2, last: 2});
+  expect(parseRowRange('2', '4', 5)).toEqual({first: 2, last: 4});
+  expect(parseRowRange('2', '1', 5)).toBeNull();
+  expect(parseRowRange('6', '', 5)).toBeNull();
+});
 
 const disk = new Map<string, string>();
 const storage: Storage = {
