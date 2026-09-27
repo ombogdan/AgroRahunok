@@ -55,7 +55,7 @@ export function FieldDetailScreen({route, navigation}: Props) {
         removeField(field.id).then(() => navigation.goBack())
           .catch(error => {
             logSupabaseError('Не вдалося видалити ділянку', error);
-            Alert.alert('Не вдалося видалити ділянку', 'Перевірте інтернет і спробуйте ще раз.');
+            Alert.alert('Не вдалося видалити ділянку', 'Не вдалося записати зміни на телефон.');
           });
       }},
     ]);

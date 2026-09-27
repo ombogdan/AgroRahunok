@@ -33,10 +33,17 @@ function requireClient() {
 }
 
 export async function fetchPlantings(): Promise<Planting[]> {
-  const {data, error} = await requireClient().from('plantings')
-    .select('id, field_id, season, crop, variety, area_m2');
-  if (error) throw error;
-  return (data as PlantingRow[]).map(row => ({
+  const all: PlantingRow[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const {data, error} = await requireClient().from('plantings')
+      .select('id, field_id, season, crop, variety, area_m2')
+      .order('id', {ascending: true}).range(offset, offset + 999);
+    if (error) throw error;
+    const page = data as PlantingRow[];
+    all.push(...page);
+    if (page.length < 1000) break;
+  }
+  return all.map(row => ({
     id: row.id,
     fieldId: row.field_id,
     season: row.season,

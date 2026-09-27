@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import type {Session} from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {AuthSession} from '../../services/auth/types';
 import {
   signInWithGoogle,
@@ -16,6 +17,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const LAST_USER_KEY = 'agrorahunok-last-user-v1';
 
 function toAuthSession(session: Session | null): AuthSession {
   if (!session) return {kind: 'guest'};
@@ -39,20 +41,42 @@ export function AuthProvider({children}: PropsWithChildren) {
       return;
     }
     let mounted = true;
-    let eventReceived = false;
+    let decisiveAuthEvent = false;
     // Only store the session here: Supabase awaits this callback, so it must not call Supabase itself.
-    const {data: listener} = supabase.auth.onAuthStateChange((_event, next) => {
+    const {data: listener} = supabase.auth.onAuthStateChange((event, next) => {
       if (!mounted) return;
-      eventReceived = true;
-      setSession(toAuthSession(next));
+      if (next) {
+        decisiveAuthEvent = true;
+        const identity = toAuthSession(next);
+        setSession(identity);
+        AsyncStorage.setItem(LAST_USER_KEY, JSON.stringify(identity)).catch(() => undefined);
+      } else if (event === 'SIGNED_OUT') {
+        decisiveAuthEvent = true;
+        setSession({kind: 'guest'});
+        AsyncStorage.removeItem(LAST_USER_KEY).catch(() => undefined);
+      }
     });
-    supabase.auth.getSession()
-      .then(({data}) => {
-        if (mounted && !eventReceived) setSession(toAuthSession(data.session));
-      })
-      .catch(() => {
-        if (mounted && !eventReceived) setSession({kind: 'guest'});
-      });
+    // A previously signed-in person can open their local records even when token refresh is offline.
+    AsyncStorage.getItem(LAST_USER_KEY).catch(() => null).then(saved => {
+      if (mounted && !decisiveAuthEvent && saved) {
+        try {
+          const identity = JSON.parse(saved) as AuthSession;
+          if (identity.kind === 'authenticated' && identity.userId) setSession(identity);
+        } catch { /* A malformed identity never replaces the Supabase session. */ }
+      }
+      return supabase.auth.getSession();
+    }).then(({data}) => {
+      if (!mounted || decisiveAuthEvent) return;
+      if (data.session) {
+        const identity = toAuthSession(data.session);
+        setSession(identity);
+        AsyncStorage.setItem(LAST_USER_KEY, JSON.stringify(identity)).catch(() => undefined);
+      } else {
+        setSession(current => current ?? {kind: 'guest'});
+      }
+    }).catch(() => {
+      if (mounted && !decisiveAuthEvent) setSession(current => current ?? {kind: 'guest'});
+    });
     return () => {
       mounted = false;
       listener.subscription.unsubscribe();
@@ -63,7 +87,11 @@ export function AuthProvider({children}: PropsWithChildren) {
     () => ({
       session,
       signInWithGoogle,
-      signOut: signOutOfGoogle,
+      signOut: async () => {
+        await signOutOfGoogle();
+        await AsyncStorage.removeItem(LAST_USER_KEY);
+        setSession({kind: 'guest'});
+      },
     }),
     [session],
   );

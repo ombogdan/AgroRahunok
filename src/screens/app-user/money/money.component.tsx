@@ -1,16 +1,13 @@
-import React, {useCallback, useState} from 'react';
+import React from 'react';
 import {ActivityIndicator, Pressable, Text, View} from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
 import {AppButton, EmptyFeature, InfoCard, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {formatArea, selectedAreaM2} from '../../../shared/core/fields/model';
-import {fetchPlantings} from '../../../shared/core/fields/plantingsRepository';
-import type {Planting} from '../../../shared/core/fields/plantingsRepository';
+import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {formatKilograms, formatMoney} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
 import {summarizeSeason, yieldForArea} from '../../../shared/core/records/seasonSummary';
-import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 
@@ -42,20 +39,9 @@ export function MoneyScreen() {
   const {theme} = useTheme();
   const {fields} = useFields();
   const {records, loadState, reload} = useRecords();
-  const [plantings, setPlantings] = useState<Planting[]>([]);
-  const [plantingsError, setPlantingsError] = useState(false);
+  const {data} = useFarmData();
+  const plantings = data.plantings;
   const {selectedSeason, setSelectedSeason} = useSeason();
-
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    fetchPlantings().then(items => {
-      if (active) { setPlantings(items); setPlantingsError(false); }
-    }).catch(error => {
-      logSupabaseError('Не вдалося завантажити площі сезонів', error);
-      if (active) setPlantingsError(true);
-    });
-    return () => { active = false; };
-  }, []));
 
   const availableSeasons = [...new Set([new Date().getFullYear(),
     ...(selectedSeason === null ? [] : [selectedSeason]),
@@ -75,7 +61,7 @@ export function MoneyScreen() {
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
       <Text style={styles.sectionTitle}>Не вдалося завантажити записи</Text>
-      <Text style={styles.note}>Перевірте інтернет і спробуйте ще раз.</Text>
+      <Text style={styles.note}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
       <AppButton label="Повторити" onPress={reload} />
     </InfoCard>}
     {loadState === 'ready' && <>
@@ -86,9 +72,6 @@ export function MoneyScreen() {
           <Text style={[styles.chipText, year === season && styles.chipTextSelected]}>{year}</Text>
         </Pressable>)}
       </View>
-      {plantingsError && <Text style={styles.note}>
-        Площі сезонів не завантажилися. Урожайність рахуємо за поточною площею ділянок.
-      </Text>}
       {seasonRecords.length === 0 ? <EmptyFeature icon="money" title="Записів за цей сезон ще немає"
         detail="Додайте роботу, збір урожаю або продаж — тут з’являться підсумки." /> : <>
         <InfoCard>

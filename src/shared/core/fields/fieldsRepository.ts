@@ -39,10 +39,16 @@ function requireClient() {
 }
 
 export async function fetchFields(): Promise<Field[]> {
-  const {data, error} = await requireClient().from('fields').select(COLUMNS)
-    .order('created_at', {ascending: true});
-  if (error) throw error;
-  return (data as FieldRow[]).map(fromRow);
+  const all: FieldRow[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const {data, error} = await requireClient().from('fields').select(COLUMNS)
+      .order('id', {ascending: true}).range(offset, offset + 999);
+    if (error) throw error;
+    const page = data as FieldRow[];
+    all.push(...page);
+    if (page.length < 1000) break;
+  }
+  return all.map(fromRow).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 function toRow(input: NewField) {

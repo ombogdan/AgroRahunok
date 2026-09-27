@@ -110,7 +110,7 @@ export function OtherRecordScreen({route, navigation}: Props) {
       });
     } catch (error) {
       logSupabaseError('Не вдалося зберегти суму', error);
-      Alert.alert('Не вдалося зберегти запис', 'Перевірте інтернет і спробуйте ще раз.');
+      Alert.alert('Не вдалося зберегти запис', 'Не вдалося записати дані на телефон.');
       setSaving(false);
     }
   };
@@ -122,7 +122,7 @@ export function OtherRecordScreen({route, navigation}: Props) {
       {text: 'Видалити', style: 'destructive', onPress: () => {
         removeRecord(editing.id).then(() => navigation.goBack()).catch(error => {
           logSupabaseError('Не вдалося видалити запис', error);
-          Alert.alert('Не вдалося видалити запис', 'Перевірте інтернет і спробуйте ще раз.');
+          Alert.alert('Не вдалося видалити запис', 'Не вдалося записати зміни на телефон.');
         });
       }},
     ]);

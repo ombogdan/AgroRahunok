@@ -19,10 +19,17 @@ function fromRow(row: UnitRow): QuantityUnit {
 }
 
 export async function fetchQuantityUnits(): Promise<QuantityUnit[]> {
-  const {data, error} = await requireClient().from('quantity_units')
-    .select('id, name, kilograms_per_unit').order('created_at', {ascending: true});
-  if (error) throw error;
-  return (data as UnitRow[]).map(fromRow);
+  const all: UnitRow[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const {data, error} = await requireClient().from('quantity_units')
+      .select('id, name, kilograms_per_unit').order('id', {ascending: true})
+      .range(offset, offset + 999);
+    if (error) throw error;
+    const page = data as UnitRow[];
+    all.push(...page);
+    if (page.length < 1000) break;
+  }
+  return all.map(fromRow);
 }
 
 export async function addQuantityUnit(name: string, kilogramsPerUnit: number): Promise<QuantityUnit> {

@@ -84,7 +84,8 @@ export function RootNavigator() {
   }
 
   return (
-    <SeasonProvider key={session.kind === 'authenticated' ? session.userId : 'guest'}>
+    <SeasonProvider key={session.kind === 'authenticated' ? session.userId : 'guest'}
+      userId={session.kind === 'authenticated' ? session.userId : null}>
       <NavigationContainer
         theme={{
           ...DefaultTheme,

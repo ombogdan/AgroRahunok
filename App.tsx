@@ -5,8 +5,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {RootNavigator} from './src/navigation/RootNavigator';
 import {ToastProvider} from './src/shared/components/ui';
 import {AuthProvider} from './src/shared/core/providers/auth/AuthProvider';
-import {FieldsProvider} from './src/shared/core/fields/FieldsProvider';
-import {RecordsProvider} from './src/shared/core/records/RecordsProvider';
+import {FarmDataProvider} from './src/shared/core/offline/FarmDataProvider';
 import {SubscriptionProvider} from './src/shared/core/providers/subscription/SubscriptionProvider';
 import {ThemeProvider, useTheme} from './src/shared/theme';
 
@@ -32,15 +31,13 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <FieldsProvider>
-              <RecordsProvider>
+            <FarmDataProvider>
                 <SubscriptionProvider>
                   <ToastProvider>
                     <AppContent />
                   </ToastProvider>
                 </SubscriptionProvider>
-              </RecordsProvider>
-            </FieldsProvider>
+            </FarmDataProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

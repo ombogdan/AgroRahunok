@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
@@ -14,8 +14,8 @@ import {
   parseMoneyInput, saleAmountKopecks, toLocalIsoDate,
 } from '../../../shared/core/records/model';
 import type {NewRecord} from '../../../shared/core/records/model';
-import {addQuantityUnit, fetchQuantityUnits} from '../../../shared/core/records/quantityUnitsRepository';
 import type {QuantityUnit} from '../../../shared/core/records/quantityUnitsRepository';
+import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
@@ -79,6 +79,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const {showToast} = useToast();
   const {fields} = useFields();
   const {records, addRecord, updateRecord, removeRecord} = useRecords();
+  const {data, store} = useFarmData();
   const {kind, recordId} = route.params;
   const editing = recordId ? records.find(item => item.id === recordId && item.kind === kind) ?? null : null;
   const isSale = kind === 'sale';
@@ -100,24 +101,12 @@ export function QuantityRecordScreen({route, navigation}: Props) {
     editing?.details.pricePerUnitKopecks ? editing.details.pricePerUnitKopecks / 100 : undefined));
   const [buyer, setBuyer] = useState(editing?.details.buyer ?? previousRecord?.details.buyer ?? '');
   const [note, setNote] = useState(editing?.note ?? '');
-  const [customUnits, setCustomUnits] = useState<QuantityUnit[]>([]);
-  const [unitLoadError, setUnitLoadError] = useState(false);
+  const customUnits = data.units;
   const [addingUnit, setAddingUnit] = useState(false);
   const [newUnitName, setNewUnitName] = useState('');
   const [newUnitWeight, setNewUnitWeight] = useState('');
   const [savingUnit, setSavingUnit] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    fetchQuantityUnits().then(items => {
-      if (active) { setCustomUnits(items); setUnitLoadError(false); }
-    }).catch(error => {
-      logSupabaseError('Не вдалося завантажити одиниці', error);
-      if (active) setUnitLoadError(true);
-    });
-    return () => { active = false; };
-  }, []);
 
   const rememberedRecord = records.find(item => item.kind === kind && item.fieldId === fieldId &&
     item.details.unitName === unitName && item.details.kilogramsPerUnit);
@@ -150,15 +139,15 @@ export function QuantityRecordScreen({route, navigation}: Props) {
     if (!newUnitValid || newUnitKg === null) return;
     setSavingUnit(true);
     try {
-      const saved = await addQuantityUnit(newUnitName.trim(), newUnitKg);
-      setCustomUnits(current => [...current, saved]);
+      if (!store) throw new Error('Локальні дані ще завантажуються');
+      const saved = await store.addUnit(newUnitName.trim(), newUnitKg);
       setUnitName(saved.name);
       setAddingUnit(false);
       setNewUnitName('');
       setNewUnitWeight('');
     } catch (error) {
       logSupabaseError('Не вдалося зберегти одиницю', error);
-      Alert.alert('Не вдалося зберегти одиницю', 'Перевірте інтернет і спробуйте ще раз.');
+      Alert.alert('Не вдалося зберегти одиницю', 'Не вдалося записати дані на телефон.');
     } finally {
       setSavingUnit(false);
     }
@@ -196,7 +185,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
       });
     } catch (error) {
       logSupabaseError('Не вдалося зберегти запис', error);
-      Alert.alert('Не вдалося зберегти запис', 'Перевірте інтернет і спробуйте ще раз.');
+      Alert.alert('Не вдалося зберегти запис', 'Не вдалося записати дані на телефон.');
       setSaving(false);
     }
   };
@@ -208,7 +197,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
       {text: 'Видалити', style: 'destructive', onPress: () => {
         removeRecord(editing.id).then(() => navigation.goBack()).catch(error => {
           logSupabaseError('Не вдалося видалити запис', error);
-          Alert.alert('Не вдалося видалити запис', 'Перевірте інтернет і спробуйте ще раз.');
+          Alert.alert('Не вдалося видалити запис', 'Не вдалося записати зміни на телефон.');
         });
       }},
     ]);
@@ -248,7 +237,6 @@ export function QuantityRecordScreen({route, navigation}: Props) {
             onPress={() => setUnitName(item.name)} />)}
           <Chip label="+ Своя одиниця" selected={addingUnit} onPress={() => setAddingUnit(open => !open)} />
         </View>
-        {unitLoadError && <Text style={styles.error}>Власні одиниці не завантажилися. Стандартні доступні.</Text>}
         {addingUnit && <View style={styles.custom}>
           <Text style={styles.label}>Нова одиниця</Text>
           <TextInput value={newUnitName} onChangeText={setNewUnitName} maxLength={30}

@@ -52,7 +52,7 @@ export function JournalScreen() {
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
       <Text style={styles.errorTitle}>Не вдалося завантажити записи</Text>
-      <Text style={styles.muted}>Перевірте інтернет і спробуйте ще раз.</Text>
+      <Text style={styles.muted}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
       <AppButton label="Повторити" onPress={reload} />
     </InfoCard>}
     {loadState === 'ready' && records.length === 0 && <EmptyFeature

@@ -16,7 +16,7 @@ import {
   parseAreaInput,
   rectangleAreaM2,
 } from '../../../shared/core/fields/model';
-import {savePlanting} from '../../../shared/core/fields/plantingsRepository';
+import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {seasonFor} from '../../../shared/core/records/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
@@ -78,6 +78,7 @@ export function FieldFormScreen({route, navigation}: Props) {
   const {theme} = useTheme();
   const {showToast} = useToast();
   const {fields, addField, updateField, removeField, loadState} = useFields();
+  const {store} = useFarmData();
   const {params} = route;
   const editing = params.mode === 'edit' ? fields.find(item => item.id === params.fieldId) ?? null : null;
   // Area measured before the form opened: on the map, by walking, or stored with the edited plot.
@@ -136,7 +137,8 @@ export function FieldFormScreen({route, navigation}: Props) {
     const rememberPlanting = async (fieldId: string): Promise<boolean> => {
       if (!cropName) return true;
       try {
-        await savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0});
+        if (!store) throw new Error('Локальні дані ще завантажуються');
+        await store.savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0});
         return true;
       } catch (error) {
         logSupabaseError('Не вдалося зберегти культуру сезону', error);
@@ -166,7 +168,7 @@ export function FieldFormScreen({route, navigation}: Props) {
       });
     } catch (error) {
       logSupabaseError('Не вдалося зберегти ділянку', error);
-      Alert.alert('Не вдалося зберегти ділянку', 'Перевірте інтернет і спробуйте ще раз.');
+      Alert.alert('Не вдалося зберегти ділянку', 'Не вдалося записати дані на телефон. Спробуйте ще раз.');
       setSaving(false);
     }
   };

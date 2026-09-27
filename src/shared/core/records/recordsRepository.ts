@@ -60,10 +60,17 @@ function requireClient() {
 
 // Newest first, the order the journal shows them in.
 export async function fetchRecords(): Promise<FarmRecord[]> {
-  const {data, error} = await requireClient().from('records').select(COLUMNS)
-    .order('occurred_on', {ascending: false}).order('created_at', {ascending: false});
-  if (error) throw error;
-  return (data as RecordRow[]).map(fromRow);
+  const all: RecordRow[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const {data, error} = await requireClient().from('records').select(COLUMNS)
+      .order('id', {ascending: true}).range(offset, offset + 999);
+    if (error) throw error;
+    const page = data as RecordRow[];
+    all.push(...page);
+    if (page.length < 1000) break;
+  }
+  return all.map(fromRow).sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) ||
+    b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function insertRecord(input: NewRecord): Promise<FarmRecord> {

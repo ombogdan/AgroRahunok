@@ -29,7 +29,7 @@ export function FieldsScreen() {
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
       <Text style={styles.emptyTitle}>Не вдалося завантажити ділянки</Text>
-      <Text style={styles.muted}>Перевірте інтернет і спробуйте ще раз.</Text>
+      <Text style={styles.muted}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
       <AppButton label="Повторити" onPress={reload} />
     </InfoCard>}
     {loadState === 'ready' && <>

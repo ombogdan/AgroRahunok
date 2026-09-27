@@ -1,16 +1,13 @@
-import React, {useCallback, useState} from 'react';
+import React from 'react';
 import {ActivityIndicator, Pressable, ScrollView, Text, View} from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, formatSotky, selectedAreaM2} from '../../../shared/core/fields/model';
-import {fetchPlantings} from '../../../shared/core/fields/plantingsRepository';
-import type {Planting} from '../../../shared/core/fields/plantingsRepository';
+import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {formatMoney} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
-import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
@@ -31,6 +28,7 @@ const createStyles = (theme: AppTheme) => ({
   emptyTitle: {color: theme.colors.text, fontSize: 28, lineHeight: 34, fontWeight: '700' as const},
   emptyText: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24},
   hint: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 20},
+  syncHint: {color: theme.colors.textMuted, fontSize: 14, lineHeight: 19},
   summaryLabel: {color: theme.colors.textMuted, fontSize: 17, fontWeight: '600' as const},
   totalRow: {flexDirection: 'row' as const, alignItems: 'baseline' as const, flexWrap: 'wrap' as const, gap: 8},
   total: {color: theme.colors.text, fontSize: 40, lineHeight: 48, fontWeight: '700' as const},
@@ -76,28 +74,9 @@ export function HomeScreen() {
   const navigation = useRootNavigation();
   const {fields, loadState, reload} = useFields();
   const {records} = useRecords();
-  const [plantings, setPlantings] = useState<Planting[]>([]);
-  const [plantingsLoaded, setPlantingsLoaded] = useState(false);
-  const [plantingsError, setPlantingsError] = useState(false);
+  const {data, pendingCount, syncState} = useFarmData();
+  const plantings = data.plantings;
   const {selectedSeason, setSelectedSeason} = useSeason();
-
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    fetchPlantings().then(items => {
-      if (active) {
-        setPlantings(items);
-        setPlantingsLoaded(true);
-        setPlantingsError(false);
-      }
-    }).catch(error => {
-      logSupabaseError('Не вдалося завантажити сівозміну', error);
-      if (active) {
-        setPlantingsLoaded(true);
-        setPlantingsError(true);
-      }
-    });
-    return () => { active = false; };
-  }, []));
 
   const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
   const now = new Date();
@@ -136,10 +115,13 @@ export function HomeScreen() {
       <Text style={styles.title} accessibilityRole="header">Моє господарство</Text>
     </View>
     <ScrollView contentContainerStyle={styles.content}>
+      {loadState === 'ready' && pendingCount > 0 && <Text style={styles.syncHint}>
+        {syncState === 'syncing' ? 'Синхронізуємо…' : `На телефоні · очікує синхронізації: ${pendingCount}`}
+      </Text>}
       {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
       {loadState === 'error' && <InfoCard>
         <Text style={styles.emptyTitle}>Не вдалося завантажити ділянки</Text>
-        <Text style={styles.emptyText}>Перевірте інтернет і спробуйте ще раз.</Text>
+        <Text style={styles.emptyText}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
         <AppButton label="Повторити" onPress={reload} />
       </InfoCard>}
       {loadState === 'ready' && fields.length === 0 && <>
@@ -165,7 +147,6 @@ export function HomeScreen() {
               <Text style={[styles.yearOptionText, season === year && styles.yearOptionTextSelected]}>{year}</Text>
             </Pressable>)}
           </View>
-          {plantingsError && <Text style={styles.hint}>Не вдалося завантажити культури за роками.</Text>}
         </View>
         <InfoCard>
           <Text style={styles.summaryLabel}>Уся земля</Text>
@@ -187,9 +168,7 @@ export function HomeScreen() {
               <Text style={styles.rowDetail}>{[
                 seasonPlantings.get(field.id)?.crop,
                 seasonPlantings.get(field.id)?.variety,
-              ].filter(Boolean).join(' · ') || (plantingsError
-                ? 'Культуру не вдалося завантажити'
-                : plantingsLoaded ? `${fieldTypeLabels[field.type]} · культуру не записано` : 'Завантажуємо культуру…')}</Text>
+              ].filter(Boolean).join(' · ') || `${fieldTypeLabels[field.type]} · культуру не записано`}</Text>
             </View>
             <Text style={styles.rowArea}>{formatArea(selectedAreaM2(field))}</Text>
           </Pressable>)}

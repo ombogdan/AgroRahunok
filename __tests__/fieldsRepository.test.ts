@@ -16,7 +16,7 @@ jest.mock('../src/shared/core/supabase/client', () => ({
     from: (table: string) => {
       mockCalls.table = table;
       return {
-        select: () => ({order: async () => ({data: [mockRow], error: null})}),
+        select: () => ({order: () => ({range: async () => ({data: [mockRow], error: null})})}),
         insert: (values: Record<string, unknown>) => {
           mockCalls.inserted = values;
           return {select: () => ({single: async () => ({data: mockRow, error: null})})};
