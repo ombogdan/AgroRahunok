@@ -7,17 +7,17 @@ import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {currentRows, varietyGroups} from '../../../shared/core/rows/model';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
-import type {AppTheme} from '../../../shared/theme/theme';
+import type {AppTheme, Scale} from '../../../shared/theme/theme';
 
-const createStyles = (theme: AppTheme) => ({
-  label: {color: theme.colors.textMuted, fontSize: 17, fontWeight: '600' as const},
-  total: {color: theme.colors.text, fontSize: 38, fontWeight: '700' as const},
-  emptyTitle: {color: theme.colors.text, fontSize: 22, fontWeight: '700' as const},
-  muted: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24},
-  row: {minHeight: 72, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12},
-  rowBody: {flex: 1, gap: 3},
-  name: {color: theme.colors.text, fontSize: 19, fontWeight: '600' as const},
-  area: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
+const createStyles = (theme: AppTheme, scale: Scale) => ({
+  label: {color: theme.colors.textMuted, fontSize: scale(17), fontWeight: '600' as const},
+  total: {color: theme.colors.text, fontSize: scale(38), fontWeight: '700' as const},
+  emptyTitle: {color: theme.colors.text, fontSize: scale(22), fontWeight: '700' as const},
+  muted: {color: theme.colors.textMuted, fontSize: scale(17), lineHeight: scale(24)},
+  row: {minHeight: scale(72), flexDirection: 'row' as const, alignItems: 'center' as const, gap: scale(12)},
+  rowBody: {flex: 1, gap: scale(3)},
+  name: {color: theme.colors.text, fontSize: scale(19), fontWeight: '600' as const},
+  area: {color: theme.colors.text, fontSize: scale(17), fontWeight: '600' as const},
 });
 
 export function FieldsScreen() {

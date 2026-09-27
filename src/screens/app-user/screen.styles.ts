@@ -1,49 +1,49 @@
 import {useThemedStyles} from '../../shared/theme';
-import type {AppTheme} from '../../shared/theme/theme';
+import type {AppTheme, Scale} from '../../shared/theme/theme';
 
-const createStyles = (theme: AppTheme) => ({
+const createStyles = (theme: AppTheme, scale: Scale) => ({
   sectionTitle: {
     color: theme.colors.text,
-    fontSize: theme.typography.heading,
+    fontSize: scale(theme.typography.heading),
     fontWeight: '700' as const,
   },
   label: {
     color: theme.colors.textMuted,
-    fontSize: theme.typography.small,
+    fontSize: scale(theme.typography.small),
   },
   body: {
     color: theme.colors.text,
-    fontSize: theme.typography.body,
-    lineHeight: 24,
+    fontSize: scale(theme.typography.body),
+    lineHeight: scale(24),
   },
   muted: {
     color: theme.colors.textMuted,
-    fontSize: theme.typography.body,
-    lineHeight: 23,
+    fontSize: scale(theme.typography.body),
+    lineHeight: scale(23),
   },
   metric: {
     color: theme.colors.text,
-    fontSize: theme.typography.metric,
+    fontSize: scale(theme.typography.metric),
     fontWeight: '700' as const,
   },
   row: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
-    gap: theme.spacing.md,
+    gap: scale(theme.spacing.md),
   },
-  group: {gap: theme.spacing.md},
-  divider: {height: 1, backgroundColor: theme.colors.border},
+  group: {gap: scale(theme.spacing.md)},
+  divider: {height: scale(1), backgroundColor: theme.colors.border},
   pill: {
     backgroundColor: theme.colors.primarySoft,
-    borderRadius: theme.radii.full,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    borderRadius: scale(theme.radii.full),
+    paddingHorizontal: scale(theme.spacing.md),
+    paddingVertical: scale(theme.spacing.sm),
   },
   pillText: {
     color: theme.colors.primary,
     fontWeight: '700' as const,
-    fontSize: theme.typography.small,
+    fontSize: scale(theme.typography.small),
   },
 });
 

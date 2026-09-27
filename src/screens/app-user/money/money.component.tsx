@@ -1,3 +1,4 @@
+import {useStyles} from './money.styles';
 import React from 'react';
 import {ActivityIndicator, Pressable, Text, View} from 'react-native';
 import {AppButton, EmptyFeature, InfoCard, Page} from '../../../shared/components/ui';
@@ -8,34 +9,14 @@ import {formatKilograms, formatMoney} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
 import {summarizeSeason, yieldForArea} from '../../../shared/core/records/seasonSummary';
-import {useTheme, useThemedStyles} from '../../../shared/theme';
-import type {AppTheme} from '../../../shared/theme/theme';
+import {useTheme} from '../../../shared/theme';
 
 const number = (value: number) => new Intl.NumberFormat('uk-UA', {maximumFractionDigits: 1}).format(value);
 const signedMoney = (value: number) => `${value < 0 ? '−' : value > 0 ? '+' : ''}${formatMoney(value)}`;
 
-const createStyles = (theme: AppTheme) => ({
-  chips: {flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8},
-  chip: {minHeight: 44, paddingHorizontal: 18, borderRadius: 999, borderWidth: 2,
-    borderColor: theme.colors.border, backgroundColor: theme.colors.surface, justifyContent: 'center' as const},
-  chipSelected: {borderColor: theme.colors.primary, backgroundColor: theme.colors.primary},
-  chipText: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
-  chipTextSelected: {color: theme.colors.onPrimary},
-  label: {color: theme.colors.textMuted, fontSize: 17, fontWeight: '600' as const},
-  result: {color: theme.colors.text, fontSize: 40, lineHeight: 48, fontWeight: '700' as const},
-  positive: {color: theme.colors.primary},
-  negative: {color: theme.colors.danger},
-  row: {flexDirection: 'row' as const, justifyContent: 'space-between' as const,
-    alignItems: 'baseline' as const, gap: 8, flexWrap: 'wrap' as const},
-  rowLabel: {color: theme.colors.textMuted, fontSize: 17},
-  rowValue: {color: theme.colors.text, fontSize: 19, fontWeight: '600' as const},
-  sectionTitle: {color: theme.colors.text, fontSize: 22, fontWeight: '700' as const},
-  note: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 21},
-  fieldName: {color: theme.colors.text, fontSize: 20, fontWeight: '700' as const},
-});
 
 export function MoneyScreen() {
-  const styles = useThemedStyles(createStyles);
+  const styles = useStyles();
   const {theme} = useTheme();
   const {fields} = useFields();
   const {records, loadState, reload} = useRecords();

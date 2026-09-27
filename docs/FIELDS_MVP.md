@@ -9,8 +9,8 @@
 ## Що потрібно зробити на своєму комп'ютері
 
 1. Запустити `yarn install` у корені проєкту. Це встановить `react-native-maps` і `@turf/area`; наявний `postinstall` також виконає `pod install`.
-2. Для Android створити `android/maps.properties` за зразком `android/maps.properties.example`. За [інструкцією Google](https://developers.google.com/maps/documentation/android-sdk/get-api-key) у Google Cloud Console увімкнути **Maps SDK for Android**, створити API key і вписати `GOOGLE_MAPS_API_KEY=...`. Обмежити ключ Android застосунком `com.agrorahunok.mobile` та SHA-1 підпису. Файл ключа ігнорується Git.
-3. Для iOS використовується Apple Maps, окремий ключ для базової карти не потрібен. Кнопка «Моє місце» запитує дозвіл на геолокацію тільки після натискання.
+2. Для Android Gradle бере ключ із `android/maps.properties.example`, якщо немає локального `android/maps.properties`. У Google Cloud Console має бути ввімкнено **Maps SDK for Android**; обмеження ключа повинні включати застосунок `com.agrorahunok.mobile` та SHA-1 підпису. Локальний файл має пріоритет і ігнорується Git.
+3. Для iOS використовується Apple Maps, окремий ключ для базової карти не потрібен. Обидві платформи показують підписи на супутниковій карті в режимі `hybrid`. Екран обведення запитує геолокацію під час відкриття; кнопка «Моє місце» центрує карту або пропонує надати доступ.
 4. Після встановлення нових нативних залежностей перебудувати застосунок. Якщо Metro тримає старий список модулів, перезапустити його з `--reset-cache`.
 
 ## Перевірка вручну

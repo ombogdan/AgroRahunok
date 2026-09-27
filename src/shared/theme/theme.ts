@@ -1,4 +1,6 @@
 // Source of truth: docs/design-handoff/tokens/theme.ts.
+export type Scale = (size: number) => number;
+
 export const spacing = {
   xs: 4,
   sm: 8,

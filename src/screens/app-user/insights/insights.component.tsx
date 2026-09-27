@@ -1,28 +1,13 @@
+import {useStyles} from './insights.styles';
 import React from 'react';
 import {Text, View} from 'react-native';
 import {DemoBadge, InfoCard, Page} from '../../../shared/components/ui';
 import {useScreenStyles} from '../screen.styles';
-import {useThemedStyles} from '../../../shared/theme';
-import type {AppTheme} from '../../../shared/theme/theme';
 
-const createStyles = (theme: AppTheme) => ({
-  track: {
-    height: 14,
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.radii.full,
-    overflow: 'hidden' as const,
-  },
-  bar: {
-    height: 14,
-    width: '68%' as const,
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radii.full,
-  },
-});
 
 export function InsightsScreen() {
   const common = useScreenStyles();
-  const styles = useThemedStyles(createStyles);
+  const styles = useStyles();
   return (
     <Page title="Підсумки" subtitle="Площа, урожай і гроші за сезон">
       <DemoBadge />

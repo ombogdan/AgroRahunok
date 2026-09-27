@@ -5,15 +5,21 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {FieldDetailScreen, FieldsScreen, HomeScreen, JournalScreen, MoneyScreen, SettingsScreen} from '../screens/app-user';
-import {FieldFormScreen, FieldMapScreen, FieldMethodScreen, FieldWalkScreen} from '../screens/app-user/field-create';
-import {OtherRecordScreen, QuantityRecordScreen, TabBarWithDock, WorkRecordScreen} from '../screens/app-user/records';
-import {BerryRowsScreen} from '../screens/app-user/rows/BerryRowsScreen';
-import {SignInScreen} from '../screens/app-auth';
+import {FieldFormScreen} from '../screens/app-user/field-form/field-form.screen';
+import {FieldMapScreen} from '../screens/app-user/field-map/field-map.screen';
+import {FieldMethodScreen} from '../screens/app-user/field-method/field-method.screen';
+import {FieldWalkScreen} from '../screens/app-user/field-walk/field-walk.screen';
+import {OtherRecordScreen} from '../screens/app-user/other-record/other-record.screen';
+import {QuantityRecordScreen} from '../screens/app-user/quantity-record/quantity-record.screen';
+import {TabBarWithDock} from '../screens/app-user/components/record-dock/record-dock.component';
+import {WorkRecordScreen} from '../screens/app-user/work-record/work-record.screen';
+import {RowsSetupScreen} from '../screens/app-user/rows-setup/rows-setup.screen';
+import {SignInScreen} from '../screens/app-auth/sign-in/sign-in.component';
 import {AppIcon} from '../shared/components/ui';
-import type {AppIconName} from '../shared/components/ui/AppIcon';
+import type {AppIconName} from '../shared/components/ui/app-icon/app-icon.component';
 import {useAuth} from '../shared/core/providers/auth/AuthProvider';
 import {SeasonProvider} from '../shared/core/records/SeasonProvider';
-import {useTheme} from '../shared/theme';
+import {useScale, useTheme} from '../shared/theme';
 import {useThemedStyles} from '../shared/theme';
 import type {AppTheme} from '../shared/theme/theme';
 import type {MainTabParamList, RootStackParamList} from './types';
@@ -47,6 +53,7 @@ const renderTabBar = (props: BottomTabBarProps) => <TabBarWithDock {...props} />
 
 function MainTabs() {
   const {theme} = useTheme();
+  const scale = useScale();
   return (
     <Tab.Navigator
       tabBar={renderTabBar}
@@ -55,12 +62,12 @@ function MainTabs() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
-          height: 83,
-          paddingTop: 8,
+          height: scale(83),
+          paddingTop: scale(8),
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
         },
-        tabBarLabelStyle: {fontSize: 13, fontWeight: '700'},
+        tabBarLabelStyle: {fontSize: scale(13), fontWeight: '700'},
         tabBarIcon: tabIcons[route.name],
         tabBarLabel: tabs[route.name].label,
       })}>
@@ -108,7 +115,7 @@ export function RootNavigator() {
               <Stack.Screen name="FieldWalk" component={FieldWalkScreen} />
               <Stack.Screen name="FieldForm" component={FieldFormScreen} />
               <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
-              <Stack.Screen name="BerryRows" component={BerryRowsScreen} />
+              <Stack.Screen name="RowsSetup" component={RowsSetupScreen} />
               <Stack.Screen name="WorkRecord" component={WorkRecordScreen} />
               <Stack.Screen name="QuantityRecord" component={QuantityRecordScreen} />
               <Stack.Screen name="OtherRecord" component={OtherRecordScreen} />

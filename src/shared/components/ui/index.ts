@@ -1,9 +1,9 @@
-export {AppButton} from './AppButton';
-export {AppIcon} from './AppIcon';
-export {AutocompleteInput} from './AutocompleteInput';
-export {BackButton} from './BackButton';
-export {EmptyFeature} from './EmptyFeature';
-export {DemoBadge} from './DemoBadge';
-export {InfoCard} from './InfoCard';
-export {Page} from './Page';
-export {ToastProvider, useToast} from './Toast';
+export {AppButton} from './app-button/app-button.component';
+export {AppIcon} from './app-icon/app-icon.component';
+export {AutocompleteInput} from './autocomplete-input/autocomplete-input.component';
+export {BackButton} from './back-button/back-button.component';
+export {EmptyFeature} from './empty-feature/empty-feature.component';
+export {DemoBadge} from './demo-badge/demo-badge.component';
+export {InfoCard} from './info-card/info-card.component';
+export {Page} from './page/page.component';
+export {ToastProvider, useToast} from './toast/toast.component';

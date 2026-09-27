@@ -1,3 +1,4 @@
+import {useStyles} from './journal.styles';
 import React, {useMemo, useState} from 'react';
 import {ActivityIndicator, Pressable, ScrollView, Text, View} from 'react-native';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
@@ -6,26 +7,9 @@ import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import type {FarmRecord} from '../../../shared/core/records/model';
 import {dateLabel} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
-import {useTheme, useThemedStyles} from '../../../shared/theme';
-import type {AppTheme} from '../../../shared/theme/theme';
-import {RecordRow} from '../records';
+import {useTheme} from '../../../shared/theme';
+import {RecordRow} from '../components/record-row/record-row.component';
 
-const createStyles = (theme: AppTheme) => ({
-  filters: {gap: 8, paddingRight: 20},
-  chip: {minHeight: 44, paddingHorizontal: 15, borderRadius: 999, borderWidth: 2,
-    borderColor: theme.colors.border, backgroundColor: theme.colors.surface, justifyContent: 'center' as const},
-  chipSelected: {borderColor: theme.colors.primary, backgroundColor: theme.colors.primary},
-  chipText: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
-  chipTextSelected: {color: theme.colors.onPrimary},
-  group: {gap: 8},
-  day: {color: theme.colors.textMuted, fontSize: 15, fontWeight: '600' as const},
-  // Rows carry their own padding and dividers, so the card has no inner gap.
-  card: {backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: 20, paddingHorizontal: 16},
-  cardShadow: {shadowColor: '#193327', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: {width: 0, height: 4}, elevation: 2},
-  errorTitle: {color: theme.colors.text, fontSize: 22, fontWeight: '700' as const},
-  muted: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24},
-});
 
 function groupByDay(records: FarmRecord[]): {day: string; items: FarmRecord[]}[] {
   const groups: {day: string; items: FarmRecord[]}[] = [];
@@ -38,7 +22,7 @@ function groupByDay(records: FarmRecord[]): {day: string; items: FarmRecord[]}[]
 }
 
 export function JournalScreen() {
-  const styles = useThemedStyles(createStyles);
+  const styles = useStyles();
   const {theme, isDark} = useTheme();
   const navigation = useRootNavigation();
   const {fields} = useFields();

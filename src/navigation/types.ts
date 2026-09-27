@@ -20,7 +20,7 @@ export type RootStackParamList = {
     | {mode: 'map' | 'walk'; polygon: GeoPoint[]; measuredAreaM2: number}
     | {mode: 'edit'; fieldId: string};
   FieldDetail: {fieldId: string};
-  BerryRows: {fieldId: string};
+  RowsSetup: {fieldId: string};
   WorkRecord: {recordId?: string} | undefined;
   QuantityRecord: {kind: 'harvest' | 'sale'; recordId?: string};
   OtherRecord: {recordId?: string} | undefined;

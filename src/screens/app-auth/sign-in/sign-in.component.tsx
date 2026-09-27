@@ -1,30 +1,15 @@
+import {useStyles} from './sign-in.styles';
 import React, {useState} from 'react';
 import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
 import {useAuth} from '../../../shared/core/providers/auth/AuthProvider';
 import {signInErrorMessage} from '../../../shared/core/services/auth/googleAuth';
-import {useTheme, useThemedStyles} from '../../../shared/theme';
-import type {AppTheme} from '../../../shared/theme/theme';
+import {useTheme} from '../../../shared/theme';
 
-const createStyles = (theme: AppTheme) => ({
-  safe: {flex: 1, backgroundColor: theme.colors.background},
-  content: {flexGrow: 1, padding: 20, justifyContent: 'center' as const, gap: 32},
-  brand: {gap: 16},
-  iconCircle: {
-    width: 88, height: 88, borderRadius: 44,
-    backgroundColor: theme.colors.primarySoft,
-    alignItems: 'center' as const, justifyContent: 'center' as const,
-  },
-  title: {color: theme.colors.text, fontSize: 34, lineHeight: 41, fontWeight: '700' as const},
-  subtitle: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24},
-  cardTitle: {color: theme.colors.text, fontSize: 22, lineHeight: 28, fontWeight: '700' as const},
-  fine: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 20},
-  error: {color: theme.colors.danger, fontSize: 15, lineHeight: 20},
-});
 
 export function SignInScreen() {
-  const styles = useThemedStyles(createStyles);
+  const styles = useStyles();
   const {theme} = useTheme();
   const {signInWithGoogle} = useAuth();
   const [busy, setBusy] = useState(false);
