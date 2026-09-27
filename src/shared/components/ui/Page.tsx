@@ -15,13 +15,20 @@ type Props = PropsWithChildren<{
 
 const createStyles = (theme: AppTheme) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
-  content: {
+  // The header stays put while only the content below it scrolls.
+  header: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+  },
+  content: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing.xxl,
     gap: theme.spacing.lg,
   },
-  heading: {gap: theme.spacing.sm},
   title: {
     color: theme.colors.text,
     fontSize: theme.typography.title,
@@ -41,12 +48,12 @@ export function Page({title, subtitle, withHeader = false, onBack, children}: Pr
     <SafeAreaView
       style={styles.safe}
       edges={withHeader ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <View style={styles.header}>
         {onBack && <BackButton onPress={onBack} />}
-        <View style={styles.heading}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
+        <Text style={styles.title} accessibilityRole="header">{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+      <ScrollView contentContainerStyle={styles.content}>
         {children}
       </ScrollView>
     </SafeAreaView>

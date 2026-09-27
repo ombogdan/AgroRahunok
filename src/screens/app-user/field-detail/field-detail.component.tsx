@@ -60,7 +60,7 @@ export function FieldDetailScreen({route, navigation}: Props) {
       }},
     ]);
 
-  const subtitle = field.crop ? `${fieldTypeLabels[field.type]} · ${field.crop}` : fieldTypeLabels[field.type];
+  const subtitle = [fieldTypeLabels[field.type], field.crop, field.variety].filter(Boolean).join(' · ');
 
   return <Page title={field.name} subtitle={subtitle} onBack={() => navigation.goBack()}>
     {region && <View style={styles.map} pointerEvents="none" accessibilityLabel="Контур ділянки на карті">
@@ -79,8 +79,9 @@ export function FieldDetailScreen({route, navigation}: Props) {
         selected={field.areaSource === 'measured'} />}
     </InfoCard>
     {field.crop ? <InfoCard>
-      <Text style={styles.label}>Культура цього сезону</Text>
+      <Text style={styles.label}>Поточна культура</Text>
       <Text style={styles.crop}>{field.crop}</Text>
+      {field.variety ? <Text style={styles.label}>Сорт: {field.variety}</Text> : null}
     </InfoCard> : null}
     <AppButton label="Змінити" variant="secondary"
       onPress={() => navigation.navigate('FieldForm', {mode: 'edit', fieldId: field.id})} />

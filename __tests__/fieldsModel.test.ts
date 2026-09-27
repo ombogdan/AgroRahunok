@@ -3,6 +3,7 @@ import {
   formatArea,
   formatHectares,
   formatSotky,
+  matchSuggestions,
   parseAreaInput,
   polygonAreaM2,
   polygonHasCrossingEdges,
@@ -106,5 +107,23 @@ describe('manual area helpers', () => {
     expect(region.longitude).toBeCloseTo(31.001, 6);
     expect(region.latitudeDelta).toBeCloseTo(0.0016, 6);
     expect(region.longitudeDelta).toBeCloseTo(0.0032, 6);
+  });
+});
+
+describe('matchSuggestions', () => {
+  const crops = ['Пшениця озима', 'Соняшник', 'пшениця озима', null, 'Малина', ''];
+
+  it('offers earlier entries that contain the typed text, without duplicates', () => {
+    expect(matchSuggestions('пш', crops)).toEqual(['Пшениця озима']);
+    expect(matchSuggestions('ник', crops)).toEqual(['Соняшник']);
+  });
+
+  it('shows the first few entries before anything is typed', () => {
+    expect(matchSuggestions('', crops)).toEqual(['Пшениця озима', 'Соняшник', 'Малина']);
+    expect(matchSuggestions('', crops, 2)).toEqual(['Пшениця озима', 'Соняшник']);
+  });
+
+  it('hides the value that is already typed in full', () => {
+    expect(matchSuggestions('малина', crops)).toEqual([]);
   });
 });

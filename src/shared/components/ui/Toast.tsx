@@ -11,8 +11,9 @@ type ToastContextValue = {showToast: (options: ToastOptions) => void};
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 const TOAST_DURATION_MS = 6000;
-// Height of the tab bar content above the home indicator, so the toast floats over it.
+// Tab bar content above the home indicator plus the «+ Записати» dock, so the toast floats over both.
 const TAB_BAR_CONTENT_HEIGHT = 49;
+const RECORD_DOCK_HEIGHT = 80;
 
 const createStyles = (theme: AppTheme) => ({
   wrap: {position: 'absolute' as const, left: 16, right: 16},
@@ -55,7 +56,7 @@ export function ToastProvider({children}: PropsWithChildren) {
   };
 
   const value = useMemo(() => ({showToast}), [showToast]);
-  const bottom = insets.bottom + TAB_BAR_CONTENT_HEIGHT + 12;
+  const bottom = insets.bottom + TAB_BAR_CONTENT_HEIGHT + RECORD_DOCK_HEIGHT + 12;
 
   return <ToastContext.Provider value={value}>
     {children}

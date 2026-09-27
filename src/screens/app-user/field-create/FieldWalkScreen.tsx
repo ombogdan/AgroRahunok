@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Alert, Text, Vibration, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import KeepAwake from '@sayem314/react-native-keep-awake';
 import MapView, {Marker, Polygon, Polyline} from 'react-native-maps';
 import type {UserLocationChangeEvent} from 'react-native-maps';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -44,7 +45,7 @@ function walkHint(phase: Phase, accuracy: number | null, points: number, lengthM
   }
   if (phase === 'idle') {
     return {
-      text: `Станьте на кут ділянки й натисніть «Почати». Точність ${accuracyText}. Не блокуйте екран під час обходу.`,
+      text: `Станьте на кут ділянки й натисніть «Почати». Точність ${accuracyText}.`,
       tone: 'normal',
     };
   }
@@ -169,6 +170,8 @@ export function FieldWalkScreen({navigation}: Props) {
   const hintStyle = hint.tone === 'warning' ? styles.warning : hint.tone === 'success' ? styles.success : styles.hint;
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    {/* The screen must not sleep mid-walk: a locked phone stops receiving GPS fixes. */}
+    {phase === 'tracking' && <KeepAwake />}
     <View style={styles.top}>
       <FieldFlowHeader title="Обійдіть ділянку" onBack={() => navigation.goBack()} />
       <Text style={styles.area}>

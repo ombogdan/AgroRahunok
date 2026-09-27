@@ -6,6 +6,7 @@ import {RootNavigator} from './src/navigation/RootNavigator';
 import {ToastProvider} from './src/shared/components/ui';
 import {AuthProvider} from './src/shared/core/providers/auth/AuthProvider';
 import {FieldsProvider} from './src/shared/core/fields/FieldsProvider';
+import {RecordsProvider} from './src/shared/core/records/RecordsProvider';
 import {SubscriptionProvider} from './src/shared/core/providers/subscription/SubscriptionProvider';
 import {ThemeProvider, useTheme} from './src/shared/theme';
 
@@ -32,11 +33,13 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <FieldsProvider>
-              <SubscriptionProvider>
-                <ToastProvider>
-                  <AppContent />
-                </ToastProvider>
-              </SubscriptionProvider>
+              <RecordsProvider>
+                <SubscriptionProvider>
+                  <ToastProvider>
+                    <AppContent />
+                  </ToastProvider>
+                </SubscriptionProvider>
+              </RecordsProvider>
             </FieldsProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -11,7 +11,8 @@ import {FieldFlowHeader} from './FieldFlowHeader';
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldMethod'>;
 const createStyles = (theme: AppTheme) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
-  content: {paddingHorizontal: 20, paddingBottom: 40, gap: 18},
+  header: {paddingHorizontal: 20, paddingBottom: 12, backgroundColor: theme.colors.background},
+  content: {paddingHorizontal: 20, paddingTop: 6, paddingBottom: 40, gap: 18},
   heading: {marginTop: 14, marginBottom: 6},
   title: {color: theme.colors.text, fontSize: 34, lineHeight: 41, fontWeight: '700' as const},
   subtitle: {color: theme.colors.textMuted, fontSize: 17, lineHeight: 24, marginTop: 4},
@@ -29,12 +30,14 @@ export function FieldMethodScreen({navigation}: Props) {
   const styles = useThemedStyles(createStyles);
   const {theme} = useTheme();
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-    <ScrollView contentContainerStyle={styles.content}>
+    <View style={styles.header}>
       <FieldFlowHeader onBack={() => navigation.goBack()} />
       <View style={styles.heading}>
-        <Text style={styles.title}>Нова ділянка</Text>
+        <Text style={styles.title} accessibilityRole="header">Нова ділянка</Text>
         <Text style={styles.subtitle}>Як зручніше визначити площу?</Text>
       </View>
+    </View>
+    <ScrollView contentContainerStyle={styles.content}>
       <Pressable accessibilityRole="button" onPress={() => navigation.navigate('FieldMap')} style={styles.tile}>
         <View style={styles.icon}><AppIcon name="draw" color={theme.colors.primary} size={28} /></View>
         <View style={styles.tileBody}>

@@ -9,6 +9,7 @@ export type Field = {
   name: string;
   type: FieldType;
   crop: string | null;
+  variety: string | null;
   documentAreaM2: number | null;
   measuredAreaM2: number | null;
   areaSource: AreaSource;
@@ -141,4 +142,23 @@ export function polygonHasCrossingEdges(points: GeoPoint[]): boolean {
     }
   }
   return false;
+}
+
+// Earlier entries that contain what is typed (any case), in the given order, without the exact value itself.
+// With nothing typed yet it offers the first few, so a crop used before is one tap away.
+export function matchSuggestions(input: string, options: (string | null)[], limit = 5): string[] {
+  const query = input.trim().toLocaleLowerCase('uk');
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const option of options) {
+    const value = option?.trim();
+    if (!value) continue;
+    const key = value.toLocaleLowerCase('uk');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (key === query || (query && !key.includes(query))) continue;
+    result.push(value);
+    if (result.length >= limit) break;
+  }
+  return result;
 }

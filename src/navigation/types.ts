@@ -20,6 +20,7 @@ export type RootStackParamList = {
     | {mode: 'map' | 'walk'; polygon: GeoPoint[]; measuredAreaM2: number}
     | {mode: 'edit'; fieldId: string};
   FieldDetail: {fieldId: string};
+  WorkRecord: {recordId?: string} | undefined;
   Settings: undefined;
   QuickEntry: {kind: EntryKind} | undefined;
   SignIn: undefined;

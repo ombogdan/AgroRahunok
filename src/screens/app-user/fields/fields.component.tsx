@@ -47,14 +47,15 @@ export function FieldsScreen() {
           <View style={styles.row}>
             <View style={styles.rowBody}>
               <Text style={styles.name}>{field.name}</Text>
-              <Text style={styles.muted}>{fieldTypeLabels[field.type]}{field.crop ? ` · ${field.crop}` : ''}</Text>
+              <Text style={styles.muted}>{[fieldTypeLabels[field.type], field.crop, field.variety].filter(Boolean).join(' · ')}</Text>
             </View>
             <Text style={styles.area}>{formatArea(selectedAreaM2(field))}</Text>
             <AppIcon name="chevronRight" color={theme.colors.textMuted} size={24} strokeWidth={2.2} />
           </View>
         </InfoCard>
       </Pressable>)}
-      <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')} />
+      {/* With plots, «+ Додати ділянку» sits in the dock above the tabs. */}
+      {fields.length === 0 && <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')} />}
     </>}
   </Page>;
 }

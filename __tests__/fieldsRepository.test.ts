@@ -1,7 +1,7 @@
 import {deleteField, fetchFields, insertField, updateField} from '../src/shared/core/fields/fieldsRepository';
 
 const mockRow = {
-  id: 'field-1', name: 'Малинник', type: 'berries', crop: 'Малина',
+  id: 'field-1', name: 'Малинник', type: 'berries', crop: 'Малина', variety: 'Полка',
   document_area_m2: 2000, measured_area_m2: null, area_source: 'document',
   polygon: [], created_at: '2026-09-26T10:00:00.000Z',
 };
@@ -38,7 +38,7 @@ jest.mock('../src/shared/core/supabase/client', () => ({
 }));
 
 const expectedField = {
-  id: 'field-1', name: 'Малинник', type: 'berries', crop: 'Малина',
+  id: 'field-1', name: 'Малинник', type: 'berries', crop: 'Малина', variety: 'Полка',
   documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document',
   polygon: [], createdAt: '2026-09-26T10:00:00.000Z',
 };
@@ -50,12 +50,12 @@ it('reads plots from the fields table', async () => {
 
 it('inserts only plot columns and leaves id and owner to the database', async () => {
   const field = await insertField({
-    name: 'Малинник', type: 'berries', crop: 'Малина',
+    name: 'Малинник', type: 'berries', crop: 'Малина', variety: 'Полка',
     documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document', polygon: [],
   });
   expect(field).toEqual(expectedField);
   expect(mockCalls.inserted).toEqual({
-    name: 'Малинник', type: 'berries', crop: 'Малина',
+    name: 'Малинник', type: 'berries', crop: 'Малина', variety: 'Полка',
     document_area_m2: 2000, measured_area_m2: null, area_source: 'document', polygon: [],
   });
 });
@@ -67,12 +67,12 @@ it('deletes a plot by id', async () => {
 
 it('updates a plot by id with the same columns as an insert', async () => {
   await updateField('field-1', {
-    name: 'Малинник', type: 'berries', crop: null,
+    name: 'Малинник', type: 'berries', crop: null, variety: null,
     documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document', polygon: [],
   });
   expect(mockCalls.updatedId).toBe('field-1');
   expect(mockCalls.updated).toEqual({
-    name: 'Малинник', type: 'berries', crop: null,
+    name: 'Малинник', type: 'berries', crop: null, variety: null,
     document_area_m2: 2000, measured_area_m2: null, area_source: 'document', polygon: [],
   });
 });

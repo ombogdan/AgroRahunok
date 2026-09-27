@@ -6,6 +6,7 @@ type FieldRow = {
   name: string;
   type: FieldType;
   crop: string | null;
+  variety: string | null;
   document_area_m2: number | null;
   measured_area_m2: number | null;
   area_source: AreaSource;
@@ -14,7 +15,7 @@ type FieldRow = {
 };
 
 // owner_id is filled in by the database from the signed-in user, and RLS limits every query to it.
-const COLUMNS = 'id, name, type, crop, document_area_m2, measured_area_m2, area_source, polygon, created_at';
+const COLUMNS = 'id, name, type, crop, variety, document_area_m2, measured_area_m2, area_source, polygon, created_at';
 
 function fromRow(row: FieldRow): Field {
   return {
@@ -22,6 +23,7 @@ function fromRow(row: FieldRow): Field {
     name: row.name,
     type: row.type,
     crop: row.crop,
+    variety: row.variety,
     documentAreaM2: row.document_area_m2,
     measuredAreaM2: row.measured_area_m2,
     areaSource: row.area_source,
@@ -48,6 +50,7 @@ function toRow(input: NewField) {
     name: input.name,
     type: input.type,
     crop: input.crop,
+    variety: input.variety,
     document_area_m2: input.documentAreaM2,
     measured_area_m2: input.measuredAreaM2,
     area_source: input.areaSource,

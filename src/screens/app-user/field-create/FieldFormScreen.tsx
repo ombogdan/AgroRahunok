@@ -3,7 +3,7 @@ import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Te
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, useToast} from '../../../shared/components/ui';
+import {AppButton, AutocompleteInput, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import type {AreaSource, AreaUnit, FieldType} from '../../../shared/core/fields/model';
 import {
@@ -12,9 +12,12 @@ import {
   formatArea,
   formatHectares,
   formatSotky,
+  matchSuggestions,
   parseAreaInput,
   rectangleAreaM2,
 } from '../../../shared/core/fields/model';
+import {savePlanting} from '../../../shared/core/fields/plantingsRepository';
+import {seasonFor} from '../../../shared/core/records/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
@@ -23,18 +26,14 @@ import {FieldFlowHeader} from './FieldFlowHeader';
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldForm'>;
 type ManualMethod = 'document' | 'dimensions';
 
-const nameSuggestions: {name: string; type: FieldType}[] = [
-  {name: 'Поле', type: 'field'}, {name: 'Город', type: 'garden'},
-  {name: 'Малинник', type: 'berries'}, {name: 'Сад', type: 'orchard'},
-];
 const types: FieldType[] = ['field', 'garden', 'berries', 'orchard', 'greenhouse'];
-const crops = ['Пшениця озима', 'Соняшник', 'Кукурудза', 'Картопля', 'Малина'];
 // The iOS decimal pad has no return key, so number fields get a «Готово» bar above it.
 const NUMBER_KEYBOARD_BAR = 'field-number-keyboard-bar';
 
 const createStyles = (theme: AppTheme) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
-  content: {paddingHorizontal: 20, paddingBottom: 28, gap: 24},
+  header: {paddingHorizontal: 20, paddingBottom: 12, backgroundColor: theme.colors.background},
+  content: {paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28, gap: 24},
   title: {color: theme.colors.text, fontSize: 34, fontWeight: '700' as const, lineHeight: 41},
   section: {gap: 10},
   label: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
@@ -95,6 +94,9 @@ export function FieldFormScreen({route, navigation}: Props) {
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<FieldType>(editing?.type ?? 'field');
   const [crop, setCrop] = useState(editing?.crop ?? '');
+  const [variety, setVariety] = useState(editing?.variety ?? '');
+  // The crop belongs to a harvest year; autumn-sown winter crops default to the next one.
+  const [seasonOverride, setSeasonOverride] = useState<number | null>(null);
   const [unit, setUnit] = useState<AreaUnit>(initialUnit);
   const [areaInput, setAreaInput] = useState(initialDocM2 === null ? '' : areaInputValue(initialDocM2, initialUnit));
   const [manualMethod, setManualMethod] = useState<ManualMethod>('document');
@@ -104,6 +106,14 @@ export function FieldFormScreen({route, navigation}: Props) {
     editing?.areaSource ?? (presetMeasuredM2 !== null ? 'measured' : 'document'));
   const [saving, setSaving] = useState(false);
 
+  const now = new Date();
+  const season = seasonOverride ?? seasonFor(now, crop.trim() || null);
+  // Suggestions come from what was typed on other plots, newest first.
+  const newestFirst = [...fields].reverse();
+  const cropSuggestions = matchSuggestions(crop, newestFirst.map(item => item.crop));
+  const varietySuggestions = crop.trim() ? matchSuggestions(variety, newestFirst
+    .filter(item => item.crop?.trim().toLocaleLowerCase('uk') === crop.trim().toLocaleLowerCase('uk'))
+    .map(item => item.variety)) : [];
   const usesDimensions = isManual && manualMethod === 'dimensions';
   const documentAreaM2 = usesDimensions ? null : parseAreaInput(areaInput, unit);
   const dimensionsAreaM2 = rectangleAreaM2(lengthInput, widthInput);
@@ -117,18 +127,27 @@ export function FieldFormScreen({route, navigation}: Props) {
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
+    const cropName = crop.trim() || null;
     const input = {
-      name: name.trim(), type, crop: crop.trim() || null,
+      name: name.trim(), type, crop: cropName, variety: cropName ? variety.trim() || null : null,
       documentAreaM2, measuredAreaM2, areaSource: effectiveSource, polygon,
+    };
+    // Also remember what grows here in this season; the plot itself is already saved if this fails.
+    const rememberPlanting = (fieldId: string) => {
+      if (!cropName) return;
+      savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0})
+        .catch(error => logSupabaseError('Не вдалося зберегти культуру сезону', error));
     };
     try {
       if (editing) {
         await updateField(editing.id, input);
+        rememberPlanting(editing.id);
         navigation.goBack();
         showToast({text: 'Зміни збережено'});
         return;
       }
       const field = await addField(input);
+      rememberPlanting(field.id);
       navigation.reset({index: 0, routes: [{name: 'Tabs', params: {screen: 'Home'}}]});
       showToast({
         text: `Ділянку «${field.name}» збережено`,
@@ -154,18 +173,16 @@ export function FieldFormScreen({route, navigation}: Props) {
   };
 
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+    <View style={styles.header}>
+      <FieldFlowHeader backLabel={backLabel} onBack={() => navigation.goBack()} />
+      <Text style={styles.title} accessibilityRole="header">{editing ? 'Змінити ділянку' : 'Про ділянку'}</Text>
+    </View>
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
       automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
-      <FieldFlowHeader backLabel={backLabel} onBack={() => navigation.goBack()} />
-      <Text style={styles.title}>{editing ? 'Змінити ділянку' : 'Про ділянку'}</Text>
       <View style={styles.section}>
         <Text style={styles.label}>Назва</Text>
         <TextInput value={name} onChangeText={setName} placeholder="Наприклад, Малинник"
           placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
-        <View style={styles.chips}>
-          {nameSuggestions.map(suggestion => <Chip key={suggestion.name} label={suggestion.name}
-            onPress={() => { setName(suggestion.name); setType(suggestion.type); }} />)}
-        </View>
       </View>
       <View style={styles.section}>
         <Text style={styles.label}>Тип</Text>
@@ -175,13 +192,20 @@ export function FieldFormScreen({route, navigation}: Props) {
         </View>
       </View>
       <View style={styles.section}>
-        <Text style={styles.label}>Культура цього сезону · необов’язково</Text>
-        <TextInput value={crop} onChangeText={setCrop} placeholder="Вкажіть культуру"
-          placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
-        <View style={styles.chips}>
-          {crops.map(value => <Chip key={value} label={value} selected={crop.trim() === value}
-            onPress={() => setCrop(value)} />)}
-        </View>
+        <Text style={styles.label}>Культура сезону {season} · необов’язково</Text>
+        <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
+          placeholder="Наприклад, Пшениця озима" accessibilityLabel={`Культура сезону ${season}`} />
+        {crop.trim() !== '' && <>
+          <Text style={styles.label}>Сорт · необов’язково</Text>
+          <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
+            placeholder="Наприклад, Богдана" accessibilityLabel="Сорт" />
+          <Text style={styles.label}>Рік урожаю</Text>
+          <View style={styles.chips}>
+            {[now.getFullYear(), now.getFullYear() + 1].map(year => <Chip key={year} label={String(year)}
+              selected={season === year} onPress={() => setSeasonOverride(year)} />)}
+          </View>
+          <Text style={styles.note}>Осінній посів озимих — це врожай наступного року.</Text>
+        </>}
       </View>
       {isManual && <View style={styles.section}>
         <Text style={styles.label}>Як знаєте площу?</Text>

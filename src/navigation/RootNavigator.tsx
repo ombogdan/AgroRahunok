@@ -2,9 +2,11 @@ import React from 'react';
 import {ActivityIndicator, View} from 'react-native';
 import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {FieldDetailScreen, FieldsScreen, HomeScreen, JournalScreen, MoneyScreen, SettingsScreen} from '../screens/app-user';
 import {FieldFormScreen, FieldMapScreen, FieldMethodScreen, FieldWalkScreen} from '../screens/app-user/field-create';
+import {TabBarWithDock, WorkRecordScreen} from '../screens/app-user/records';
 import {SignInScreen} from '../screens/app-auth';
 import {AppIcon} from '../shared/components/ui';
 import type {AppIconName} from '../shared/components/ui/AppIcon';
@@ -39,10 +41,13 @@ const createLoadingStyles = (theme: AppTheme) => ({
   },
 });
 
+const renderTabBar = (props: BottomTabBarProps) => <TabBarWithDock {...props} />;
+
 function MainTabs() {
   const {theme} = useTheme();
   return (
     <Tab.Navigator
+      tabBar={renderTabBar}
       screenOptions={({route}) => ({
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
@@ -99,6 +104,7 @@ export function RootNavigator() {
             <Stack.Screen name="FieldWalk" component={FieldWalkScreen} />
             <Stack.Screen name="FieldForm" component={FieldFormScreen} />
             <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+            <Stack.Screen name="WorkRecord" component={WorkRecordScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
           </>
         ) : (
