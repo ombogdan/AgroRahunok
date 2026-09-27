@@ -7,11 +7,17 @@ export type RecordDetails = {
   costMode?: CostMode;
   ratePerHaKopecks?: number;
   performer?: Performer;
+  unitName?: string;
+  kilogramsPerUnit?: number;
+  enteredQuantity?: number;
+  pricePerUnitKopecks?: number;
+  buyer?: string;
+  category?: string;
 };
 
 export type FarmRecord = {
   id: string;
-  fieldId: string;
+  fieldId: string | null;
   plantingId: string | null;
   kind: RecordKind;
   workType: WorkType | null;
@@ -107,4 +113,16 @@ export function formatMoney(kopecks: number): string {
 export function workCostKopecks(mode: CostMode, valueKopecks: number | null, areaM2: number): number | null {
   if (valueKopecks === null) return null;
   return mode === 'sum' ? valueKopecks : Math.round((valueKopecks * areaM2) / 10000);
+}
+
+export function kilogramsFor(quantity: number, kilogramsPerUnit: number): number {
+  return Math.round(quantity * kilogramsPerUnit * 1000) / 1000;
+}
+
+export function saleAmountKopecks(quantity: number, pricePerUnitKopecks: number): number {
+  return Math.round(quantity * pricePerUnitKopecks);
+}
+
+export function formatKilograms(kg: number): string {
+  return `${new Intl.NumberFormat('uk-UA', {maximumFractionDigits: 3}).format(kg)}${NBSP}кг`;
 }

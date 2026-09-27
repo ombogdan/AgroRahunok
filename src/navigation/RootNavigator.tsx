@@ -6,11 +6,12 @@ import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {FieldDetailScreen, FieldsScreen, HomeScreen, JournalScreen, MoneyScreen, SettingsScreen} from '../screens/app-user';
 import {FieldFormScreen, FieldMapScreen, FieldMethodScreen, FieldWalkScreen} from '../screens/app-user/field-create';
-import {TabBarWithDock, WorkRecordScreen} from '../screens/app-user/records';
+import {OtherRecordScreen, QuantityRecordScreen, TabBarWithDock, WorkRecordScreen} from '../screens/app-user/records';
 import {SignInScreen} from '../screens/app-auth';
 import {AppIcon} from '../shared/components/ui';
 import type {AppIconName} from '../shared/components/ui/AppIcon';
 import {useAuth} from '../shared/core/providers/auth/AuthProvider';
+import {SeasonProvider} from '../shared/core/records/SeasonProvider';
 import {useTheme} from '../shared/theme';
 import {useThemedStyles} from '../shared/theme';
 import type {AppTheme} from '../shared/theme/theme';
@@ -83,34 +84,38 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer
-      theme={{
-        ...DefaultTheme,
-        colors: {
-          ...DefaultTheme.colors,
-          background: theme.colors.background,
-          card: theme.colors.surface,
-          text: theme.colors.text,
-          border: theme.colors.border,
-          primary: theme.colors.primary,
-        },
-      }}>
-      <Stack.Navigator screenOptions={{headerShown: false}}>
-        {session.kind === 'authenticated' ? (
-          <>
-            <Stack.Screen name="Tabs" component={MainTabs} />
-            <Stack.Screen name="FieldMethod" component={FieldMethodScreen} />
-            <Stack.Screen name="FieldMap" component={FieldMapScreen} />
-            <Stack.Screen name="FieldWalk" component={FieldWalkScreen} />
-            <Stack.Screen name="FieldForm" component={FieldFormScreen} />
-            <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
-            <Stack.Screen name="WorkRecord" component={WorkRecordScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-          </>
-        ) : (
-          <Stack.Screen name="SignIn" component={SignInScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SeasonProvider key={session.kind === 'authenticated' ? session.userId : 'guest'}>
+      <NavigationContainer
+        theme={{
+          ...DefaultTheme,
+          colors: {
+            ...DefaultTheme.colors,
+            background: theme.colors.background,
+            card: theme.colors.surface,
+            text: theme.colors.text,
+            border: theme.colors.border,
+            primary: theme.colors.primary,
+          },
+        }}>
+        <Stack.Navigator screenOptions={{headerShown: false}}>
+          {session.kind === 'authenticated' ? (
+            <>
+              <Stack.Screen name="Tabs" component={MainTabs} />
+              <Stack.Screen name="FieldMethod" component={FieldMethodScreen} />
+              <Stack.Screen name="FieldMap" component={FieldMapScreen} />
+              <Stack.Screen name="FieldWalk" component={FieldWalkScreen} />
+              <Stack.Screen name="FieldForm" component={FieldFormScreen} />
+              <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+              <Stack.Screen name="WorkRecord" component={WorkRecordScreen} />
+              <Stack.Screen name="QuantityRecord" component={QuantityRecordScreen} />
+              <Stack.Screen name="OtherRecord" component={OtherRecordScreen} />
+              <Stack.Screen name="Settings" component={SettingsScreen} />
+            </>
+          ) : (
+            <Stack.Screen name="SignIn" component={SignInScreen} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SeasonProvider>
   );
 }

@@ -53,7 +53,8 @@ export function Page({title, subtitle, withHeader = false, onBack, children}: Pr
         <Text style={styles.title} accessibilityRole="header">{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         {children}
       </ScrollView>
     </SafeAreaView>

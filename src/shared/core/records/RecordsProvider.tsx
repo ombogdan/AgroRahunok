@@ -59,7 +59,7 @@ export function RecordsProvider({children}: PropsWithChildren) {
   const visibleRecords = useMemo(() => {
     if (ownerId !== userId) return [];
     const fieldIds = new Set(fields.map(field => field.id));
-    return records.filter(record => fieldIds.has(record.fieldId));
+    return records.filter(record => record.fieldId === null || fieldIds.has(record.fieldId));
   }, [records, fields, ownerId, userId]);
   const visibleLoadState: LoadState = ownerId === userId ? loadState : 'loading';
 

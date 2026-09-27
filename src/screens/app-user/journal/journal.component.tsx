@@ -77,8 +77,12 @@ export function JournalScreen() {
         <Text style={styles.day}>{dateLabel(group.day)}</Text>
         <View style={[styles.card, !isDark && styles.cardShadow]}>
           {group.items.map((record, index) => <RecordRow key={record.id} record={record} first={index === 0}
-            field={fieldById.get(record.fieldId)}
-            onPress={record.kind === 'work' ? () => navigation.navigate('WorkRecord', {recordId: record.id}) : undefined} />)}
+            field={record.fieldId === null ? undefined : fieldById.get(record.fieldId)}
+            onPress={record.kind === 'work' ? () => navigation.navigate('WorkRecord', {recordId: record.id})
+              : record.kind === 'harvest' || record.kind === 'sale'
+                ? () => navigation.navigate('QuantityRecord', {kind: record.kind as 'harvest' | 'sale', recordId: record.id})
+                : record.kind === 'other' ? () => navigation.navigate('OtherRecord', {recordId: record.id})
+                  : undefined} />)}
         </View>
       </View>)}
     </>}

@@ -4,7 +4,7 @@ import {AppIcon} from '../../../shared/components/ui';
 import type {AppIconName} from '../../../shared/components/ui/AppIcon';
 import type {Field} from '../../../shared/core/fields/model';
 import type {FarmRecord} from '../../../shared/core/records/model';
-import {formatMoney, workTypeLabels} from '../../../shared/core/records/model';
+import {formatKilograms, formatMoney, workTypeLabels} from '../../../shared/core/records/model';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
 
@@ -13,6 +13,7 @@ const kindIcons = {harvest: 'basket', sale: 'cash', other: 'plusMinus'} as const
 
 export function recordTitle(record: FarmRecord): string {
   if (record.kind === 'work') return record.workType ? workTypeLabels[record.workType] : 'Робота';
+  if (record.kind === 'other') return record.details.category || kindTitles.other;
   return kindTitles[record.kind];
 }
 
@@ -36,6 +37,7 @@ const createStyles = (theme: AppTheme) => ({
   detail: {color: theme.colors.textMuted, fontSize: 15, lineHeight: 20},
   expense: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
   income: {color: theme.colors.primary, fontSize: 17, fontWeight: '600' as const},
+  quantity: {color: theme.colors.text, fontSize: 17, fontWeight: '600' as const},
 });
 
 export function RecordRow({record, field, first, detail, onPress}: {
@@ -47,7 +49,13 @@ export function RecordRow({record, field, first, detail, onPress}: {
 }) {
   const styles = useThemedStyles(createStyles);
   const {theme} = useTheme();
-  const subtitle = detail ?? [field?.name, field?.crop].filter(Boolean).join(' · ');
+  const quantityDetail = record.details.enteredQuantity && record.details.unitName
+    ? `${new Intl.NumberFormat('uk-UA', {maximumFractionDigits: 3}).format(record.details.enteredQuantity)} × ${record.details.unitName}`
+    : null;
+  const location = detail ?? (record.fieldId === null ? 'Усе господарство'
+    : [field?.name, field?.crop].filter(Boolean).join(' · '));
+  const subtitle = [location, quantityDetail, record.kind === 'sale' ? record.details.buyer : null]
+    .filter(Boolean).join(' · ');
   return <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress}
     style={[styles.row, !first && styles.divider]}>
     <View style={styles.circle}><AppIcon name={recordIcon(record)} color={theme.colors.primary} size={24} /></View>
@@ -57,5 +65,7 @@ export function RecordRow({record, field, first, detail, onPress}: {
     </View>
     {record.amountKopecks !== null && record.amountKopecks !== 0 &&
       <Text style={record.amountKopecks < 0 ? styles.expense : styles.income}>{signedMoney(record.amountKopecks)}</Text>}
+    {record.kind === 'harvest' && record.quantityKg !== null &&
+      <Text style={styles.quantity}>{formatKilograms(record.quantityKg)}</Text>}
   </Pressable>;
 }

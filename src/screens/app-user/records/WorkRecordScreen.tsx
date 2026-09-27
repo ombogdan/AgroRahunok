@@ -116,6 +116,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
     : '';
 
   const [step, setStep] = useState<Step>(editing ? 3 : singleField ? 2 : 1);
+  const [showFieldStep, setShowFieldStep] = useState(!singleField);
   const [fieldId, setFieldId] = useState<string | null>(editing?.fieldId ?? singleField?.id ?? null);
   const [workType, setWorkType] = useState<WorkType | null>(editing?.workType ?? null);
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
@@ -133,12 +134,18 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const occurredDate = fromLocalIsoDate(occurredOn ?? today);
   const defaultSeason = seasonFor(occurredDate, field?.crop ?? null);
   const season = seasonOverride ?? defaultSeason;
+  const seasonOptions = [...new Set([
+    occurredDate.getFullYear(), occurredDate.getFullYear() + 1, season,
+    ...records.map(record => record.season),
+  ])].filter(year => year >= 2000 && year <= 2100).sort((a, b) => b - a);
   const areaM2 = field ? selectedAreaM2(field) : 0;
   const valueKopecks = parseMoneyInput(costInput);
   const costInvalid = costInput.trim() !== '' && valueKopecks === null;
   const costKopecks = workCostKopecks(costMode, valueKopecks, areaM2);
   const canSave = !!field && !!workType && !!occurredOn && !costInvalid && !saving;
-  const firstStep: Step = singleField && !editing ? 2 : 1;
+  const firstStep: Step = showFieldStep ? 1 : 2;
+  const visibleStep = showFieldStep ? step : step - 1;
+  const visibleStepCount = showFieldStep ? 3 : 2;
 
   const goBack = () => {
     if (editing && step < 3) setStep(3);
@@ -204,14 +211,15 @@ export function WorkRecordScreen({route, navigation}: Props) {
     ]);
   };
 
-  const headerTitle = editing ? 'Змінити запис' : `Робота · крок ${step} з 3`;
+  const headerTitle = editing ? 'Змінити запис' : `Робота · крок ${visibleStep} з ${visibleStepCount}`;
 
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
     <View style={styles.header}>
       <FieldFlowHeader title={headerTitle} onBack={goBack}
         rightLabel="Скасувати" onRight={() => navigation.goBack()} />
       {!editing && <View style={styles.progress}>
-        {[1, 2, 3].map(index => <View key={index} style={[styles.progressBar, index <= step && styles.progressDone]} />)}
+        {Array.from({length: visibleStepCount}, (_, index) => <View key={index}
+          style={[styles.progressBar, index < visibleStep && styles.progressDone]} />)}
       </View>}
       <Text style={styles.title} accessibilityRole="header">{stepTitles[step]}</Text>
     </View>
@@ -243,7 +251,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
       {step === 3 && field && workType && <>
         <View style={styles.pills}>
           <Pressable accessibilityRole="button" accessibilityHint="Змінити ділянку" style={styles.pill}
-            onPress={() => setStep(1)}><Text style={styles.pillText}>{field.name}</Text></Pressable>
+            onPress={() => { setShowFieldStep(true); setStep(1); }}><Text style={styles.pillText}>{field.name}</Text></Pressable>
           <Pressable accessibilityRole="button" accessibilityHint="Змінити роботу" style={styles.pill}
             onPress={() => setStep(2)}><Text style={styles.pillText}>{workTypeLabels[workType]}</Text></Pressable>
         </View>
@@ -251,19 +259,34 @@ export function WorkRecordScreen({route, navigation}: Props) {
         <View style={styles.section}>
           <Text style={styles.label}>Коли</Text>
           <View style={styles.chips}>
-            <Chip label="Сьогодні" selected={dateChoice === 'today'} onPress={() => setDateChoice('today')} />
-            <Chip label="Вчора" selected={dateChoice === 'yesterday'} onPress={() => setDateChoice('yesterday')} />
+            <Chip label="Сьогодні" selected={dateChoice === 'today'} onPress={() => {
+              setDateChoice('today'); setSeasonOverride(null);
+            }} />
+            <Chip label="Вчора" selected={dateChoice === 'yesterday'} onPress={() => {
+              setDateChoice('yesterday'); setSeasonOverride(null);
+            }} />
             <Chip label="Інша дата" selected={dateChoice === 'other'} onPress={() => {
-              setDateChoice('other');
+              setDateChoice('other'); setSeasonOverride(null);
               if (!otherDate) setOtherDate(formatDateInput(today));
             }} />
           </View>
           {dateChoice === 'other' && <>
-            <TextInput value={otherDate} onChangeText={setOtherDate} placeholder="дд.мм.рррр"
+            <TextInput value={otherDate} onChangeText={value => {
+              setOtherDate(value); setSeasonOverride(null);
+            }} placeholder="дд.мм.рррр"
               placeholderTextColor={theme.colors.textMuted} keyboardType="numbers-and-punctuation"
               accessibilityLabel="Дата роботи, день, місяць і рік через крапку" maxLength={10} style={styles.input} />
             {!occurredOn && <Text style={styles.error}>Введіть дату як 26.09.2026.</Text>}
           </>}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.label}>Сезон (рік урожаю)</Text>
+          <View style={styles.chips}>
+            {seasonOptions.map(year => <Chip key={year} label={String(year)}
+              selected={season === year} onPress={() => setSeasonOverride(year)} />)}
+          </View>
+          <Text style={styles.note}>Робота потрапить до сезону {season}. Осінні роботи під озимі належать до врожаю наступного року.</Text>
         </View>
 
         <View style={styles.section}>
@@ -310,14 +333,6 @@ export function WorkRecordScreen({route, navigation}: Props) {
             <TextInput value={note} onChangeText={setNote} multiline maxLength={500}
               placeholder="Наприклад, насіння 450 кг" placeholderTextColor={theme.colors.textMuted}
               style={[styles.input, styles.noteInput]} />
-          </View>
-          <View style={styles.section}>
-            <Text style={styles.label}>Сезон (рік урожаю)</Text>
-            <View style={styles.chips}>
-              {[occurredDate.getFullYear(), occurredDate.getFullYear() + 1].map(year => <Chip key={year}
-                label={String(year)} selected={season === year} onPress={() => setSeasonOverride(year)} />)}
-            </View>
-            <Text style={styles.note}>Осінні роботи під озимі належать до врожаю наступного року.</Text>
           </View>
         </>}
 

@@ -29,7 +29,7 @@ export function SettingsScreen({navigation}: Props) {
       <Text style={common.label}>Акаунт Google</Text>
       <Text style={common.sectionTitle}>{account?.displayName || 'Ваш акаунт'}</Text>
       {account?.email ? <Text style={common.muted}>{account.email}</Text> : null}
-      <AppButton label="Вийти з акаунта" variant="secondary" onPress={confirmSignOut} />
+      <AppButton label="Вийти з акаунта" variant="danger" onPress={confirmSignOut} />
     </InfoCard>
   </Page>;
 }

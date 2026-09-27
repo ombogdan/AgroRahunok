@@ -3,7 +3,7 @@ import {getSupabaseClient} from '../supabase/client';
 
 type RecordRow = {
   id: string;
-  field_id: string;
+  field_id: string | null;
   planting_id: string | null;
   kind: RecordKind;
   work_type: WorkType | null;

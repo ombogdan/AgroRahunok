@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, {Circle, Line, Path, Polyline, Rect} from 'react-native-svg';
+import Svg, {Circle, Line, Path, Polygon, Polyline, Rect} from 'react-native-svg';
 
 // Single-path line icons from the design handoff (docs/design-handoff/design/AgroApp.dc.html, object `I`).
 const PATHS = {
@@ -30,7 +30,7 @@ const PATHS = {
   inshe: 'M5 12h.01M12 12h.01M19 12h.01',
 } as const;
 
-export type AppIconName = 'home' | 'plots' | 'journal' | 'money' | 'plus' | 'map' | keyof typeof PATHS;
+export type AppIconName = 'home' | 'plots' | 'journal' | 'money' | 'plus' | 'map' | 'settings' | keyof typeof PATHS;
 
 export function AppIcon({
   name,
@@ -70,6 +70,10 @@ export function AppIcon({
       {name === 'plus' && <>
         <Line x1="12" y1="4" x2="12" y2="20" {...common} />
         <Line x1="4" y1="12" x2="20" y2="12" {...common} />
+      </>}
+      {name === 'settings' && <>
+        <Polygon points="10,2 14,2 14.7,4.2 16.3,4.9 18.4,3.8 20.2,5.6 19.1,7.7 19.8,9.3 22,10 22,14 19.8,14.7 19.1,16.3 20.2,18.4 18.4,20.2 16.3,19.1 14.7,19.8 14,22 10,22 9.3,19.8 7.7,19.1 5.6,20.2 3.8,18.4 4.9,16.3 4.2,14.7 2,14 2,10 4.2,9.3 4.9,7.7 3.8,5.6 5.6,3.8 7.7,4.9 9.3,4.2" {...common} />
+        <Circle cx="12" cy="12" r="3" {...common} />
       </>}
       {name in PATHS && <Path d={PATHS[name as keyof typeof PATHS]} {...common} />}
     </Svg>

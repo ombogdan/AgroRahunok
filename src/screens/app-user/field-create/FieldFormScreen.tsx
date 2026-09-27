@@ -132,25 +132,30 @@ export function FieldFormScreen({route, navigation}: Props) {
       name: name.trim(), type, crop: cropName, variety: cropName ? variety.trim() || null : null,
       documentAreaM2, measuredAreaM2, areaSource: effectiveSource, polygon,
     };
-    // Also remember what grows here in this season; the plot itself is already saved if this fails.
-    const rememberPlanting = (fieldId: string) => {
-      if (!cropName) return;
-      savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0})
-        .catch(error => logSupabaseError('Не вдалося зберегти культуру сезону', error));
+    // Finish saving the planting before returning home, so its season is available there immediately.
+    const rememberPlanting = async (fieldId: string): Promise<boolean> => {
+      if (!cropName) return true;
+      try {
+        await savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0});
+        return true;
+      } catch (error) {
+        logSupabaseError('Не вдалося зберегти культуру сезону', error);
+        return false;
+      }
     };
     try {
       if (editing) {
         await updateField(editing.id, input);
-        rememberPlanting(editing.id);
+        const plantingSaved = await rememberPlanting(editing.id);
         navigation.goBack();
-        showToast({text: 'Зміни збережено'});
+        showToast({text: plantingSaved ? 'Зміни збережено' : 'Ділянку збережено, але культуру сезону — ні'});
         return;
       }
       const field = await addField(input);
-      rememberPlanting(field.id);
+      const plantingSaved = await rememberPlanting(field.id);
       navigation.reset({index: 0, routes: [{name: 'Tabs', params: {screen: 'Home'}}]});
       showToast({
-        text: `Ділянку «${field.name}» збережено`,
+        text: plantingSaved ? `Ділянку «${field.name}» збережено` : 'Ділянку збережено, але культуру сезону — ні',
         actionLabel: 'Скасувати',
         onAction: () => {
           removeField(field.id).catch(error => {

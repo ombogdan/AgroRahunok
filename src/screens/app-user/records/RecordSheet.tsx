@@ -9,9 +9,9 @@ import type {AppTheme} from '../../../shared/theme/theme';
 
 const options: {kind: RecordKind; title: string; detail: string; icon: AppIconName; ready: boolean}[] = [
   {kind: 'work', title: 'Робота', detail: 'Оранка, посів, сапання…', icon: 'spade', ready: true},
-  {kind: 'harvest', title: 'Збір урожаю', detail: 'Незабаром', icon: 'basket', ready: false},
-  {kind: 'sale', title: 'Продаж', detail: 'Незабаром', icon: 'cash', ready: false},
-  {kind: 'other', title: 'Інша витрата чи дохід', detail: 'Незабаром', icon: 'plusMinus', ready: false},
+  {kind: 'harvest', title: 'Збір урожаю', detail: 'Кг, центнери, відра…', icon: 'basket', ready: true},
+  {kind: 'sale', title: 'Продаж', detail: 'Кількість і ціна', icon: 'cash', ready: true},
+  {kind: 'other', title: 'Інша витрата чи дохід', detail: 'Податок, тара, ремонт…', icon: 'plusMinus', ready: true},
 ];
 
 const createStyles = (theme: AppTheme) => ({
@@ -30,7 +30,7 @@ const createStyles = (theme: AppTheme) => ({
   optionDetail: {color: theme.colors.textMuted, fontSize: 15},
 });
 
-// «Що записати?» bottom sheet from the design; only work records exist so far.
+// «Що записати?» bottom sheet from the design.
 export function RecordSheet({visible, onClose, onChoose}: {
   visible: boolean;
   onClose: () => void;

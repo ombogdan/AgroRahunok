@@ -21,6 +21,8 @@ export type RootStackParamList = {
     | {mode: 'edit'; fieldId: string};
   FieldDetail: {fieldId: string};
   WorkRecord: {recordId?: string} | undefined;
+  QuantityRecord: {kind: 'harvest' | 'sale'; recordId?: string};
+  OtherRecord: {recordId?: string} | undefined;
   Settings: undefined;
   QuickEntry: {kind: EntryKind} | undefined;
   SignIn: undefined;

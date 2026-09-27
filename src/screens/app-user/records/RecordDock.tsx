@@ -31,6 +31,8 @@ export function TabBarWithDock(props: BottomTabBarProps) {
     <RecordSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onChoose={kind => {
       setSheetOpen(false);
       if (kind === 'work') navigation.navigate('WorkRecord');
+      else if (kind === 'harvest' || kind === 'sale') navigation.navigate('QuantityRecord', {kind});
+      else if (kind === 'other') navigation.navigate('OtherRecord');
     }} />
   </>;
 }
