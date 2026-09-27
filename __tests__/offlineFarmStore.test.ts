@@ -6,7 +6,7 @@ const fieldInput: NewField = {
   name: 'Малинник', type: 'berries', crop: 'Малина', variety: null,
   documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document', polygon: [],
 };
-const empty = (): FarmData => ({fields: [], records: [], plantings: [], units: []});
+const empty = (): FarmData => ({fields: [], records: [], plantings: [], units: [], rows: []});
 
 function fixture() {
   const disk = new Map<string, string>();

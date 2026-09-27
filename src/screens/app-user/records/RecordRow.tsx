@@ -53,8 +53,11 @@ export function RecordRow({record, field, first, detail, onPress}: {
     ? `${new Intl.NumberFormat('uk-UA', {maximumFractionDigits: 3}).format(record.details.enteredQuantity)} × ${record.details.unitName}`
     : null;
   const location = detail ?? (record.fieldId === null ? 'Усе господарство'
-    : [field?.name, field?.crop].filter(Boolean).join(' · '));
-  const subtitle = [location, quantityDetail, record.kind === 'sale' ? record.details.buyer : null]
+    : [field?.name, record.details.varietySnapshot ? null : field?.crop].filter(Boolean).join(' · '));
+  const rowDetail = record.details.varietySnapshot
+    ? `${record.details.varietySnapshot}${record.details.rowNumbersSnapshot?.length
+      ? ` · ряди ${record.details.rowNumbersSnapshot.join(', ')}` : ''}` : null;
+  const subtitle = [location, rowDetail, quantityDetail, record.kind === 'sale' ? record.details.buyer : null]
     .filter(Boolean).join(' · ');
   return <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress}
     style={[styles.row, !first && styles.divider]}>

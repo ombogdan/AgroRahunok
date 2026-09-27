@@ -16,6 +16,7 @@ import {
 import type {NewRecord} from '../../../shared/core/records/model';
 import type {QuantityUnit} from '../../../shared/core/records/quantityUnitsRepository';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
+import {rowNumbersLabel, rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
@@ -101,6 +102,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
     editing?.details.pricePerUnitKopecks ? editing.details.pricePerUnitKopecks / 100 : undefined));
   const [buyer, setBuyer] = useState(editing?.details.buyer ?? previousRecord?.details.buyer ?? '');
   const [note, setNote] = useState(editing?.note ?? '');
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
   const customUnits = data.units;
   const [addingUnit, setAddingUnit] = useState(false);
   const [newUnitName, setNewUnitName] = useState('');
@@ -122,6 +124,11 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const dateYear = fromLocalIsoDate(occurredOn ?? today).getFullYear();
   // A harvest or sale belongs to the harvest year; sales of stored crops can be reassigned manually.
   const season = seasonOverride ?? dateYear;
+  const seasonRows = field ? rowsForSeason(data.rows, field.id, season) : [];
+  const rowGroups = varietyGroups(seasonRows);
+  const selectedRows = seasonRows.filter(row => selectedRowIds.includes(row.id));
+  const selectedGroups = varietyGroups(selectedRows);
+  const selectedVariety = selectedGroups.length === 1 ? selectedGroups[0].variety : null;
   const seasonOptions = [...new Set([dateYear, dateYear + 1, season, ...records.map(item => item.season)])]
     .filter(year => year >= 2000 && year <= 2100).sort((a, b) => b - a);
   const quantity = parsePositiveNumber(quantityInput);
@@ -164,6 +171,11 @@ export function QuantityRecordScreen({route, navigation}: Props) {
         unitName: unit.name,
         kilogramsPerUnit: unit.kilogramsPerUnit,
         enteredQuantity: quantity,
+        ...(selectedVariety ? {
+          rowPlantingIds: selectedRows.map(row => row.id),
+          varietySnapshot: selectedVariety,
+          rowNumbersSnapshot: selectedRows.map(row => row.rowNumber).sort((a, b) => a - b),
+        } : {}),
         ...(isSale ? {pricePerUnitKopecks: priceKopecks ?? undefined, buyer: buyer.trim() || undefined} : {}),
       },
     };
@@ -217,6 +229,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
           {fields.map(item => <Chip key={item.id} label={item.name} selected={fieldId === item.id}
             onPress={() => {
               setFieldId(item.id);
+              setSelectedRowIds([]);
               if (!editing) {
                 const previous = records.find(record => record.kind === kind && record.fieldId === item.id);
                 setUnitName(previous?.details.unitName ?? 'кг');
@@ -226,6 +239,26 @@ export function QuantityRecordScreen({route, navigation}: Props) {
         </View>
       </View>}
       {field && <Text style={styles.note}>{field.name} · {formatArea(selectedAreaM2(field))}</Text>}
+
+      {rowGroups.length > 0 && <View style={styles.section}>
+        <Text style={styles.label}>Сорт і ряди · необов’язково</Text>
+        <Text style={styles.note}>Можна вказати весь сорт або конкретні ряди. Для змішаного збору залиште без уточнення.</Text>
+        <View style={styles.chips}>
+          <Chip label="Без уточнення" selected={selectedRows.length === 0}
+            onPress={() => setSelectedRowIds([])} />
+          {rowGroups.map(group => <Chip key={group.variety}
+            label={`${group.variety} · ряди ${rowNumbersLabel(group.rows)}`}
+            selected={selectedRows.length === group.rows.length &&
+              group.rows.every(row => selectedRowIds.includes(row.id))}
+            onPress={() => setSelectedRowIds(group.rows.map(row => row.id))} />)}
+        </View>
+        {selectedVariety && <View style={styles.chips}>
+          {rowGroups.find(group => group.variety === selectedVariety)?.rows.map(row =>
+            <Chip key={row.id} label={`Ряд ${row.rowNumber}`} selected={selectedRowIds.includes(row.id)}
+              onPress={() => setSelectedRowIds(current => current.includes(row.id)
+                ? current.filter(id => id !== row.id) : [...current, row.id])} />)}
+        </View>}
+      </View>}
 
       <View style={styles.section}>
         <Text style={styles.label}>Скільки {isSale ? 'продали' : 'зібрали'}</Text>

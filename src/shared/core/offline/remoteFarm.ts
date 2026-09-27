@@ -2,6 +2,7 @@ import {fetchFields} from '../fields/fieldsRepository';
 import {fetchPlantings} from '../fields/plantingsRepository';
 import {fetchRecords} from '../records/recordsRepository';
 import {fetchQuantityUnits} from '../records/quantityUnitsRepository';
+import {fetchRowPlantings} from '../rows/rowsRepository';
 import {getSupabaseClient} from '../supabase/client';
 import type {Change, FarmData, Remote} from './farmStore';
 
@@ -54,6 +55,21 @@ async function push(change: Change): Promise<void> {
     if (error) throw error;
     return;
   }
+  if (change.table === 'plot_rows') {
+    if (change.action === 'delete') {
+      const {error} = await supabase.from('plot_rows').delete().eq('id', change.id);
+      if (error) throw error;
+      return;
+    }
+    const row = change.value;
+    const {error} = await supabase.from('plot_rows').upsert({
+      id: row.id, field_id: row.fieldId, row_number: row.rowNumber,
+      variety: row.variety, planted_year: row.plantedYear,
+      ended_year: row.endedYear, created_at: row.createdAt,
+    }, {onConflict: 'id'});
+    if (error) throw error;
+    return;
+  }
   const unit = change.value;
   const {error} = await supabase.from('quantity_units').upsert({
     id: unit.id, name: unit.name, kilograms_per_unit: unit.kilogramsPerUnit,
@@ -62,10 +78,10 @@ async function push(change: Change): Promise<void> {
 }
 
 async function pull(): Promise<FarmData> {
-  const [fields, records, plantings, units] = await Promise.all([
-    fetchFields(), fetchRecords(), fetchPlantings(), fetchQuantityUnits(),
+  const [fields, records, plantings, units, rows] = await Promise.all([
+    fetchFields(), fetchRecords(), fetchPlantings(), fetchQuantityUnits(), fetchRowPlantings(),
   ]);
-  return {fields, records, plantings, units};
+  return {fields, records, plantings, units, rows};
 }
 
 export const remoteFarm: Remote = {push, pull};

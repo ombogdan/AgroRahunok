@@ -14,6 +14,8 @@ import {
   seasonFor, toLocalIsoDate, workCostKopecks, workTypeLabels, workTypes,
 } from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
+import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
+import {rowNumbersLabel, rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
@@ -100,6 +102,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const {showToast} = useToast();
   const {fields} = useFields();
   const {records, addRecord, updateRecord, removeRecord} = useRecords();
+  const {data} = useFarmData();
   const editing = route.params?.recordId ? records.find(item => item.id === route.params?.recordId) ?? null : null;
   const now = new Date();
   const today = toLocalIsoDate(now);
@@ -126,6 +129,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const [detailsOpen, setDetailsOpen] = useState(!!editing && (!!editing.note || !!editing.details.performer));
   const [performer, setPerformer] = useState<Performer | null>(editing?.details.performer ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
   const [saving, setSaving] = useState(false);
 
@@ -134,6 +138,11 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const occurredDate = fromLocalIsoDate(occurredOn ?? today);
   const defaultSeason = seasonFor(occurredDate, field?.crop ?? null);
   const season = seasonOverride ?? defaultSeason;
+  const seasonRows = field ? rowsForSeason(data.rows, field.id, season) : [];
+  const rowGroups = varietyGroups(seasonRows);
+  const selectedRows = seasonRows.filter(row => selectedRowIds.includes(row.id));
+  const selectedGroups = varietyGroups(selectedRows);
+  const selectedVariety = selectedGroups.length === 1 ? selectedGroups[0].variety : null;
   const seasonOptions = [...new Set([
     occurredDate.getFullYear(), occurredDate.getFullYear() + 1, season,
     ...records.map(record => record.season),
@@ -142,7 +151,8 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const valueKopecks = parseMoneyInput(costInput);
   const costInvalid = costInput.trim() !== '' && valueKopecks === null;
   const costKopecks = workCostKopecks(costMode, valueKopecks, areaM2);
-  const canSave = !!field && !!workType && !!occurredOn && !costInvalid && !saving;
+  const canSave = !!field && !!workType && !!occurredOn && !costInvalid && !saving &&
+    (selectedRows.length === 0 || costMode === 'sum');
   const firstStep: Step = showFieldStep ? 1 : 2;
   const visibleStep = showFieldStep ? step : step - 1;
   const visibleStepCount = showFieldStep ? 3 : 2;
@@ -169,6 +179,11 @@ export function WorkRecordScreen({route, navigation}: Props) {
         costMode,
         ...(costMode === 'perHa' && valueKopecks !== null ? {ratePerHaKopecks: valueKopecks} : {}),
         ...(performer ? {performer} : {}),
+        ...(selectedVariety ? {
+          rowPlantingIds: selectedRows.map(row => row.id),
+          varietySnapshot: selectedVariety,
+          rowNumbersSnapshot: selectedRows.map(row => row.rowNumber).sort((a, b) => a - b),
+        } : {}),
       },
     };
     try {
@@ -228,7 +243,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
 
       {step === 1 && <>
         {fields.map(item => <Pressable key={item.id} accessibilityRole="button"
-          onPress={() => { setFieldId(item.id); setStep(2); }}
+          onPress={() => { setFieldId(item.id); setSelectedRowIds([]); setStep(2); }}
           style={[styles.tile, item.id === fieldId && styles.tileSelected]}>
           <Text style={styles.tileName}>{item.name}</Text>
           <Text style={styles.tileDetail}>
@@ -289,6 +304,28 @@ export function WorkRecordScreen({route, navigation}: Props) {
           <Text style={styles.note}>Робота потрапить до сезону {season}. Осінні роботи під озимі належать до врожаю наступного року.</Text>
         </View>
 
+        {rowGroups.length > 0 && <View style={styles.section}>
+          <Text style={styles.label}>Де саме працювали? · необов’язково</Text>
+          <View style={styles.chips}>
+            <Chip label="Уся ділянка" selected={selectedRows.length === 0}
+              onPress={() => setSelectedRowIds([])} />
+            {rowGroups.map(group => <Chip key={group.variety}
+              label={`${group.variety} · ряди ${rowNumbersLabel(group.rows)}`}
+              selected={selectedRows.length === group.rows.length &&
+                group.rows.every(row => selectedRowIds.includes(row.id))}
+              onPress={() => setSelectedRowIds(group.rows.map(row => row.id))} />)}
+          </View>
+          {selectedVariety && <View style={styles.chips}>
+            {rowGroups.find(group => group.variety === selectedVariety)?.rows.map(row =>
+              <Chip key={row.id} label={`Ряд ${row.rowNumber}`} selected={selectedRowIds.includes(row.id)}
+                onPress={() => setSelectedRowIds(current => current.includes(row.id)
+                  ? current.filter(id => id !== row.id) : [...current, row.id])} />)}
+          </View>}
+          {selectedRows.length > 0 && <Text style={styles.note}>
+            Для окремих рядів вартість вкажіть сумою: їхню площу ще не виміряно.
+          </Text>}
+        </View>}
+
         <View style={styles.section}>
           <Text style={styles.label}>Скільки коштувало</Text>
           <View style={styles.segmented}>
@@ -313,6 +350,9 @@ export function WorkRecordScreen({route, navigation}: Props) {
           {costInvalid
             ? <Text style={styles.error}>Введіть суму числом, наприклад 3000 або 2,50.</Text>
             : costInput.trim() === '' && <Text style={styles.note}>Можна залишити порожнім і дописати пізніше.</Text>}
+          {selectedRows.length > 0 && costMode === 'perHa' && <Text style={styles.error}>
+            Для роботи по рядах оберіть «Сумою» або всю ділянку.
+          </Text>}
         </View>
 
         <Pressable accessibilityRole="button" accessibilityState={{expanded: detailsOpen}}

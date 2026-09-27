@@ -5,6 +5,7 @@ import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, formatSotky, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
+import {rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
 import {formatMoney} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
@@ -160,18 +161,22 @@ export function HomeScreen() {
               style={[styles.segment, {flex: selectedAreaM2(field),
                 backgroundColor: cropColor(seasonPlantings.get(field.id)?.crop ?? null)}]} />)}
           </View>
-          {fields.map(field => <Pressable key={field.id} accessibilityRole="button" style={styles.fieldRow}
-            onPress={() => navigation.navigate('FieldDetail', {fieldId: field.id})}>
+          {fields.map(field => {
+            const rowVarieties = varietyGroups(rowsForSeason(data.rows, field.id, season))
+              .map(group => group.variety);
+            const cropDetails = [seasonPlantings.get(field.id)?.crop ?? field.crop,
+              rowVarieties.length > 0 ? rowVarieties.join(', ') : seasonPlantings.get(field.id)?.variety]
+              .filter(Boolean).join(' · ');
+            return <Pressable key={field.id} accessibilityRole="button" style={styles.fieldRow}
+              onPress={() => navigation.navigate('FieldDetail', {fieldId: field.id})}>
             <View style={[styles.dot, {backgroundColor: cropColor(seasonPlantings.get(field.id)?.crop ?? null)}]} />
             <View style={styles.rowBody}>
               <Text style={styles.rowTitle}>{field.name}</Text>
-              <Text style={styles.rowDetail}>{[
-                seasonPlantings.get(field.id)?.crop,
-                seasonPlantings.get(field.id)?.variety,
-              ].filter(Boolean).join(' · ') || `${fieldTypeLabels[field.type]} · культуру не записано`}</Text>
+              <Text style={styles.rowDetail}>{cropDetails || `${fieldTypeLabels[field.type]} · культуру не записано`}</Text>
             </View>
             <Text style={styles.rowArea}>{formatArea(selectedAreaM2(field))}</Text>
-          </Pressable>)}
+          </Pressable>;
+          })}
         </InfoCard>
         <InfoCard>
           <View style={styles.seasonHeader}>

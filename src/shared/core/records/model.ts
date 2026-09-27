@@ -13,6 +13,9 @@ export type RecordDetails = {
   pricePerUnitKopecks?: number;
   buyer?: string;
   category?: string;
+  rowPlantingIds?: string[];
+  varietySnapshot?: string;
+  rowNumbersSnapshot?: number[];
 };
 
 export type FarmRecord = {

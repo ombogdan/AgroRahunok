@@ -2,12 +2,15 @@ import type {Field, NewField} from '../fields/model';
 import type {Planting, PlantingInput} from '../fields/plantingsRepository';
 import type {FarmRecord, NewRecord} from '../records/model';
 import type {QuantityUnit} from '../records/quantityUnitsRepository';
+import {currentRows} from '../rows/model';
+import type {RowPlanting} from '../rows/model';
 
 export type FarmData = {
   fields: Field[];
   records: FarmRecord[];
   plantings: Planting[];
   units: QuantityUnit[];
+  rows: RowPlanting[];
 };
 
 export type Change =
@@ -16,14 +19,16 @@ export type Change =
   | {key: string; table: 'records'; action: 'put'; value: FarmRecord}
   | {key: string; table: 'records'; action: 'delete'; id: string}
   | {key: string; table: 'plantings'; action: 'put'; value: Planting}
-  | {key: string; table: 'units'; action: 'put'; value: QuantityUnit};
+  | {key: string; table: 'units'; action: 'put'; value: QuantityUnit}
+  | {key: string; table: 'plot_rows'; action: 'put'; value: RowPlanting}
+  | {key: string; table: 'plot_rows'; action: 'delete'; id: string};
 
-export type FarmSnapshot = {version: 1; base: FarmData; pending: Change[]};
+export type FarmSnapshot = {version: 2; base: FarmData; pending: Change[]};
 export type Storage = {getItem: (key: string) => Promise<string | null>; setItem: (key: string, value: string) => Promise<unknown>};
 export type Remote = {push: (change: Change) => Promise<void>; pull: () => Promise<FarmData>};
 
-const emptyData = (): FarmData => ({fields: [], records: [], plantings: [], units: []});
-const emptySnapshot = (): FarmSnapshot => ({version: 1, base: emptyData(), pending: []});
+const emptyData = (): FarmData => ({fields: [], records: [], plantings: [], units: [], rows: []});
+const emptySnapshot = (): FarmSnapshot => ({version: 2, base: emptyData(), pending: []});
 
 // UUIDs are assigned before the network request, so dependent offline records keep their field IDs.
 export function newId(): string {
@@ -46,6 +51,7 @@ export function applyChange(data: FarmData, change: Change): FarmData {
       fields: data.fields.filter(item => item.id !== change.id),
       records: data.records.filter(item => item.fieldId !== change.id),
       plantings: data.plantings.filter(item => item.fieldId !== change.id),
+      rows: data.rows.filter(item => item.fieldId !== change.id),
     };
   }
   if (change.table === 'records') {
@@ -55,7 +61,9 @@ export function applyChange(data: FarmData, change: Change): FarmData {
   if (change.table === 'plantings') {
     return {...data, plantings: replaceById(data.plantings, change.value)};
   }
-  return {...data, units: replaceById(data.units, change.value)};
+  if (change.table === 'units') return {...data, units: replaceById(data.units, change.value)};
+  if (change.action === 'put') return {...data, rows: replaceById(data.rows, change.value)};
+  return {...data, rows: data.rows.filter(item => item.id !== change.id)};
 }
 
 export function visibleData(snapshot: FarmSnapshot): FarmData {
@@ -105,11 +113,13 @@ export class FarmStore {
     this.loading = (async () => {
       const saved = await this.storage.getItem(`farm-v1:${this.ownerId}`);
       if (saved) {
-        const parsed = JSON.parse(saved) as FarmSnapshot;
-        if (parsed.version !== 1 || !parsed.base || !Array.isArray(parsed.pending)) {
+        const parsed = JSON.parse(saved) as FarmSnapshot | {version: 1; base: Omit<FarmData, 'rows'>; pending: Change[]};
+        if ((parsed.version !== 1 && parsed.version !== 2) || !parsed.base || !Array.isArray(parsed.pending)) {
           throw new Error('Невідома версія локальних даних');
         }
-        this.snapshot = parsed;
+        this.snapshot = parsed.version === 1
+          ? {version: 2, base: {...parsed.base, rows: []}, pending: parsed.pending}
+          : parsed;
       }
       this.loaded = true;
       this.announce();
@@ -171,6 +181,84 @@ export class FarmStore {
     const value = {id: newId(), name, kilogramsPerUnit};
     await this.enqueue({key: newId(), table: 'units', action: 'put', value});
     return value;
+  }
+
+  async ensureRowCount(fieldId: string, count: number): Promise<void> {
+    if (!Number.isInteger(count) || count < 1 || count > 200) throw new Error('Вкажіть від 1 до 200 рядів');
+    await this.commit(current => {
+      const visible = visibleData(current);
+      const field = visible.fields.find(item => item.id === fieldId);
+      if (!field) throw new Error('Ділянку не знайдено');
+      const existing = currentRows(visible.rows, fieldId);
+      const max = Math.max(0, ...existing.map(row => row.rowNumber));
+      if (count < max) throw new Error('Кількість рядів можна лише збільшити');
+      const changes: Change[] = [];
+      for (let number = max + 1; number <= count; number++) {
+        changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {
+          id: newId(), fieldId, rowNumber: number, variety: null,
+          plantedYear: null, endedYear: null, createdAt: new Date().toISOString(),
+        }});
+      }
+      return {...current, pending: [...current.pending, ...changes]};
+    });
+  }
+
+  async assignRowVariety(fieldId: string, first: number, last: number, variety: string, year: number): Promise<void> {
+    const name = variety.trim();
+    if (!name || name.length > 60) throw new Error('Вкажіть сорт до 60 символів');
+    if (!Number.isInteger(year) || year < 2000 || year > new Date().getFullYear() + 1) {
+      throw new Error('Вкажіть дійсний рік посадки');
+    }
+    await this.commit(current => {
+      const visible = visibleData(current);
+      const active = currentRows(visible.rows, fieldId);
+      if (!Number.isInteger(first) || !Number.isInteger(last) || first < 1 || last < first || last > active.length) {
+        throw new Error('Виберіть наявні ряди');
+      }
+      const changes: Change[] = [];
+      for (let number = first; number <= last; number++) {
+        const previous = active.find(row => row.rowNumber === number);
+        if (!previous) throw new Error(`Ряд ${number} не знайдено`);
+        if (previous.plantedYear === year &&
+          previous.variety?.trim().toLocaleLowerCase('uk') === name.toLocaleLowerCase('uk')) continue;
+        if (previous.plantedYear !== null && year < previous.plantedYear) {
+          throw new Error(`Ряд ${number}: рік не може бути ранішим за попередню посадку`);
+        }
+        const hasLinkedRecord = visible.records.some(record =>
+          record.details.rowPlantingIds?.includes(previous.id));
+        if (previous.plantedYear === null || (year === previous.plantedYear && !hasLinkedRecord)) {
+          changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {
+            ...previous, variety: name, plantedYear: year,
+          }});
+        } else {
+          if (year === previous.plantedYear) {
+            throw new Error(`Ряд ${number}: після записів змініть сорт із наступного року`);
+          }
+          changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {
+            ...previous, endedYear: year - 1,
+          }});
+          changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {
+            id: newId(), fieldId, rowNumber: number, variety: name,
+            plantedYear: year, endedYear: null, createdAt: new Date().toISOString(),
+          }});
+        }
+      }
+      return {...current, pending: [...current.pending, ...changes]};
+    });
+  }
+
+  async removeLastEmptyRow(fieldId: string): Promise<void> {
+    await this.commit(current => {
+      const visible = visibleData(current);
+      const active = currentRows(visible.rows, fieldId);
+      const last = active[active.length - 1];
+      if (!last || last.variety !== null || visible.rows.some(row =>
+        row.fieldId === fieldId && row.rowNumber === last.rowNumber && row.id !== last.id)) {
+        throw new Error('Можна прибрати лише останній порожній ряд');
+      }
+      const change: Change = {key: newId(), table: 'plot_rows', action: 'delete', id: last.id};
+      return {...current, pending: [...current.pending, change]};
+    });
   }
 
   sync(): Promise<void> {

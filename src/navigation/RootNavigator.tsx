@@ -7,6 +7,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {FieldDetailScreen, FieldsScreen, HomeScreen, JournalScreen, MoneyScreen, SettingsScreen} from '../screens/app-user';
 import {FieldFormScreen, FieldMapScreen, FieldMethodScreen, FieldWalkScreen} from '../screens/app-user/field-create';
 import {OtherRecordScreen, QuantityRecordScreen, TabBarWithDock, WorkRecordScreen} from '../screens/app-user/records';
+import {BerryRowsScreen} from '../screens/app-user/rows/BerryRowsScreen';
 import {SignInScreen} from '../screens/app-auth';
 import {AppIcon} from '../shared/components/ui';
 import type {AppIconName} from '../shared/components/ui/AppIcon';
@@ -107,6 +108,7 @@ export function RootNavigator() {
               <Stack.Screen name="FieldWalk" component={FieldWalkScreen} />
               <Stack.Screen name="FieldForm" component={FieldFormScreen} />
               <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
+              <Stack.Screen name="BerryRows" component={BerryRowsScreen} />
               <Stack.Screen name="WorkRecord" component={WorkRecordScreen} />
               <Stack.Screen name="QuantityRecord" component={QuantityRecordScreen} />
               <Stack.Screen name="OtherRecord" component={OtherRecordScreen} />

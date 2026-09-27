@@ -19,7 +19,7 @@ type FarmContextValue = {
 };
 
 const FarmContext = createContext<FarmContextValue | null>(null);
-const empty: FarmData = {fields: [], records: [], plantings: [], units: []};
+const empty: FarmData = {fields: [], records: [], plantings: [], units: [], rows: []};
 
 export function FarmDataProvider({children}: PropsWithChildren) {
   const {session} = useAuth();

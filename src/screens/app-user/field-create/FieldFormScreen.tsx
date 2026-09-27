@@ -18,6 +18,7 @@ import {
 } from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {seasonFor} from '../../../shared/core/records/model';
+import {currentRows} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme} from '../../../shared/theme/theme';
@@ -78,7 +79,7 @@ export function FieldFormScreen({route, navigation}: Props) {
   const {theme} = useTheme();
   const {showToast} = useToast();
   const {fields, addField, updateField, removeField, loadState} = useFields();
-  const {store} = useFarmData();
+  const {data, store} = useFarmData();
   const {params} = route;
   const editing = params.mode === 'edit' ? fields.find(item => item.id === params.fieldId) ?? null : null;
   // Area measured before the form opened: on the map, by walking, or stored with the edited plot.
@@ -94,6 +95,9 @@ export function FieldFormScreen({route, navigation}: Props) {
   const initialUnit: AreaUnit = initialDocM2 !== null && initialDocM2 >= 5000 ? 'hectare' : 'sotka';
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<FieldType>(editing?.type ?? 'field');
+  const existingRowCount = editing ? currentRows(data.rows, editing.id).length : 0;
+  const [rowCountInput, setRowCountInput] = useState(editing?.type === 'berries' && existingRowCount > 0
+    ? String(existingRowCount) : '');
   const [crop, setCrop] = useState(editing?.crop ?? '');
   const [variety, setVariety] = useState(editing?.variety ?? '');
   // The crop belongs to a harvest year; autumn-sown winter crops default to the next one.
@@ -122,15 +126,20 @@ export function FieldFormScreen({route, navigation}: Props) {
   const effectiveSource: AreaSource = usesDimensions ? 'measured' : canChooseSource ? areaSource : 'document';
   const selectedAreaM2 = effectiveSource === 'measured' ? measuredAreaM2 : documentAreaM2;
   const documentInputValid = usesDimensions || areaInput.trim().length === 0 || documentAreaM2 !== null;
+  const rowCount = Number(rowCountInput);
+  const rowCountValid = type !== 'berries' || (/^\d+$/.test(rowCountInput) &&
+    rowCount >= Math.max(1, existingRowCount) && rowCount <= 200);
   const canSave = name.trim().length > 0 && (selectedAreaM2 ?? 0) >= 1 && documentInputValid && !saving &&
-    loadState === 'ready' && (params.mode !== 'edit' || editing !== null);
+    rowCountValid && loadState === 'ready' && (params.mode !== 'edit' || editing !== null);
 
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
     const cropName = crop.trim() || null;
     const input = {
-      name: name.trim(), type, crop: cropName, variety: cropName ? variety.trim() || null : null,
+      name: name.trim(), type, crop: cropName,
+      variety: cropName ? type === 'berries'
+        ? (editing?.type === 'berries' ? editing.variety : null) : variety.trim() || null : null,
       documentAreaM2, measuredAreaM2, areaSource: effectiveSource, polygon,
     };
     // Finish saving the planting before returning home, so its season is available there immediately.
@@ -145,17 +154,41 @@ export function FieldFormScreen({route, navigation}: Props) {
         return false;
       }
     };
+    const rememberRows = async (fieldId: string): Promise<boolean> => {
+      if (type !== 'berries') return true;
+      try {
+        if (!store) throw new Error('Локальні дані ще завантажуються');
+        await store.ensureRowCount(fieldId, rowCount);
+        return true;
+      } catch (error) {
+        logSupabaseError('Не вдалося зберегти ряди ділянки', error);
+        return false;
+      }
+    };
     try {
       if (editing) {
         await updateField(editing.id, input);
         const plantingSaved = await rememberPlanting(editing.id);
-        navigation.goBack();
-        showToast({text: plantingSaved ? 'Зміни збережено' : 'Ділянку збережено, але культуру сезону — ні'});
+        const rowsSaved = await rememberRows(editing.id);
+        if (type === 'berries') navigation.replace('BerryRows', {fieldId: editing.id});
+        else navigation.goBack();
+        showToast({text: !rowsSaved ? 'Ділянку збережено. Додайте ряди на наступному екрані.'
+          : plantingSaved ? 'Зміни збережено' : 'Ділянку збережено, але культуру сезону — ні'});
         return;
       }
       const field = await addField(input);
       const plantingSaved = await rememberPlanting(field.id);
-      navigation.reset({index: 0, routes: [{name: 'Tabs', params: {screen: 'Home'}}]});
+      const rowsSaved = await rememberRows(field.id);
+      navigation.reset({index: type === 'berries' ? 2 : 0, routes: type === 'berries'
+        ? [{name: 'Tabs', params: {screen: 'Home'}}, {name: 'FieldDetail', params: {fieldId: field.id}},
+          {name: 'BerryRows', params: {fieldId: field.id}}]
+        : [{name: 'Tabs', params: {screen: 'Home'}}]});
+      if (type === 'berries') {
+        showToast({text: !rowsSaved ? 'Ділянку збережено. Додайте ряди на цьому екрані.'
+          : plantingSaved ? 'Ряди створено. Тепер призначте їм сорти.'
+            : 'Ряди створено, але культуру сезону не збережено.'});
+        return;
+      }
       showToast({
         text: plantingSaved ? `Ділянку «${field.name}» збережено` : 'Ділянку збережено, але культуру сезону — ні',
         actionLabel: 'Скасувати',
@@ -198,14 +231,31 @@ export function FieldFormScreen({route, navigation}: Props) {
             onPress={() => setType(value)} />)}
         </View>
       </View>
+      {type === 'berries' && <View style={styles.section}>
+        <Text style={styles.label}>Ряди та сорти</Text>
+        <Text style={styles.note}>Скільки рядів у ягіднику? Після збереження відразу вкажете сорт і рік посадки для кожного ряду або групи рядів.</Text>
+        <TextInput value={rowCountInput} onChangeText={setRowCountInput} keyboardType="number-pad"
+          inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder="Наприклад, 6"
+          placeholderTextColor={theme.colors.textMuted} accessibilityLabel="Кількість рядів"
+          style={styles.input} />
+        {rowCountInput !== '' && !rowCountValid && <Text style={styles.note}>
+          {existingRowCount > 0 ? `Вкажіть не менше ${existingRowCount} і не більше 200 рядів.`
+            : 'Вкажіть від 1 до 200 рядів.'}
+        </Text>}
+        {existingRowCount > 0 && <Text style={styles.note}>
+          Зараз є {existingRowCount} рядів. Змінити їхні сорти можна на наступному екрані.
+        </Text>}
+      </View>}
       <View style={styles.section}>
         <Text style={styles.label}>Культура сезону {season} · необов’язково</Text>
         <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
           placeholder="Наприклад, Пшениця озима" accessibilityLabel={`Культура сезону ${season}`} />
         {crop.trim() !== '' && <>
-          <Text style={styles.label}>Сорт · необов’язково</Text>
-          <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
-            placeholder="Наприклад, Богдана" accessibilityLabel="Сорт" />
+          {type !== 'berries' && <>
+            <Text style={styles.label}>Сорт · необов’язково</Text>
+            <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
+              placeholder="Наприклад, Богдана" accessibilityLabel="Сорт" />
+          </>}
           <Text style={styles.label}>Рік урожаю</Text>
           <View style={styles.chips}>
             {[now.getFullYear(), now.getFullYear() + 1].map(year => <Chip key={year} label={String(year)}
@@ -268,7 +318,8 @@ export function FieldFormScreen({route, navigation}: Props) {
         <Text style={styles.note}>Збережемо обидві площі.</Text>
       </View>}
       <View style={styles.save}>
-        <AppButton label={saving ? 'Зберігаємо…' : editing ? 'Зберегти зміни' : 'Зберегти ділянку'}
+        <AppButton label={saving ? 'Зберігаємо…' : type === 'berries' ? 'Далі: сорти рядів'
+          : editing ? 'Зберегти зміни' : 'Зберегти ділянку'}
           disabled={!canSave} onPress={() => { save(); }} />
       </View>
     </ScrollView>
