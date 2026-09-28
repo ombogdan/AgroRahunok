@@ -117,6 +117,83 @@ export function polygonAreaM2(points: GeoPoint[]): number {
   return area({type: 'Polygon', coordinates: [ring]});
 }
 
+type Metres = {x: number; y: number};
+
+// Metres east and north of `origin`; flat-earth maths is precise enough across one plot.
+function toMetres(point: GeoPoint, origin: GeoPoint): Metres {
+  const metresPerDegree = 111320;
+  return {
+    x: (point.longitude - origin.longitude) * metresPerDegree * Math.cos((origin.latitude * Math.PI) / 180),
+    y: (point.latitude - origin.latitude) * metresPerDegree,
+  };
+}
+
+function distanceToSegmentM(point: Metres, start: Metres, end: Metres): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const along = lengthSquared === 0 ? 0
+    : Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared));
+  return Math.hypot(point.x - (start.x + along * dx), point.y - (start.y + along * dy));
+}
+
+// Drops points that lie within `toleranceM` of the line through their neighbours (Douglas–Peucker),
+// so a walked contour with a point every 2 m keeps only its corners.
+export function simplifyPolygon(points: GeoPoint[], toleranceM: number): GeoPoint[] {
+  if (points.length <= 4) return points;
+  const metres = points.map(point => toMetres(point, points[0]));
+  // Split the ring at the first point and the point farthest from it, then simplify both halves.
+  let farthest = 0;
+  metres.forEach((point, index) => {
+    if (Math.hypot(point.x, point.y) > Math.hypot(metres[farthest].x, metres[farthest].y)) farthest = index;
+  });
+  const ring = [...metres, metres[0]];
+  const keep = ring.map((_, index) => index === 0 || index === farthest);
+  const pending: [number, number][] = [[0, farthest], [farthest, ring.length - 1]];
+  while (pending.length > 0) {
+    const [first, last] = pending.pop()!;
+    let worst = -1;
+    let worstDistance = toleranceM;
+    for (let index = first + 1; index < last; index++) {
+      const distance = distanceToSegmentM(ring[index], ring[first], ring[last]);
+      if (distance > worstDistance) {
+        worst = index;
+        worstDistance = distance;
+      }
+    }
+    if (worst === -1) continue;
+    keep[worst] = true;
+    pending.push([first, worst], [worst, last]);
+  }
+  const simplified = points.filter((_, index) => keep[index]);
+  return simplified.length >= 3 ? simplified : points;
+}
+
+// Contours with more points than this are simplified before editing: dozens of pins would overlap.
+const EDITABLE_MAX_POINTS = 40;
+const EDIT_TOLERANCE_M = 2;
+
+export function editablePolygon(points: GeoPoint[]): GeoPoint[] {
+  return points.length > EDITABLE_MAX_POINTS ? simplifyPolygon(points, EDIT_TOLERANCE_M) : points;
+}
+
+// A tap next to an existing contour adds a corner to the nearest edge instead of the end of the list.
+export function insertIntoNearestEdge(points: GeoPoint[], point: GeoPoint): GeoPoint[] {
+  if (points.length < 3) return [...points, point];
+  const tap = toMetres(point, points[0]);
+  const metres = points.map(item => toMetres(item, points[0]));
+  let nearest = 0;
+  let nearestDistance = Infinity;
+  metres.forEach((start, index) => {
+    const distance = distanceToSegmentM(tap, start, metres[(index + 1) % metres.length]);
+    if (distance < nearestDistance) {
+      nearest = index;
+      nearestDistance = distance;
+    }
+  });
+  return [...points.slice(0, nearest + 1), point, ...points.slice(nearest + 1)];
+}
+
 // A crossed contour is not a valid field boundary; reject it before saving.
 export function polygonHasCrossingEdges(points: GeoPoint[]): boolean {
   const cross = (a: GeoPoint, b: GeoPoint, c: GeoPoint) =>

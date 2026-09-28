@@ -46,10 +46,12 @@ function walkHint(phase: Phase, accuracy: number | null, points: number, lengthM
   return {text: t("walkBoundaryStatus", [progress, accuracyText]), tone: 'normal'};
 }
 
-export function FieldWalkScreen({navigation}: Props) {
+export function FieldWalkScreen({route, navigation}: Props) {
   const styles = useStyles();
   const {theme} = useTheme();
   const scale = useScale();
+  // With a plot id the walk replaces that plot's contour and returns to its edit form.
+  const editFieldId = route.params?.fieldId ?? null;
   const mapRef = useRef<MapView>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [track, setTrack] = useState<GeoPoint[]>([]);
@@ -63,6 +65,7 @@ export function FieldWalkScreen({navigation}: Props) {
   const centered = useRef(false);
   const locationFailed = useRef(false);
   const announcedReturn = useRef(false);
+  const handingOver = useRef(false);
   const areaM2 = useMemo(() => polygonAreaM2(track), [track]);
   const lengthM = useMemo(() => trackLengthM(track), [track]);
   const canFinish = track.length >= 3 && areaM2 >= 1;
@@ -84,9 +87,10 @@ export function FieldWalkScreen({navigation}: Props) {
       .catch(showLocationUnavailable);
   }, []);
 
-  // Losing a long walk to a stray back swipe hurts; saving resets the stack and is allowed through.
+  // Losing a long walk to a stray back swipe hurts; saving resets the stack and is allowed through,
+  // as is handing a finished walk back to the edit form.
   useEffect(() => navigation.addListener('beforeRemove', event => {
-    if (trackRef.current.length === 0 || event.data.action.type === 'RESET') return;
+    if (trackRef.current.length === 0 || handingOver.current || event.data.action.type === 'RESET') return;
     event.preventDefault();
     Alert.alert(t("confirmCancelBoundaryWalkTitle"), t("theRecordedTrackWillBeLost"), [
       {text: t("stay"), style: 'cancel'},
@@ -153,6 +157,15 @@ export function FieldWalkScreen({navigation}: Props) {
   const finish = () => {
     // Stop recording while the form is open; coming back lets the walk continue.
     changePhase('paused');
+    if (editFieldId) {
+      handingOver.current = true;
+      navigation.popTo('FieldForm', {
+        mode: 'edit',
+        fieldId: editFieldId,
+        boundary: {polygon: track, measuredAreaM2: areaM2, source: 'walk'},
+      });
+      return;
+    }
     navigation.navigate('FieldForm', {mode: 'walk', polygon: track, measuredAreaM2: areaM2});
   };
 

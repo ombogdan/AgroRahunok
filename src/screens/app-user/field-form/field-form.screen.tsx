@@ -5,7 +5,7 @@ import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Te
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, AppIcon, AutocompleteInput, useToast} from '../../../shared/components/ui';
+import {AppButton, AutocompleteInput, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import type {AreaSource, AreaUnit, FieldType} from '../../../shared/core/fields/model';
 import {
@@ -25,6 +25,7 @@ import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
 import {Chip} from './components/choice-chip/choice-chip.component';
+import {FieldBoundary} from './components/field-boundary/field-boundary.component';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldForm'>;
 type ManualMethod = 'document' | 'dimensions';
@@ -42,13 +43,18 @@ export function FieldFormScreen({route, navigation}: Props) {
   const {data, store} = useFarmData();
   const {params} = route;
   const editing = params.mode === 'edit' ? fields.find(item => item.id === params.fieldId) ?? null : null;
+  // A contour just redrawn or walked again for the edited plot; it is saved together with the form.
+  const boundary = params.mode === 'edit' ? params.boundary ?? null : null;
   // Area measured before the form opened: on the map, by walking, or stored with the edited plot.
   const presetMeasuredM2 = params.mode === 'map' || params.mode === 'walk'
-    ? params.measuredAreaM2 : editing?.measuredAreaM2 ?? null;
-  const polygon = params.mode === 'map' || params.mode === 'walk' ? params.polygon : editing?.polygon ?? [];
+    ? params.measuredAreaM2 : boundary?.measuredAreaM2 ?? editing?.measuredAreaM2 ?? null;
+  const polygon = params.mode === 'map' || params.mode === 'walk' ? params.polygon
+    : boundary?.polygon ?? editing?.polygon ?? [];
   const isManual = params.mode === 'manual';
   const canChooseSource = !isManual && presetMeasuredM2 !== null;
-  const measuredLabel = params.mode === 'walk' ? t("measuredByWalking") : params.mode === 'map' ? t("measuredOnMap") : t("measuredArea");
+  const measuredBy = params.mode === 'map' || params.mode === 'walk' ? params.mode : boundary?.source;
+  const measuredLabel = measuredBy === 'walk' ? t("measuredByWalking")
+    : measuredBy === 'map' ? t("measuredOnMap") : t("measuredArea");
   const backLabel = params.mode === 'map' ? t("map") : params.mode === 'walk' ? t("walkBoundary") : t("back");
 
   const initialDocM2 = editing?.documentAreaM2 ?? null;
@@ -69,7 +75,6 @@ export function FieldFormScreen({route, navigation}: Props) {
   const [widthInput, setWidthInput] = useState('');
   const [areaSource, setAreaSource] = useState<AreaSource>(
     editing?.areaSource ?? (presetMeasuredM2 !== null ? 'measured' : 'document'));
-  const [moreOpen, setMoreOpen] = useState(!!editing);
   const [saving, setSaving] = useState(false);
 
   const now = new Date();
@@ -245,37 +250,35 @@ export function FieldFormScreen({route, navigation}: Props) {
         </View>}
         <Text style={styles.note}>{t("rectangleAreaHint")}</Text>
       </View> : showDocumentArea && documentAreaForm}
+      {editing && <FieldBoundary polygon={polygon}
+        onDraw={() => navigation.navigate('FieldMap', {fieldId: editing.id, polygon})}
+        onWalk={() => navigation.navigate('FieldWalk', {fieldId: editing.id})} />}
       {presetMeasuredM2 !== null && <View style={styles.section}>
         <Text style={styles.label}>{measuredLabel}</Text>
         <Text style={styles.areaValue}>{formatArea(presetMeasuredM2)}</Text>
       </View>}
-      <Pressable accessibilityRole="button" accessibilityState={{expanded: moreOpen}}
-        onPress={() => setMoreOpen(open => !open)} style={styles.detailsToggle}>
-        <Text style={styles.label}>{t("cropAndOtherDetailsOptional")}</Text>
-        <AppIcon name={moreOpen ? 'chevronUp' : 'chevronDown'} color={theme.colors.textMuted} size={22} />
-      </Pressable>
-      {moreOpen && <>
-        <View style={styles.section}>
-          <Text style={styles.label}>{t("seasonCrop", [], "after")}{season}{t("optional", [], "before")}</Text>
-          <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
-            placeholder={t("forExampleWinterWheat")} accessibilityLabel={t("cropForSeasonYear", [season])} />
-          {crop.trim() !== '' && <>
-            {type !== 'berries' && <>
-              <Text style={styles.label}>{t("varietyOptional")}</Text>
-              <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
-                placeholder={t("forExampleBohdana")} accessibilityLabel={t("variety")} />
-            </>}
-            <Text style={styles.label}>{t("harvestYear")}</Text>
-            <View style={styles.chips}>
-              {[now.getFullYear(), now.getFullYear() + 1].map(year => <Chip key={year} label={String(year)}
-                selected={season === year} onPress={() => setSeasonOverride(year)} />)}
-            </View>
-            <Text style={styles.note}>{t("autumnSownWinterCropsBelongToNextYearSHarvest")}</Text>
+      {/* Always open: optional fields hidden behind a toggle were never filled in. */}
+      <Text style={styles.detailsHeading} accessibilityRole="header">{t("cropAndOtherDetailsOptional")}</Text>
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("seasonCrop", [], "after")}{season}{t("optional", [], "before")}</Text>
+        <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
+          placeholder={t("forExampleWinterWheat")} accessibilityLabel={t("cropForSeasonYear", [season])} />
+        {crop.trim() !== '' && <>
+          {type !== 'berries' && <>
+            <Text style={styles.label}>{t("varietyOptional")}</Text>
+            <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
+              placeholder={t("forExampleBohdana")} accessibilityLabel={t("variety")} />
           </>}
-        </View>
-        {!showDocumentArea && documentAreaForm}
-      </>}
-      {moreOpen && canChooseSource && documentAreaM2 !== null && <View style={styles.section}>
+          <Text style={styles.label}>{t("harvestYear")}</Text>
+          <View style={styles.chips}>
+            {[now.getFullYear(), now.getFullYear() + 1].map(year => <Chip key={year} label={String(year)}
+              selected={season === year} onPress={() => setSeasonOverride(year)} />)}
+          </View>
+          <Text style={styles.note}>{t("autumnSownWinterCropsBelongToNextYearSHarvest")}</Text>
+        </>}
+      </View>
+      {!showDocumentArea && documentAreaForm}
+      {canChooseSource && documentAreaM2 !== null && <View style={styles.section}>
         <Text style={styles.label}>{t("whichAreaShouldBeUsedInCalculations")}</Text>
         <Pressable accessibilityRole="radio" accessibilityState={{checked: areaSource === 'measured'}}
           onPress={() => setAreaSource('measured')}

@@ -9,32 +9,56 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
 import {AppButton, AppIcon} from '../../../shared/components/ui';
 import type {GeoPoint} from '../../../shared/core/fields/model';
-import {formatHectares, formatSotky, polygonAreaM2, polygonHasCrossingEdges} from '../../../shared/core/fields/model';
+import {
+  editablePolygon,
+  formatHectares,
+  formatSotky,
+  insertIntoNearestEdge,
+  polygonAreaM2,
+  polygonHasCrossingEdges,
+  regionForPoints,
+} from '../../../shared/core/fields/model';
 import {useScale, useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
 import {requestLocationPermission, showLocationUnavailable} from '../../../shared/core/location/permissions';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldMap'>;
+// `appendPoints` is off while adjusting an existing contour: a tap then adds a corner to the nearest edge.
+type Shape = {points: GeoPoint[]; appendPoints: boolean};
+// Every change is kept, so a wrong drag or tap can be taken back step by step.
+type Contour = Shape & {history: Shape[]};
 
-function mapHint(count: number, crossing: boolean): string {
+const UKRAINE_REGION = {latitude: 49, longitude: 31.5, latitudeDelta: 6, longitudeDelta: 6};
+
+function mapHint(count: number, crossing: boolean, adjusting: boolean): string {
   if (crossing) return t("theBoundaryCrossesItselfMoveOrRemoveAPoint");
   if (count === 0) return t("tapTheFirstFieldCorner");
   if (count < 3) {
     const left = 3 - count;
     return t("morePointsNeededHint", [left, t(left === 1 ? 'pointSingular' : 'pointPlural')]);
   }
-  return t("mapPointCountHint", [count]);
+  return adjusting ? t("adjustBoundaryHint") : t("mapPointCountHint", [count]);
 }
 
-export function FieldMapScreen({navigation}: Props) {
+export function FieldMapScreen({route, navigation}: Props) {
   const styles = useStyles();
   const {theme} = useTheme();
   const scale = useScale();
+  // With a plot id the screen changes that plot's contour and hands it back to the edit form.
+  const editFieldId = route.params?.fieldId ?? null;
+  const [adjusting] = useState(() => (route.params?.polygon.length ?? 0) >= 3);
+  const [contour, setContour] = useState<Contour>(() => ({
+    points: editablePolygon(route.params?.polygon ?? []),
+    appendPoints: (route.params?.polygon.length ?? 0) < 3,
+    history: [],
+  }));
+  const {points} = contour;
+  const [initialRegion] = useState(() => (points.length >= 3 ? regionForPoints(points) : UKRAINE_REGION));
   const mapRef = useRef<MapView>(null);
-  const centeredOnLocation = useRef(false);
+  // An existing contour stays in view instead of jumping to where the phone is.
+  const centeredOnLocation = useRef(points.length >= 3);
   const lastLocation = useRef<GeoPoint | null>(null);
   const locationFailed = useRef(false);
-  const [points, setPoints] = useState<GeoPoint[]>([]);
   const [showLocation, setShowLocation] = useState(false);
   const areaM2 = useMemo(() => polygonAreaM2(points), [points]);
   const crossing = useMemo(() => polygonHasCrossingEdges(points), [points]);
@@ -45,6 +69,17 @@ export function FieldMapScreen({navigation}: Props) {
       if (granted) setShowLocation(true);
     }).catch(() => undefined);
   }, []);
+
+  const change = (update: (shape: Shape) => Shape) => setContour(current => {
+    const next = update(current);
+    if (next.points === current.points && next.appendPoints === current.appendPoints) return current;
+    return {...next, history: [...current.history, {points: current.points, appendPoints: current.appendPoints}]};
+  });
+
+  const undo = () => setContour(current => {
+    const previous = current.history[current.history.length - 1];
+    return previous ? {...previous, history: current.history.slice(0, -1)} : current;
+  });
 
   const centerOn = (point: GeoPoint) => {
     mapRef.current?.animateToRegion({...point, latitudeDelta: 0.006, longitudeDelta: 0.006}, 500);
@@ -69,14 +104,15 @@ export function FieldMapScreen({navigation}: Props) {
   const addPoint = (event: MapPressEvent) => {
     const {coordinate, action} = event.nativeEvent;
     if (action === 'marker-press') return;
-    setPoints(current => current.some(point =>
+    change(shape => (shape.points.some(point =>
       Math.abs(point.latitude - coordinate.latitude) < 0.0000001 &&
       Math.abs(point.longitude - coordinate.longitude) < 0.0000001)
-      ? current : [...current, coordinate]);
+      ? shape
+      : {...shape, points: shape.appendPoints ? [...shape.points, coordinate] : insertIntoNearestEdge(shape.points, coordinate)}));
   };
 
   const movePoint = (index: number, coordinate: GeoPoint) => {
-    setPoints(current => current.map((item, itemIndex) => (itemIndex === index ? coordinate : item)));
+    change(shape => ({...shape, points: shape.points.map((item, itemIndex) => (itemIndex === index ? coordinate : item))}));
   };
 
   const handleUserLocation = (event: UserLocationChangeEvent) => {
@@ -96,20 +132,41 @@ export function FieldMapScreen({navigation}: Props) {
     centerOn(lastLocation.current);
   };
 
+  const finish = () => {
+    if (!editFieldId) {
+      navigation.navigate('FieldForm', {mode: 'map', polygon: points, measuredAreaM2: areaM2});
+      return;
+    }
+    // Nothing was moved: keep the saved contour rather than its simplified copy.
+    if (contour.history.length === 0) {
+      navigation.goBack();
+      return;
+    }
+    navigation.popTo('FieldForm', {
+      mode: 'edit',
+      fieldId: editFieldId,
+      boundary: {polygon: points, measuredAreaM2: areaM2, source: 'map'},
+    });
+  };
+
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <View style={styles.top}>
-      <FieldFlowHeader title={t("drawTheFieldBoundary")} onBack={() => navigation.goBack()}/>
+      <FieldFlowHeader
+        title={adjusting ? t("adjustTheBoundary") : t("drawTheFieldBoundary")}
+        onBack={() => navigation.goBack()}
+        rightLabel={adjusting && points.length > 0 ? t("clearAll") : undefined}
+        onRight={() => change(() => ({points: [], appendPoints: true}))}/>
       <Text style={styles.area}>
         {points.length >= 3 ? `${formatHectares(areaM2, {exact: true})} · ${formatSotky(areaM2)}` : formatHectares(0)}
       </Text>
-      <Text style={styles.hint}>{mapHint(points.length, crossing)}</Text>
+      <Text style={styles.hint}>{mapHint(points.length, crossing, adjusting && !contour.appendPoints)}</Text>
     </View>
     <View style={styles.map}>
       <MapView
         ref={mapRef}
         style={styles.map}
         mapType="hybrid"
-        initialRegion={{latitude: 49, longitude: 31.5, latitudeDelta: 6, longitudeDelta: 6}}
+        initialRegion={initialRegion}
         showsUserLocation={showLocation}
         onUserLocationChange={handleUserLocation}
         onPress={addPoint}>
@@ -150,21 +207,17 @@ export function FieldMapScreen({navigation}: Props) {
     </View>
     <View style={styles.bottom}>
       <View style={styles.button}>
-        <AppButton
-          label={t("removePoint")}
-          variant="secondary"
-          disabled={points.length === 0}
-          onPress={() => setPoints(current => current.slice(0, -1))}/>
+        {adjusting
+          ? <AppButton label={t("undoStep")} variant="secondary" disabled={contour.history.length === 0}
+            onPress={undo}/>
+          : <AppButton label={t("removePoint")} variant="secondary" disabled={points.length === 0}
+            onPress={() => change(shape => ({...shape, points: shape.points.slice(0, -1)}))}/>}
       </View>
       <View style={styles.button}>
         <AppButton
           label={t("done")}
           disabled={points.length < 3 || areaM2 < 1 || crossing}
-          onPress={() => navigation.navigate('FieldForm', {
-            mode: 'map',
-            polygon: points,
-            measuredAreaM2: areaM2
-          })}/>
+          onPress={finish}/>
       </View>
     </View>
   </SafeAreaView>;

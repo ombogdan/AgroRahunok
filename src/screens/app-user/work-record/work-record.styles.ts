@@ -45,9 +45,9 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   calcText: {color: theme.colors.accentInk, fontSize: scale(17), fontWeight: '700' as const},
   note: {color: theme.colors.textMuted, fontSize: scale(15), lineHeight: scale(20)},
   error: {color: theme.colors.danger, fontSize: scale(15), lineHeight: scale(20)},
-  detailsToggle: {minHeight: scale(56), flexDirection: 'row' as const, alignItems: 'center' as const,
-    justifyContent: 'space-between' as const, paddingHorizontal: scale(18), borderRadius: scale(20),
-    borderWidth: scale(1), borderColor: theme.colors.border, backgroundColor: theme.colors.surface},
+  // Plain heading over the optional fields; the negative margin keeps it next to the card it names.
+  detailsHeading: {color: theme.colors.textMuted, fontSize: scale(17), lineHeight: scale(22),
+    fontWeight: '600' as const, marginTop: scale(8), marginBottom: -scale(8), paddingHorizontal: scale(4)},
   footer: {paddingHorizontal: scale(20), paddingTop: scale(12), paddingBottom: scale(12),
     borderTopWidth: scale(1), borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface},
   keyboardBar: {flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingHorizontal: scale(12),

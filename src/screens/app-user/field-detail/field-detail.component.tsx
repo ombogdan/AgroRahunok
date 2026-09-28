@@ -1,19 +1,18 @@
 import {t} from '../../../shared/config/i18n';
 import {useStyles} from './field-detail.styles';
-import React, {useMemo} from 'react';
+import React from 'react';
 import {Alert, Text, View} from 'react-native';
-import MapView, {Polygon} from 'react-native-maps';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
 import {AppButton, InfoCard, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
-import {fieldTypeLabels, formatArea, regionForPoints, selectedAreaM2} from '../../../shared/core/fields/model';
+import {fieldTypeLabels, formatArea, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {formatKilograms} from '../../../shared/core/records/model';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
 import {currentRows, rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
-import {useScale, useTheme} from '../../../shared/theme';
+import {FieldMapPreview} from '../../../shared/components/field-map-preview/field-map-preview.component';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldDetail'>;
 
@@ -29,8 +28,6 @@ function AreaRow({label, areaM2, selected}: {label: string; areaM2: number; sele
 
 export function FieldDetailScreen({route, navigation}: Props) {
   const styles = useStyles();
-  const {theme} = useTheme();
-  const scale = useScale();
   const {fields, removeField} = useFields();
   const {data} = useFarmData();
   const {selectedSeason} = useSeason();
@@ -40,11 +37,6 @@ export function FieldDetailScreen({route, navigation}: Props) {
   const groups = varietyGroups(rowsForSeason(data.rows, route.params.fieldId, season));
   const harvests = data.records.filter(record => record.fieldId === route.params.fieldId &&
     record.kind === 'harvest' && record.season === season);
-  const region = useMemo(
-    () => (field && field.polygon.length >= 3 ? regionForPoints(field.polygon) : null),
-    [field],
-  );
-
   if (!field) return <Page title={t("fieldNotFound")} onBack={() => navigation.goBack()} />;
 
   const confirmDelete = () => Alert.alert(t("confirmDeleteFieldTitle"),
@@ -66,13 +58,7 @@ export function FieldDetailScreen({route, navigation}: Props) {
     {field.type === 'berries' && <AppButton
       label={rows.length > 0 ? t("rowsAndVarietiesCount", [rows.length]) : t("addRowsAndVarieties")}
       variant="secondary" onPress={() => navigation.navigate('RowsSetup', {fieldId: field.id})} />}
-    {region && <View style={styles.map} pointerEvents="none" accessibilityLabel={t("fieldBoundaryOnMap")}>
-      <MapView style={styles.mapFill} mapType="hybrid" region={region} liteMode
-        scrollEnabled={false} zoomEnabled={false} rotateEnabled={false} pitchEnabled={false}>
-        <Polygon coordinates={field.polygon} strokeColor={theme.colors.accent}
-          fillColor="rgba(227,164,59,0.28)" strokeWidth={scale(3)} />
-      </MapView>
-    </View>}
+    {field.polygon.length >= 3 && <FieldMapPreview polygon={field.polygon} />}
     <InfoCard>
       <Text style={styles.label}>{t("areaUsedInCalculations")}</Text>
       <Text style={styles.metric}>{formatArea(selectedAreaM2(field))}</Text>

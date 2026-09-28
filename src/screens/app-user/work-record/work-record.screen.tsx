@@ -69,7 +69,6 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [costMode, setCostMode] = useState<CostMode>(initialCostMode);
   const [costInput, setCostInput] = useState(initialCost);
-  const [detailsOpen, setDetailsOpen] = useState(!!editing);
   const [performer, setPerformer] = useState<Performer | null>(editing?.details.performer ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
@@ -248,46 +247,41 @@ export function WorkRecordScreen({route, navigation}: Props) {
           {selectedRows.length > 0 && costMode === 'perHa' && <Text style={styles.error}>{t("selectedRowsCostModeHint", [], "both")}</Text>}
         </View>
 
-        <Pressable accessibilityRole="button" accessibilityState={{expanded: detailsOpen}}
-          onPress={() => setDetailsOpen(open => !open)} style={styles.detailsToggle}>
-          <Text style={styles.label}>{t("detailsOptional")}</Text>
-          <AppIcon name={detailsOpen ? 'chevronUp' : 'chevronDown'} color={theme.colors.textMuted} size={22} />
-        </Pressable>
-        {detailsOpen && <>
-          <View style={styles.section}>
-            <Text style={styles.label}>{t("howShouldTheCostBeCalculated")}</Text>
-            <View style={styles.segmented}>
-              {(['sum', 'perHa'] as const).map(mode => <Pressable key={mode} accessibilityRole="button"
-                accessibilityState={{selected: costMode === mode}} onPress={() => setCostMode(mode)}
-                style={[styles.segment, costMode === mode && styles.segmentSelected]}>
-                <Text style={styles.segmentText}>{mode === 'sum' ? t("totalAmount") : t("perHectare")}</Text>
-              </Pressable>)}
-            </View>
+        {/* Always open: optional fields hidden behind a toggle were never filled in. */}
+        <Text style={styles.detailsHeading} accessibilityRole="header">{t("detailsOptional")}</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("howShouldTheCostBeCalculated")}</Text>
+          <View style={styles.segmented}>
+            {(['sum', 'perHa'] as const).map(mode => <Pressable key={mode} accessibilityRole="button"
+              accessibilityState={{selected: costMode === mode}} onPress={() => setCostMode(mode)}
+              style={[styles.segment, costMode === mode && styles.segmentSelected]}>
+              <Text style={styles.segmentText}>{mode === 'sum' ? t("totalAmount") : t("perHectare")}</Text>
+            </Pressable>)}
           </View>
-          <View style={styles.section}>
-            <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
-            <View style={styles.chips}>
-              {seasonOptions.map(year => <Chip key={year} label={String(year)}
-                selected={season === year} onPress={() => setSeasonOverride(year)} />)}
-            </View>
-            <Text style={styles.note}>{t("automatically", [], "after")}{season}{t("winterCropSeasonHint")}</Text>
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
+          <View style={styles.chips}>
+            {seasonOptions.map(year => <Chip key={year} label={String(year)}
+              selected={season === year} onPress={() => setSeasonOverride(year)} />)}
           </View>
-          {rowGroups.length > 0 && <RowSelection groups={rowGroups} selectedIds={selectedRowIds}
-            onChange={setSelectedRowIds} mode="work" />}
-          <View style={styles.section}>
-            <Text style={styles.label}>{t("whoDidTheWork")}</Text>
-            <View style={styles.chips}>
-              {performers.map(value => <Chip key={value} label={t(performerLabels[value])} selected={performer === value}
-                onPress={() => setPerformer(current => (current === value ? null : value))} />)}
-            </View>
+          <Text style={styles.note}>{t("automatically", [], "after")}{season}{t("winterCropSeasonHint")}</Text>
+        </View>
+        {rowGroups.length > 0 && <RowSelection groups={rowGroups} selectedIds={selectedRowIds}
+          onChange={setSelectedRowIds} mode="work" />}
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("whoDidTheWork")}</Text>
+          <View style={styles.chips}>
+            {performers.map(value => <Chip key={value} label={t(performerLabels[value])} selected={performer === value}
+              onPress={() => setPerformer(current => (current === value ? null : value))} />)}
           </View>
-          <View style={styles.section}>
-            <Text style={styles.label}>{t("note")}</Text>
-            <TextInput value={note} onChangeText={setNote} multiline maxLength={500}
-              placeholder={t("forExampleSeed450Kg")} placeholderTextColor={theme.colors.textMuted}
-              style={[styles.input, styles.noteInput]} />
-          </View>
-        </>}
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("note")}</Text>
+          <TextInput value={note} onChangeText={setNote} multiline maxLength={500}
+            placeholder={t("forExampleSeed450Kg")} placeholderTextColor={theme.colors.textMuted}
+            style={[styles.input, styles.noteInput]} />
+        </View>
 
         {editing && <AppButton label={t("deleteRecord")} variant="danger" onPress={confirmDelete} />}
       </>}

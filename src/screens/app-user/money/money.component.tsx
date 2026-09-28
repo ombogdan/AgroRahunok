@@ -1,4 +1,4 @@
-import {t} from '../../../shared/config/i18n';
+import {localeTag, t} from '../../../shared/config/i18n';
 import {useStyles} from './money.styles';
 import React from 'react';
 import {ActivityIndicator, Pressable, Text, View} from 'react-native';
@@ -12,7 +12,7 @@ import {useSeason} from '../../../shared/core/records/SeasonProvider';
 import {summarizeSeason, yieldForArea} from '../../../shared/core/records/seasonSummary';
 import {useTheme} from '../../../shared/theme';
 
-const number = (value: number) => new Intl.NumberFormat('uk-UA', {maximumFractionDigits: 1}).format(value);
+const number = (value: number) => new Intl.NumberFormat(localeTag(), {maximumFractionDigits: 1}).format(value);
 const signedMoney = (value: number) => `${value < 0 ? '−' : value > 0 ? '+' : ''}${formatMoney(value)}`;
 
 

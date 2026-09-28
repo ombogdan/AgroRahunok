@@ -1,3 +1,4 @@
+import {t} from '../../../config/i18n';
 import {Platform} from 'react-native';
 import {
   GoogleSignin,
@@ -44,15 +45,15 @@ export function signInErrorMessage(error: unknown): string | null {
       return null;
     }
     if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-      return 'Оновіть сервіси Google Play і спробуйте ще раз.';
+      return t('updateGooglePlayServices');
     }
   }
   if (error instanceof Error && /network request failed|failed to fetch/i.test(error.message)) {
-    return 'Немає зв’язку з інтернетом. Перевірте мережу й спробуйте ще раз.';
+    return t('internetConnectionRequired');
   }
   // Setup problems (.env, the Google provider in Supabase) are spelled out for the developer only.
   if (__DEV__ && error instanceof Error) return error.message;
-  return 'Не вдалося увійти. Спробуйте ще раз.';
+  return t('signInFailed');
 }
 
 export async function signOutOfGoogle() {

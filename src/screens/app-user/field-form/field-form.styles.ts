@@ -10,10 +10,9 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
     borderColor: theme.colors.border, backgroundColor: theme.colors.surface},
   label: {color: theme.colors.text, fontSize: scale(17), fontWeight: '600' as const},
   areaValue: {color: theme.colors.primary, fontSize: scale(28), fontWeight: '700' as const},
-  detailsToggle: {minHeight: scale(58), paddingHorizontal: scale(18), paddingVertical: scale(12),
-    borderRadius: scale(20), borderWidth: scale(1), borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface, flexDirection: 'row' as const,
-    alignItems: 'center' as const, justifyContent: 'space-between' as const, gap: scale(12)},
+  // Plain heading over the optional fields; the negative margin keeps it next to the card it names.
+  detailsHeading: {color: theme.colors.textMuted, fontSize: scale(17), lineHeight: scale(22),
+    fontWeight: '600' as const, marginTop: scale(8), marginBottom: -scale(8), paddingHorizontal: scale(4)},
   input: {minHeight: scale(58), paddingHorizontal: scale(16), borderRadius: scale(12), borderWidth: scale(1),
     borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt,
     color: theme.colors.text, fontSize: scale(19)},

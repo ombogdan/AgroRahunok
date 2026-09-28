@@ -1,8 +1,10 @@
 import {useStyles} from './page.styles';
-import React from 'react';
+import React, {useContext} from 'react';
 import {KeyboardAvoidingView, Platform, ScrollView, Text, View} from 'react-native';
 import type {PropsWithChildren, ReactNode} from 'react';
+import {BottomTabBarHeightContext} from '@react-navigation/bottom-tabs';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import type {Edge} from 'react-native-safe-area-context';
 import {BackButton} from '../back-button/back-button.component';
 
 type Props = PropsWithChildren<{
@@ -16,10 +18,14 @@ type Props = PropsWithChildren<{
 
 export function Page({title, subtitle, withHeader = false, onBack, footer, children}: Props) {
   const styles = useStyles();
+  // On a tab the tab bar already keeps clear of the home indicator; a second bottom inset
+  // would leave an empty band above the «Додати запис» dock.
+  const inTabs = useContext(BottomTabBarHeightContext) !== undefined;
+  const edges: Edge[] = ['left', 'right'];
+  if (!withHeader) edges.push('top');
+  if (!inTabs) edges.push('bottom');
   return (
-    <SafeAreaView
-      style={styles.safe}
-      edges={withHeader ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={edges}>
       <View style={styles.header}>
         {onBack && <BackButton onPress={onBack} />}
         <Text style={styles.title} accessibilityRole="header">{title}</Text>

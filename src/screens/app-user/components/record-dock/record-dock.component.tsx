@@ -5,13 +5,13 @@ import {View} from 'react-native';
 import {BottomTabBar} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useRootNavigation} from '../../../../navigation/useRootNavigation';
-import {AppButton} from '../../../../shared/components/ui';
 import {useFields} from '../../../../shared/core/fields/FieldsProvider';
+import {DockButton} from '../dock-button/dock-button.component';
 import {RecordSheet} from '../record-sheet/record-sheet.component';
 
 
-// Tab bar with the design's RecordDock above it: «+ Записати» on every tab once a plot exists,
-// «+ Додати ділянку» on the plots tab.
+// Tab bar with the design's RecordDock above it: «Додати запис» on every tab once a plot exists,
+// «Додати ділянку» on the plots tab.
 export function TabBarWithDock(props: BottomTabBarProps) {
   const styles = useStyles();
   const navigation = useRootNavigation();
@@ -21,8 +21,9 @@ export function TabBarWithDock(props: BottomTabBarProps) {
 
   return <>
     {fields.length > 0 && <View style={styles.dock}>
-      <AppButton label={onFieldsTab ? t("addField") : t("addRecord")}
-        onPress={() => (onFieldsTab ? navigation.navigate('FieldMethod') : setSheetOpen(true))} />
+      {onFieldsTab
+        ? <DockButton title={t("addFieldTitle")} onPress={() => navigation.navigate('FieldMethod')} />
+        : <DockButton title={t("addRecordTitle")} onPress={() => setSheetOpen(true)} />}
     </View>}
     <BottomTabBar {...props} />
     <RecordSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} onChoose={kind => {

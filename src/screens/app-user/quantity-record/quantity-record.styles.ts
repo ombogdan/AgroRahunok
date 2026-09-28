@@ -21,9 +21,9 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   error: {color: theme.colors.danger, fontSize: scale(15), lineHeight: scale(20)},
   custom: {gap: scale(12), padding: scale(16), backgroundColor: theme.colors.surfaceAlt, borderRadius: scale(16),
     borderWidth: scale(1), borderColor: theme.colors.border},
-  detailsToggle: {minHeight: scale(56), paddingHorizontal: scale(18), borderRadius: scale(20),
-    borderWidth: scale(1), borderColor: theme.colors.border, backgroundColor: theme.colors.surface,
-    flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const},
+  // Plain heading over the optional fields; the negative margin keeps it next to the card it names.
+  detailsHeading: {color: theme.colors.textMuted, fontSize: scale(17), lineHeight: scale(22),
+    fontWeight: '600' as const, marginTop: scale(8), marginBottom: -scale(8), paddingHorizontal: scale(4)},
   footer: {paddingHorizontal: scale(20), paddingTop: scale(12), paddingBottom: scale(12),
     borderTopWidth: scale(1), borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface},
   keyboardBar: {flexDirection: 'row' as const, justifyContent: 'flex-end' as const,

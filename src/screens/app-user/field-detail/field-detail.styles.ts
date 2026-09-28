@@ -2,9 +2,6 @@ import {useThemedStyles} from '../../../shared/theme';
 import type {AppTheme, Scale} from '../../../shared/theme/theme';
 
 const createStyles = (theme: AppTheme, scale: Scale) => ({
-  map: {height: scale(190), borderRadius: scale(20), overflow: 'hidden' as const,
-    borderWidth: scale(1), borderColor: theme.colors.border},
-  mapFill: {flex: 1},
   label: {color: theme.colors.textMuted, fontSize: scale(17), fontWeight: '600' as const},
   metric: {color: theme.colors.text, fontSize: scale(40), lineHeight: scale(48), fontWeight: '700' as const},
   row: {minHeight: scale(44), flexDirection: 'row' as const, alignItems: 'center' as const, flexWrap: 'wrap' as const,

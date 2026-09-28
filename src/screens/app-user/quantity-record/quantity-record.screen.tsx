@@ -9,7 +9,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, AppIcon, CalendarDatePicker, useToast} from '../../../shared/components/ui';
+import {AppButton, CalendarDatePicker, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {formatArea, parsePositiveNumber, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
@@ -65,7 +65,6 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
   const [otherDate, setOtherDate] = useState(editing && initialDate === 'other' ? formatDateInput(editing.occurredOn) : '');
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(!!editing);
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
   const [unitName, setUnitName] = useState(editing?.details.unitName ?? previousRecord?.details.unitName ?? builtInUnits[0].name);
   const [quantityInput, setQuantityInput] = useState(inputNumber(editing?.details.enteredQuantity ?? editing?.quantityKg ?? undefined));
@@ -251,49 +250,44 @@ export function QuantityRecordScreen({route, navigation}: Props) {
         </View>
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityState={{expanded: detailsOpen}}
-        onPress={() => setDetailsOpen(open => !open)} style={styles.detailsToggle}>
-        <Text style={styles.label}>{t("detailsOptional")}</Text>
-        <AppIcon name={detailsOpen ? 'chevronUp' : 'chevronDown'} color={theme.colors.textMuted} size={22} />
-      </Pressable>
-      {detailsOpen && <>
-        {rowGroups.length > 0 && <RowSelection groups={rowGroups} selectedIds={selectedRowIds}
-          onChange={setSelectedRowIds} mode="quantity" />}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
-          <View style={styles.chips}>
-            {seasonOptions.map(year => <Chip key={year} label={String(year)} selected={season === year}
-              onPress={() => setSeasonOverride(year)} />)}
-          </View>
+      {/* Always open: optional fields hidden behind a toggle were never filled in. */}
+      <Text style={styles.detailsHeading} accessibilityRole="header">{t("detailsOptional")}</Text>
+      {rowGroups.length > 0 && <RowSelection groups={rowGroups} selectedIds={selectedRowIds}
+        onChange={setSelectedRowIds} mode="quantity" />}
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
+        <View style={styles.chips}>
+          {seasonOptions.map(year => <Chip key={year} label={String(year)} selected={season === year}
+            onPress={() => setSeasonOverride(year)} />)}
         </View>
-        {isSale && <View style={styles.section}>
-          <Text style={styles.label}>{t("buyerOptional")}</Text>
-          <TextInput value={buyer} onChangeText={setBuyer} maxLength={60}
-            placeholder={t("soldToWhom")} placeholderTextColor={theme.colors.textMuted}
-            accessibilityLabel={t("buyer")} style={styles.input} />
+      </View>
+      {isSale && <View style={styles.section}>
+        <Text style={styles.label}>{t("buyerOptional")}</Text>
+        <TextInput value={buyer} onChangeText={setBuyer} maxLength={60}
+          placeholder={t("soldToWhom")} placeholderTextColor={theme.colors.textMuted}
+          accessibilityLabel={t("buyer")} style={styles.input} />
+      </View>}
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("customUnit")}</Text>
+        <Chip label={t("addUnit")} selected={addingUnit} onPress={() => setAddingUnit(open => !open)} />
+        {addingUnit && <View style={styles.custom}>
+          <TextInput value={newUnitName} onChangeText={setNewUnitName} maxLength={30}
+            placeholder={t("forExampleBucket")} placeholderTextColor={theme.colors.textMuted}
+            accessibilityLabel={t("unitName")} style={styles.input} />
+          <TextInput value={newUnitWeight} onChangeText={setNewUnitWeight} keyboardType="decimal-pad"
+            inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder={t("kilogramsPerBucket")}
+            placeholderTextColor={theme.colors.textMuted} accessibilityLabel={t("unitWeightInKilograms")}
+            style={styles.input} />
+          <AppButton label={savingUnit ? t("saving") : t("saveUnit")}
+            disabled={!newUnitValid || savingUnit} onPress={() => { saveUnit(); }} />
         </View>}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t("customUnit")}</Text>
-          <Chip label={t("addUnit")} selected={addingUnit} onPress={() => setAddingUnit(open => !open)} />
-          {addingUnit && <View style={styles.custom}>
-            <TextInput value={newUnitName} onChangeText={setNewUnitName} maxLength={30}
-              placeholder={t("forExampleBucket")} placeholderTextColor={theme.colors.textMuted}
-              accessibilityLabel={t("unitName")} style={styles.input} />
-            <TextInput value={newUnitWeight} onChangeText={setNewUnitWeight} keyboardType="decimal-pad"
-              inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder={t("kilogramsPerBucket")}
-              placeholderTextColor={theme.colors.textMuted} accessibilityLabel={t("unitWeightInKilograms")}
-              style={styles.input} />
-            <AppButton label={savingUnit ? t("saving") : t("saveUnit")}
-              disabled={!newUnitValid || savingUnit} onPress={() => { saveUnit(); }} />
-          </View>}
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.label}>{t("noteOptional")}</Text>
-          <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
-            placeholder={t("addDetails")} placeholderTextColor={theme.colors.textMuted}
-            accessibilityLabel={t("note")} style={styles.input} />
-        </View>
-      </>}
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("noteOptional")}</Text>
+        <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
+          placeholder={t("addDetails")} placeholderTextColor={theme.colors.textMuted}
+          accessibilityLabel={t("note")} style={styles.input} />
+      </View>
       {editing && <AppButton label={t("deleteRecord")} variant="danger" onPress={confirmDelete} />}
     </ScrollView>
     <View style={styles.footer}>

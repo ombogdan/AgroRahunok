@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, AppIcon, CalendarDatePicker, Page, useToast} from '../../../shared/components/ui';
+import {AppButton, CalendarDatePicker, Page, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import type {NewRecord} from '../../../shared/core/records/model';
@@ -49,7 +49,6 @@ export function OtherRecordScreen({route, navigation}: Props) {
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
   const [otherDate, setOtherDate] = useState(editing && initialDate === 'other' ? formatDateInput(editing.occurredOn) : '');
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(!!editing);
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
   const [saving, setSaving] = useState(false);
@@ -82,7 +81,7 @@ export function OtherRecordScreen({route, navigation}: Props) {
       const record = await addRecord(input);
       navigation.goBack();
       showToast({
-        text: `${categoryName}: ${isIncome ? '+' : '−'}${formatMoney(amountKopecks)}`,
+        text: `${category === 'Інше' ? categoryName : t(categoryKeys[category])}: ${isIncome ? '+' : '−'}${formatMoney(amountKopecks)}`,
         actionLabel: t("cancel"),
         onAction: () => {
           removeRecord(record.id).catch(error => logSupabaseError(t("couldNotUndoTheRecord"), error));
@@ -153,35 +152,30 @@ export function OtherRecordScreen({route, navigation}: Props) {
             selected={dateChoice === 'other'} onPress={() => { Keyboard.dismiss(); setCalendarOpen(true); }}/>
         </View>
       </View>
-      <Pressable accessibilityRole="button" accessibilityState={{expanded: detailsOpen}}
-        onPress={() => setDetailsOpen(open => !open)} style={styles.detailsToggle}>
-        <Text style={styles.label}>{t("detailsOptional")}</Text>
-        <AppIcon name={detailsOpen ? 'chevronUp' : 'chevronDown'} color={theme.colors.textMuted} size={22} />
-      </Pressable>
-      {detailsOpen && <>
-        <View style={styles.section}>
-          <Text style={styles.label}>{t("whatIsThisFor")}</Text>
-          <View style={styles.chips}>
-            <Chip label={t("wholeFarm")} selected={fieldId === null} onPress={() => setFieldId(null)}/>
-            {fields.map(field => <Chip key={field.id} label={field.name} selected={fieldId === field.id}
-              onPress={() => setFieldId(field.id)}/>)}
-          </View>
-          <Text style={styles.note}>{t("farmWideAmountsAreNotAllocatedToFields")}</Text>
+      {/* Always open: optional fields hidden behind a toggle were never filled in. */}
+      <Text style={styles.detailsHeading} accessibilityRole="header">{t("detailsOptional")}</Text>
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("whatIsThisFor")}</Text>
+        <View style={styles.chips}>
+          <Chip label={t("wholeFarm")} selected={fieldId === null} onPress={() => setFieldId(null)}/>
+          {fields.map(field => <Chip key={field.id} label={field.name} selected={fieldId === field.id}
+            onPress={() => setFieldId(field.id)}/>)}
         </View>
-        <View style={styles.section}>
-          <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
-          <View style={styles.chips}>
-            {seasonOptions.map(year => <Chip key={year} label={String(year)} selected={season === year}
-              onPress={() => setSeasonOverride(year)}/>)}
-          </View>
+        <Text style={styles.note}>{t("farmWideAmountsAreNotAllocatedToFields")}</Text>
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
+        <View style={styles.chips}>
+          {seasonOptions.map(year => <Chip key={year} label={String(year)} selected={season === year}
+            onPress={() => setSeasonOverride(year)}/>)}
         </View>
-        <View style={styles.section}>
-          <Text style={styles.label}>{t("noteOptional")}</Text>
-          <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
-            placeholder={t("addDetails")} placeholderTextColor={theme.colors.textMuted}
-            accessibilityLabel={t("note")} style={styles.input}/>
-        </View>
-      </>}
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("noteOptional")}</Text>
+        <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
+          placeholder={t("addDetails")} placeholderTextColor={theme.colors.textMuted}
+          accessibilityLabel={t("note")} style={styles.input}/>
+      </View>
       {editing && <AppButton label={t("deleteRecord")} variant="danger" onPress={confirmDelete}/>}
     </Page>
     <CalendarDatePicker visible={calendarOpen} selectedDate={parseDateInput(otherDate) ?? today}
