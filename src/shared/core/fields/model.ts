@@ -1,4 +1,5 @@
-import {getLanguage, localeTag} from '../../config/i18n';
+// The config itself, not the i18n index, which also brings the React provider: models stay plain.
+import {getLanguage, localeTag} from '../../config/i18n/i18n.config';
 import {area} from '@turf/area';
 
 export type FieldType = 'field' | 'garden' | 'berries' | 'orchard' | 'greenhouse';

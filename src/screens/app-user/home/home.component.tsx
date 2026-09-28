@@ -13,7 +13,7 @@ import {
 } from '../../../shared/core/fields/model';
 import type {Field} from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
-import {rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
+import {rowsForSeason, rowsSummary, usesRows, varietyGroups} from '../../../shared/core/rows/model';
 import {formatMoney} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
@@ -115,11 +115,14 @@ export function HomeScreen() {
                     }]}/>)}
           </View>
           {fields.map(field => {
-            const crop = cropOf(field);
-            const rowVarieties = varietyGroups(rowsForSeason(data.rows, field.id, season))
-              .map(group => group.variety);
-            const cropDetails = crop ? [crop, rowVarieties.length > 0 ? rowVarieties.join(', ')
-              : seasonPlantings.get(field.id)?.variety].filter(Boolean).join(' · ') : null;
+            const rowGroups = varietyGroups(rowsForSeason(data.rows, field.id, season));
+            // Berry plots and orchards show what grows in their rows; other plots their crop for the season.
+            const rowPlot = usesRows(field);
+            const crop = rowPlot ? rowGroups.find(group => group.crop)?.crop ?? field.crop : cropOf(field);
+            const cropDetails = rowPlot ? rowsSummary(rowGroups) || null
+              : crop ? [crop, rowGroups.length > 0 ? rowGroups.map(group => group.variety).join(', ')
+                : seasonPlantings.get(field.id)?.variety].filter(Boolean).join(' · ') : null;
+            const emptyLabel = rowPlot ? t("addRowsButton") : t("addCrop");
             return (
               <Pressable
                 key={field.id}
@@ -129,13 +132,14 @@ export function HomeScreen() {
                 <View style={[styles.dot, {backgroundColor: cropColor(crop)}]}/>
                 <View style={styles.rowBody}>
                   <Text style={styles.rowTitle}>{field.name}</Text>
-                  {/* The season's crop opens straight in the crop rotation, to add or change it. */}
+                  {/* The crop opens straight where it is kept: the rows, or the season's crop rotation line. */}
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`${field.name}, ${season}: ${cropDetails ?? t("addCrop")}`}
-                    onPress={() => navigation.navigate('PlantingForm', {fieldId: field.id, season})}
+                    accessibilityLabel={`${field.name}, ${season}: ${cropDetails ?? emptyLabel}`}
+                    onPress={() => (rowPlot ? navigation.navigate('RowsSetup', {fieldId: field.id})
+                      : navigation.navigate('PlantingForm', {fieldId: field.id, season}))}
                     style={({pressed}) => [styles.cropButton, pressed && styles.cropButtonPressed]}>
-                    <Text style={styles.cropButtonText}>{cropDetails ?? t("addCrop")}</Text>
+                    <Text style={styles.cropButtonText}>{cropDetails ?? emptyLabel}</Text>
                     {cropDetails ? <AppIcon name="pencil" color={theme.colors.primary} size={16}/> : null}
                   </Pressable>
                 </View>

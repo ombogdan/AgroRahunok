@@ -12,7 +12,7 @@ import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {PlantingSeasonTakenError} from '../../../shared/core/offline/farmStore';
 import {toLocalIsoDate} from '../../../shared/core/records/model';
 import {
-  fieldRotation, firstFreeSeason, repeatedFrom, rotatesCrops, sameCrop, seasonOnField, yieldUnit,
+  fieldRotation, firstFreeSeason, repeatedFrom, rotatesCrops, sameName, seasonOnField, yieldUnit,
 } from '../../../shared/core/rotation/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
@@ -79,8 +79,8 @@ export function PlantingFormScreen({route, navigation}: Props) {
   const newestFirst = [...data.plantings].sort((a, b) => b.season - a.season);
   const cropSuggestions = matchSuggestions(crop, [...newestFirst.map(item => item.crop), ...fields.map(item => item.crop)]);
   const varietySuggestions = cropName ? matchSuggestions(variety, [
-    ...newestFirst.filter(item => item.crop && sameCrop(item.crop, cropName)).map(item => item.variety),
-    ...fields.filter(item => item.crop && sameCrop(item.crop, cropName)).map(item => item.variety),
+    ...newestFirst.filter(item => item.crop && sameName(item.crop, cropName)).map(item => item.variety),
+    ...fields.filter(item => item.crop && sameName(item.crop, cropName)).map(item => item.variety),
   ]) : [];
 
   const pickDate = (key: DateKey) => {

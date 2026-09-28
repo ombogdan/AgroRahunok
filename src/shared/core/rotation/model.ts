@@ -1,4 +1,5 @@
-import {localeTag, t} from '../../config/i18n';
+// The config itself, not the i18n index, which also brings the React provider: models stay plain.
+import {localeTag, t} from '../../config/i18n/i18n.config';
 import type {Field} from '../fields/model';
 import type {Planting} from '../fields/plantingsRepository';
 import type {FarmRecord} from '../records/model';
@@ -38,7 +39,8 @@ export function rotatesCrops(field: Pick<Field, 'type'>): boolean {
   return field.type !== 'berries' && field.type !== 'orchard';
 }
 
-export function sameCrop(first: string, second: string): boolean {
+// Crop and variety names typed by hand match regardless of case and stray spaces.
+export function sameName(first: string, second: string): boolean {
   return first.trim().toLocaleLowerCase(localeTag()) === second.trim().toLocaleLowerCase(localeTag());
 }
 
@@ -46,7 +48,7 @@ export function sameCrop(first: string, second: string): boolean {
 export function repeatedFrom(planting: Pick<Planting, 'season' | 'crop'>, rotation: Planting[]): Planting | null {
   if (!planting.crop) return null;
   const previous = rotation.find(item => item.season === planting.season - 1);
-  return previous?.crop && sameCrop(previous.crop, planting.crop) ? previous : null;
+  return previous?.crop && sameName(previous.crop, planting.crop) ? previous : null;
 }
 
 // Centners per hectare and kilograms per sotka are the same number (kilograms per hectare / 100);

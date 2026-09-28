@@ -3,6 +3,7 @@ import React from 'react';
 import {Pressable, Text, View} from 'react-native';
 import {InfoCard} from '../../../../../shared/components/ui';
 import type {RowPlanting} from '../../../../../shared/core/rows/model';
+import {varietyLabel} from '../../../../../shared/core/rows/model';
 import {useStyles} from './row-scheme.styles';
 
 type Props = {
@@ -24,11 +25,12 @@ export function RowScheme({fieldId, rows, history, onSelect}: Props) {
       return <Pressable key={row.id} accessibilityRole="button" onPress={() => onSelect(row)} style={styles.row}>
         <Text style={styles.number}>№{row.rowNumber}</Text>
         <View style={styles.body}>
-          <Text style={styles.variety}>{row.variety ?? t("varietyNotSpecified")}</Text>
+          <Text style={styles.variety}>{row.variety ? varietyLabel({crop: row.crop, variety: row.variety})
+            : t("varietyNotSpecified")}</Text>
           {row.plantedYear !== null && <Text style={styles.muted}>
             {row.plantedYear > currentYear ? t("plannedFor") : t("planted")}: {row.plantedYear}
           </Text>}
-          {previous.map(old => <Text key={old.id} style={styles.muted}>{t("previous", [], "both")}{old.variety} · {old.plantedYear}–{old.endedYear}
+          {previous.map(old => <Text key={old.id} style={styles.muted}>{t("previous", [], "both")}{varietyLabel({crop: old.crop, variety: old.variety ?? ''})} · {old.plantedYear}–{old.endedYear}
           </Text>)}
         </View>
       </Pressable>;

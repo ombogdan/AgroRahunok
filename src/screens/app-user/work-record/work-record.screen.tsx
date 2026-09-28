@@ -88,7 +88,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const rowGroups = varietyGroups(seasonRows);
   const selectedRows = seasonRows.filter(row => selectedRowIds.includes(row.id));
   const selectedGroups = varietyGroups(selectedRows);
-  const selectedVariety = selectedGroups.length === 1 ? selectedGroups[0].variety : null;
+  const selectedGroup = selectedGroups.length === 1 ? selectedGroups[0] : null;
   const seasonOptions = [...new Set([
     occurredDate.getFullYear(), occurredDate.getFullYear() + 1, season,
     ...records.map(record => record.season),
@@ -125,9 +125,10 @@ export function WorkRecordScreen({route, navigation}: Props) {
         costMode,
         ...(costMode === 'perHa' && valueKopecks !== null ? {ratePerHaKopecks: valueKopecks} : {}),
         ...(performer ? {performer} : {}),
-        ...(selectedVariety ? {
+        ...(selectedGroup ? {
           rowPlantingIds: selectedRows.map(row => row.id),
-          varietySnapshot: selectedVariety,
+          ...(selectedGroup.crop ? {cropSnapshot: selectedGroup.crop} : {}),
+          varietySnapshot: selectedGroup.variety,
           rowNumbersSnapshot: selectedRows.map(row => row.rowNumber).sort((a, b) => a - b),
         } : {}),
       },

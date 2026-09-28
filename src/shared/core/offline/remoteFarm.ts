@@ -71,7 +71,7 @@ async function push(change: Change): Promise<void> {
     }
     const row = change.value;
     const {error} = await supabase.from('plot_rows').upsert({
-      id: row.id, field_id: row.fieldId, row_number: row.rowNumber,
+      id: row.id, field_id: row.fieldId, row_number: row.rowNumber, crop: row.crop,
       variety: row.variety, planted_year: row.plantedYear,
       ended_year: row.endedYear, created_at: row.createdAt,
     }, {onConflict: 'id'});

@@ -36,11 +36,11 @@ test('rows keep their numbers and previous varieties after replanting', async ()
   await store.load();
   const field = await store.addField(fieldInput);
   await store.ensureRowCount(field.id, 4);
-  await store.assignRowVariety(field.id, 1, 2, 'Полка', 2025);
-  await store.assignRowVariety(field.id, 3, 4, 'Глен Ампл', 2026);
+  await store.assignRowVariety(field.id, 1, 2, 'Малина', 'Полка', 2025);
+  await store.assignRowVariety(field.id, 3, 4, 'Малина', 'Глен Ампл', 2026);
   expect(varietyGroups(currentRows(store.data.rows, field.id)).map(group =>
-    [group.variety, group.rows.map(row => row.rowNumber)])).toEqual([
-    ['Полка', [1, 2]], ['Глен Ампл', [3, 4]],
+    [group.crop, group.variety, group.rows.map(row => row.rowNumber)])).toEqual([
+    ['Малина', 'Полка', [1, 2]], ['Малина', 'Глен Ампл', [3, 4]],
   ]);
 
   const oldRow = currentRows(store.data.rows, field.id)[0];
@@ -49,7 +49,7 @@ test('rows keep their numbers and previous varieties after replanting', async ()
     amountKopecks: null, quantityKg: 12, note: null,
     details: {rowPlantingIds: [oldRow.id], varietySnapshot: 'Полка', rowNumbersSnapshot: [1]},
   });
-  await store.assignRowVariety(field.id, 1, 1, 'Туламін', 2027);
+  await store.assignRowVariety(field.id, 1, 1, 'Малина', 'Туламін', 2027);
   expect(rowsForSeason(store.data.rows, field.id, 2026).find(row => row.rowNumber === 1)?.variety).toBe('Полка');
   expect(rowsForSeason(store.data.rows, field.id, 2027).find(row => row.rowNumber === 1)?.variety).toBe('Туламін');
   expect(store.data.records[0].details.rowPlantingIds).toEqual([oldRow.id]);
@@ -69,16 +69,19 @@ test('a same-year correction is allowed before linked entries, but not after', a
   await store.load();
   const field = await store.addField(fieldInput);
   await store.ensureRowCount(field.id, 1);
-  await store.assignRowVariety(field.id, 1, 1, 'Полка', 2025);
-  await store.assignRowVariety(field.id, 1, 1, 'Полка виправлено', 2025);
+  await store.assignRowVariety(field.id, 1, 1, null, 'Полка', 2025);
+  await store.assignRowVariety(field.id, 1, 1, null, 'Полка виправлено', 2025);
   const row = currentRows(store.data.rows, field.id)[0];
   expect(row.variety).toBe('Полка виправлено');
   await store.addRecord({
     fieldId: field.id, kind: 'harvest', workType: null, occurredOn: '2026-06-10', season: 2026,
     amountKopecks: null, quantityKg: 12, note: null, details: {rowPlantingIds: [row.id]},
   });
-  await expect(store.assignRowVariety(field.id, 1, 1, 'Інший сорт', 2025)).rejects.toThrow();
+  await expect(store.assignRowVariety(field.id, 1, 1, null, 'Інший сорт', 2025)).rejects.toThrow();
   expect(currentRows(store.data.rows, field.id)[0].variety).toBe('Полка виправлено');
+  // Adding the crop to the same planting is not a replanting, so linked entries do not block it.
+  await store.assignRowVariety(field.id, 1, 1, 'Малина', 'Полка виправлено', 2025);
+  expect(currentRows(store.data.rows, field.id)).toMatchObject([{id: row.id, crop: 'Малина', variety: 'Полка виправлено'}]);
 });
 
 test('existing offline snapshot upgrades without losing fields or pending changes', async () => {

@@ -1,4 +1,5 @@
-import {getLanguage, localeTag, t} from '../../config/i18n';
+// The config itself, not the i18n index, which also brings the React provider: models stay plain.
+import {getLanguage, localeTag, t} from '../../config/i18n/i18n.config';
 export type RecordKind = 'work' | 'harvest' | 'sale' | 'other';
 export type WorkType = 'oranka' | 'dysk' | 'borona' | 'kult' | 'posiv' | 'posadka' | 'sap' |
   'obpr' | 'pidzh' | 'poliv' | 'mulch' | 'obriz' | 'zbir' | 'inshe';
@@ -16,6 +17,8 @@ export type RecordDetails = {
   buyer?: string;
   category?: string;
   rowPlantingIds?: string[];
+  // The rows' crop and variety as they were when the record was made.
+  cropSnapshot?: string;
   varietySnapshot?: string;
   rowNumbersSnapshot?: number[];
 };

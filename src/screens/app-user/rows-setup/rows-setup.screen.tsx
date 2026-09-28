@@ -7,6 +7,7 @@ import {AppButton, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import type {RowPlanting} from '../../../shared/core/rows/model';
+import {matchSuggestions} from '../../../shared/core/fields/model';
 import {currentRows, parseRowRange} from '../../../shared/core/rows/model';
 import {RowCountCard} from './components/row-count-card/row-count-card.component';
 import {RowScheme} from './components/row-scheme/row-scheme.component';
@@ -22,6 +23,8 @@ export function RowsSetupScreen({route, navigation}: Props) {
   const [countInput, setCountInput] = useState('');
   const [firstInput, setFirstInput] = useState('1');
   const [lastInput, setLastInput] = useState('');
+  // Rows usually continue with the plot's last crop; older plots kept one crop on the plot itself.
+  const [crop, setCrop] = useState(() => [...rows].reverse().find(row => row.crop)?.crop ?? field?.crop ?? '');
   const [variety, setVariety] = useState(field?.variety ?? '');
   const [yearInput, setYearInput] = useState(String(new Date().getFullYear()));
   const [saving, setSaving] = useState(false);
@@ -34,7 +37,11 @@ export function RowsSetupScreen({route, navigation}: Props) {
   const range = parseRowRange(firstInput, lastInput, rows.length);
   const year = Number(yearInput);
   const canAssign = !!store && range !== null && /^\d{4}$/.test(yearInput) &&
-    year >= 2000 && year <= new Date().getFullYear() + 1 && variety.trim().length > 0 && !saving;
+    year >= 2000 && year <= new Date().getFullYear() + 1 && crop.trim().length > 0 &&
+    variety.trim().length > 0 && !saving;
+  // Crops typed before on any rows, then the plots' own crops.
+  const cropSuggestions = matchSuggestions(crop, [...[...data.rows].reverse().map(row => row.crop),
+    ...fields.map(item => item.crop)]);
   const lastRow = rows[rows.length - 1];
   const canRemoveLast = !!lastRow && lastRow.variety === null &&
     !data.rows.some(item => item.fieldId === field.id && item.rowNumber === lastRow.rowNumber && item.id !== lastRow.id);
@@ -54,7 +61,7 @@ export function RowsSetupScreen({route, navigation}: Props) {
     if (!store || !canAssign || !range) return;
     setSaving(true);
     try {
-      await store.assignRowVariety(field.id, range.first, range.last, variety, year);
+      await store.assignRowVariety(field.id, range.first, range.last, crop, variety, year);
       setFirstInput('');
       setLastInput('');
       setVariety('');
@@ -78,6 +85,7 @@ export function RowsSetupScreen({route, navigation}: Props) {
   const selectRow = (row: RowPlanting) => {
     setFirstInput(String(row.rowNumber));
     setLastInput('');
+    if (row.crop) setCrop(row.crop);
     setVariety(row.variety ?? '');
     setYearInput(String(row.plantedYear ?? new Date().getFullYear()));
   };
@@ -87,7 +95,8 @@ export function RowsSetupScreen({route, navigation}: Props) {
       canAdd={canAdd} saving={saving} onAdd={addRows} />}
     {rows.length > 0 && <>
       <RowVarietyForm rowCount={rows.length} first={firstInput} last={lastInput}
-        onFirstChange={setFirstInput} onLastChange={setLastInput} variety={variety}
+        onFirstChange={setFirstInput} onLastChange={setLastInput}
+        crop={crop} onCropChange={setCrop} cropSuggestions={cropSuggestions} variety={variety}
         onVarietyChange={setVariety} year={yearInput} onYearChange={setYearInput}
         canSave={canAssign} saving={saving} onSave={saveVariety} />
       <RowScheme fieldId={field.id} rows={rows} history={data.rows} onSelect={selectRow} />

@@ -44,7 +44,7 @@ export function RecordRow({record, field, first, detail, onPress}: {
   const location = detail ?? (record.fieldId === null ? t("wholeFarm")
     : [field?.name, record.details.varietySnapshot ? null : field?.crop].filter(Boolean).join(' · '));
   const rowDetail = record.details.varietySnapshot
-    ? `${record.details.varietySnapshot}${record.details.rowNumbersSnapshot?.length
+    ? `${[record.details.cropSnapshot, record.details.varietySnapshot].filter(Boolean).join(' · ')}${record.details.rowNumbersSnapshot?.length
       ? t("rowNumbersSuffix", [record.details.rowNumbersSnapshot.join(', ')]) : ''}` : null;
   const subtitle = [location, rowDetail, quantityDetail, record.kind === 'sale' ? record.details.buyer : null]
     .filter(Boolean).join(' · ');

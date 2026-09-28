@@ -5,7 +5,7 @@ import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Te
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, AutocompleteInput, useToast} from '../../../shared/components/ui';
+import {AppButton, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import type {AreaSource, AreaUnit, FieldType} from '../../../shared/core/fields/model';
 import {
@@ -14,14 +14,12 @@ import {
   formatArea,
   formatHectares,
   formatSotky,
-  matchSuggestions,
   parseAreaInput,
   rectangleAreaM2,
+  selectedAreaM2 as plotAreaM2,
 } from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
-import {seasonFor} from '../../../shared/core/records/model';
-import {rotatesCrops} from '../../../shared/core/rotation/model';
-import {currentRows} from '../../../shared/core/rows/model';
+import {currentRows, usesRows} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
@@ -31,7 +29,7 @@ import {FieldBoundary} from './components/field-boundary/field-boundary.componen
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldForm'>;
 type ManualMethod = 'document' | 'dimensions';
 
-const types: FieldType[] = ['field', 'garden', 'berries', 'orchard', 'greenhouse'];
+const allTypes: FieldType[] = ['field', 'garden', 'berries', 'orchard', 'greenhouse'];
 // The iOS decimal pad has no return key, so number fields get a «Готово» bar above it.
 const NUMBER_KEYBOARD_BAR = 'field-number-keyboard-bar';
 
@@ -52,83 +50,60 @@ export function FieldFormScreen({route, navigation}: Props) {
   const polygon = params.mode === 'map' || params.mode === 'walk' ? params.polygon
     : boundary?.polygon ?? editing?.polygon ?? [];
   const isManual = params.mode === 'manual';
-  const canChooseSource = !isManual && presetMeasuredM2 !== null;
+  const hasContour = polygon.length >= 3;
   const measuredBy = params.mode === 'map' || params.mode === 'walk' ? params.mode : boundary?.source;
   const measuredLabel = measuredBy === 'walk' ? t("measuredByWalking")
     : measuredBy === 'map' ? t("measuredOnMap") : t("measuredArea");
   const backLabel = params.mode === 'map' ? t("map") : params.mode === 'walk' ? t("walkBoundary") : t("back");
 
-  const initialDocM2 = editing?.documentAreaM2 ?? null;
-  const initialUnit: AreaUnit = initialDocM2 !== null && initialDocM2 >= 5000 ? 'hectare' : 'sotka';
+  // Without a contour the typed area counts, so an edited plot starts from the area it uses now.
+  const initialTypedM2 = editing ? (editing.polygon.length < 3 ? plotAreaM2(editing) || null : editing.documentAreaM2)
+    : null;
+  const initialUnit: AreaUnit = initialTypedM2 !== null && initialTypedM2 >= 5000 ? 'hectare' : 'sotka';
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<FieldType>(editing?.type ?? 'field');
+  // Gardens are no longer offered for new plots; an existing garden keeps its type.
+  const types = allTypes.filter(value => value !== 'garden' || editing?.type === 'garden');
   const existingRowCount = editing ? currentRows(data.rows, editing.id).length : 0;
-  const [rowCountInput, setRowCountInput] = useState(editing?.type === 'berries' && existingRowCount > 0
+  const [rowCountInput, setRowCountInput] = useState(editing && usesRows(editing) && existingRowCount > 0
     ? String(existingRowCount) : '');
-  const [crop, setCrop] = useState(editing?.crop ?? '');
-  const [variety, setVariety] = useState(editing?.variety ?? '');
-  // The crop belongs to a harvest year; autumn-sown winter crops default to the next one.
-  const [seasonOverride, setSeasonOverride] = useState<number | null>(null);
   const [unit, setUnit] = useState<AreaUnit>(initialUnit);
-  const [areaInput, setAreaInput] = useState(initialDocM2 === null ? '' : areaInputValue(initialDocM2, initialUnit));
+  const [areaInput, setAreaInput] = useState(initialTypedM2 === null ? '' : areaInputValue(initialTypedM2, initialUnit));
   const [manualMethod, setManualMethod] = useState<ManualMethod>('document');
   const [lengthInput, setLengthInput] = useState('');
   const [widthInput, setWidthInput] = useState('');
-  const [areaSource, setAreaSource] = useState<AreaSource>(
-    editing?.areaSource ?? (presetMeasuredM2 !== null ? 'measured' : 'document'));
   const [saving, setSaving] = useState(false);
 
-  const now = new Date();
-  const season = seasonOverride ?? seasonFor(now, crop.trim() || null);
-  // Suggestions come from what was typed on other plots, newest first.
-  const newestFirst = [...fields].reverse();
-  const cropSuggestions = matchSuggestions(crop, newestFirst.map(item => item.crop));
-  const varietySuggestions = crop.trim() ? matchSuggestions(variety, newestFirst
-    .filter(item => item.crop?.trim().toLocaleLowerCase('uk') === crop.trim().toLocaleLowerCase('uk'))
-    .map(item => item.variety)) : [];
+  // Crops are not asked here: fields and greenhouses get them in the crop rotation,
+  // berry plots and orchards in their rows.
+  const plotUsesRows = usesRows({type});
   const usesDimensions = isManual && manualMethod === 'dimensions';
-  const showDocumentArea = isManual || presetMeasuredM2 === null;
-  // A field, garden or greenhouse gets its crops year by year in the crop rotation, not here.
-  const asksCrop = !rotatesCrops({type});
-  const documentAreaM2 = usesDimensions ? null : parseAreaInput(areaInput, unit);
+  // The typed («за документами») area is only for a plot entered by hand, without a contour.
+  const asksTypedArea = !hasContour && !usesDimensions;
+  const typedAreaM2 = asksTypedArea ? parseAreaInput(areaInput, unit) : null;
   const dimensionsAreaM2 = rectangleAreaM2(lengthInput, widthInput);
   const measuredAreaM2 = usesDimensions ? dimensionsAreaM2 : presetMeasuredM2;
-  const effectiveSource: AreaSource = usesDimensions ? 'measured' : canChooseSource ? areaSource : 'document';
-  const selectedAreaM2 = effectiveSource === 'measured' ? measuredAreaM2 : documentAreaM2;
-  const documentInputValid = usesDimensions || areaInput.trim().length === 0 || documentAreaM2 !== null;
+  // A contour or length × width measures the plot; the typed area of a plot that has a contour is kept as it was.
+  const areaSource: AreaSource = usesDimensions || hasContour ? 'measured' : 'document';
+  const documentAreaM2 = asksTypedArea ? typedAreaM2 : editing?.documentAreaM2 ?? null;
+  const selectedAreaM2 = areaSource === 'measured' ? measuredAreaM2 : documentAreaM2;
+  const typedAreaValid = !asksTypedArea || areaInput.trim().length === 0 || typedAreaM2 !== null;
   const rowCount = Number(rowCountInput);
-  const rowCountValid = type !== 'berries' || (/^\d+$/.test(rowCountInput) &&
+  const rowCountValid = !plotUsesRows || (/^\d+$/.test(rowCountInput) &&
     rowCount >= Math.max(1, existingRowCount) && rowCount <= 200);
-  const canSave = name.trim().length > 0 && (selectedAreaM2 ?? 0) >= 1 && documentInputValid && !saving &&
+  const canSave = name.trim().length > 0 && (selectedAreaM2 ?? 0) >= 1 && typedAreaValid && !saving &&
     rowCountValid && loadState === 'ready' && (params.mode !== 'edit' || editing !== null);
 
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
-    // Without the crop question the plot keeps the crop its rotation gave it.
-    const cropName = asksCrop ? crop.trim() || null : editing?.crop ?? null;
-    const varietyName = !asksCrop ? editing?.variety ?? null
-      : !cropName ? null
-        : type === 'berries' ? (editing?.type === 'berries' ? editing.variety : null)
-          : variety.trim() || null;
+    // The plot keeps the crop its crop rotation gave it.
     const input = {
-      name: name.trim(), type, crop: cropName, variety: varietyName,
-      documentAreaM2, measuredAreaM2, areaSource: effectiveSource, polygon,
-    };
-    // Finish saving the planting before returning home, so its season is available there immediately.
-    const rememberPlanting = async (fieldId: string): Promise<boolean> => {
-      if (!asksCrop || !cropName) return true;
-      try {
-        if (!store) throw new Error(t("localDataIsStillLoading"));
-        await store.savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0});
-        return true;
-      } catch (error) {
-        logSupabaseError(t("couldNotSaveSeasonCrop"), error);
-        return false;
-      }
+      name: name.trim(), type, crop: editing?.crop ?? null, variety: editing?.variety ?? null,
+      documentAreaM2, measuredAreaM2, areaSource, polygon,
     };
     const rememberRows = async (fieldId: string): Promise<boolean> => {
-      if (type !== 'berries') return true;
+      if (!plotUsesRows) return true;
       try {
         if (!store) throw new Error(t("localDataIsStillLoading"));
         await store.ensureRowCount(fieldId, rowCount);
@@ -141,29 +116,24 @@ export function FieldFormScreen({route, navigation}: Props) {
     try {
       if (editing) {
         await updateField(editing.id, input);
-        const plantingSaved = await rememberPlanting(editing.id);
         const rowsSaved = await rememberRows(editing.id);
-        if (type === 'berries') navigation.replace('RowsSetup', {fieldId: editing.id});
+        if (plotUsesRows) navigation.replace('RowsSetup', {fieldId: editing.id});
         else navigation.goBack();
-        showToast({text: !rowsSaved ? t("fieldSavedAddRowsOnTheNextScreen")
-          : plantingSaved ? t("changesSaved") : t("fieldSavedButTheSeasonCropWasNotSaved")});
+        showToast({text: rowsSaved ? t("changesSaved") : t("fieldSavedAddRowsOnTheNextScreen")});
         return;
       }
       const field = await addField(input);
-      const plantingSaved = await rememberPlanting(field.id);
       const rowsSaved = await rememberRows(field.id);
-      navigation.reset({index: type === 'berries' ? 2 : 0, routes: type === 'berries'
+      navigation.reset({index: plotUsesRows ? 2 : 0, routes: plotUsesRows
         ? [{name: 'Tabs', params: {screen: 'Home'}}, {name: 'FieldDetail', params: {fieldId: field.id}},
           {name: 'RowsSetup', params: {fieldId: field.id}}]
         : [{name: 'Tabs', params: {screen: 'Home'}}]});
-      if (type === 'berries') {
-        showToast({text: !rowsSaved ? t("fieldSavedAddRowsOnThisScreen")
-          : plantingSaved ? t("rowsCreatedNowAssignVarieties")
-            : t("rowsCreatedButTheSeasonCropWasNotSaved")});
+      if (plotUsesRows) {
+        showToast({text: rowsSaved ? t("rowsCreatedNowAssignCrops") : t("fieldSavedAddRowsOnThisScreen")});
         return;
       }
       showToast({
-        text: plantingSaved ? t("fieldSavedMessage", [field.name]) : t("fieldSavedButTheSeasonCropWasNotSaved"),
+        text: t("fieldSavedMessage", [field.name]),
         actionLabel: t("cancel"),
         onAction: () => {
           removeField(field.id).catch(error => {
@@ -185,15 +155,11 @@ export function FieldFormScreen({route, navigation}: Props) {
     placeholderTextColor: theme.colors.textMuted,
   };
 
-  const documentAreaForm = <View style={styles.section}>
-    <Text style={styles.label}>{showDocumentArea ? t("documentedAreaLabel") : t("documentedAreaOptional")}</Text>
-    <TextInput {...numberInputProps} value={areaInput} onChangeText={value => {
-      setAreaInput(value);
-      if (canChooseSource && areaSource === 'document' && parseAreaInput(value, unit) === null) {
-        setAreaSource('measured');
-      }
-    }} placeholder={unit === 'sotka' ? t("forExample20") : t("forExample22")} style={styles.input} />
-    {!documentInputValid && <Text style={styles.note}>{t("enterAPositiveNumberSuchAs20Or05")}</Text>}
+  const typedAreaForm = <View style={styles.section}>
+    <Text style={styles.label}>{isManual ? t("documentedAreaLabel") : t("plotAreaLabel")}</Text>
+    <TextInput {...numberInputProps} value={areaInput} onChangeText={setAreaInput}
+      placeholder={unit === 'sotka' ? t("forExample20") : t("forExample22")} style={styles.input} />
+    {!typedAreaValid && <Text style={styles.note}>{t("enterAPositiveNumberSuchAs20Or05")}</Text>}
     <View style={styles.chips}>
       <Chip label={t("ares")} selected={unit === 'sotka'} onPress={() => setUnit('sotka')} />
       <Chip label={t("hectares")} selected={unit === 'hectare'} onPress={() => setUnit('hectare')} />
@@ -219,9 +185,9 @@ export function FieldFormScreen({route, navigation}: Props) {
             onPress={() => setType(value)} />)}
         </View>
       </View>
-      {type === 'berries' && <View style={styles.section}>
+      {plotUsesRows && <View style={styles.section}>
         <Text style={styles.label}>{t("rowsAndVarieties")}</Text>
-        <Text style={styles.note}>{t("berryRowCountDescription")}</Text>
+        <Text style={styles.note}>{t("rowCountDescription")}</Text>
         <TextInput value={rowCountInput} onChangeText={setRowCountInput} keyboardType="number-pad"
           inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder={t("forExample6")}
           placeholderTextColor={theme.colors.textMuted} accessibilityLabel={t("numberOfRows")}
@@ -255,55 +221,16 @@ export function FieldFormScreen({route, navigation}: Props) {
           </Text>
         </View>}
         <Text style={styles.note}>{t("rectangleAreaHint")}</Text>
-      </View> : showDocumentArea && documentAreaForm}
+      </View> : asksTypedArea && typedAreaForm}
       {editing && <FieldBoundary polygon={polygon}
         onDraw={() => navigation.navigate('FieldMap', {fieldId: editing.id, polygon})}
         onWalk={() => navigation.navigate('FieldWalk', {fieldId: editing.id})} />}
-      {presetMeasuredM2 !== null && <View style={styles.section}>
+      {hasContour && presetMeasuredM2 !== null && <View style={styles.section}>
         <Text style={styles.label}>{measuredLabel}</Text>
         <Text style={styles.areaValue}>{formatArea(presetMeasuredM2)}</Text>
       </View>}
-      {/* Always open: optional fields hidden behind a toggle were never filled in. */}
-      {(asksCrop || !showDocumentArea) && <Text style={styles.detailsHeading} accessibilityRole="header">
-        {asksCrop ? t("cropAndOtherDetailsOptional") : t("detailsOptional")}
-      </Text>}
-      {asksCrop && <View style={styles.section}>
-        <Text style={styles.label}>{t("seasonCrop", [], "after")}{season}{t("optional", [], "before")}</Text>
-        <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
-          placeholder={t("forExampleWinterWheat")} accessibilityLabel={t("cropForSeasonYear", [season])} />
-        {crop.trim() !== '' && <>
-          {type !== 'berries' && <>
-            <Text style={styles.label}>{t("varietyOptional")}</Text>
-            <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
-              placeholder={t("forExampleBohdana")} accessibilityLabel={t("variety")} />
-          </>}
-          <Text style={styles.label}>{t("harvestYear")}</Text>
-          <View style={styles.chips}>
-            {[now.getFullYear(), now.getFullYear() + 1].map(year => <Chip key={year} label={String(year)}
-              selected={season === year} onPress={() => setSeasonOverride(year)} />)}
-          </View>
-          <Text style={styles.note}>{t("autumnSownWinterCropsBelongToNextYearSHarvest")}</Text>
-        </>}
-      </View>}
-      {!showDocumentArea && documentAreaForm}
-      {canChooseSource && documentAreaM2 !== null && <View style={styles.section}>
-        <Text style={styles.label}>{t("whichAreaShouldBeUsedInCalculations")}</Text>
-        <Pressable accessibilityRole="radio" accessibilityState={{checked: areaSource === 'measured'}}
-          onPress={() => setAreaSource('measured')}
-          style={[styles.radio, areaSource === 'measured' && styles.radioSelected]}>
-          <Text style={styles.radioTitle}>{areaSource === 'measured' ? '◉' : '◯'} {measuredLabel}</Text>
-          <Text style={styles.radioValue}>{formatArea(presetMeasuredM2 ?? 0)}</Text>
-        </Pressable>
-        {documentAreaM2 !== null && <Pressable accessibilityRole="radio"
-          accessibilityState={{checked: areaSource === 'document'}} onPress={() => setAreaSource('document')}
-          style={[styles.radio, areaSource === 'document' && styles.radioSelected]}>
-          <Text style={styles.radioTitle}>{areaSource === 'document' ? '◉' : '◯'}{t("documentedAreaOption", [], "before")}</Text>
-          <Text style={styles.radioValue}>{formatArea(documentAreaM2)}</Text>
-        </Pressable>}
-        <Text style={styles.note}>{t("bothAreaValuesWillBeSaved")}</Text>
-      </View>}
       <View style={styles.save}>
-        <AppButton label={saving ? t("saving") : type === 'berries' ? t("nextRowVarieties")
+        <AppButton label={saving ? t("saving") : plotUsesRows ? t("nextRows")
           : editing ? t("saveChanges") : t("saveField")}
           disabled={!canSave} onPress={() => { save(); }} />
       </View>

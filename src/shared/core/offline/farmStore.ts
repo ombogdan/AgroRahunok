@@ -1,9 +1,9 @@
 import type {Field, NewField} from '../fields/model';
-import type {NewPlanting, Planting, PlantingInput} from '../fields/plantingsRepository';
-import {withRotationDefaults} from '../fields/plantingsRepository';
+import type {NewPlanting, Planting, PlantingInput} from '../fields/planting';
+import {withRotationDefaults} from '../fields/planting';
 import type {FarmRecord, NewRecord} from '../records/model';
 import type {QuantityUnit} from '../records/quantityUnitsRepository';
-import {currentRows} from '../rows/model';
+import {currentRows, withRowDefaults} from '../rows/model';
 import type {RowPlanting} from '../rows/model';
 
 export type FarmData = {
@@ -80,12 +80,20 @@ export function visibleData(snapshot: FarmSnapshot): FarmData {
   return snapshot.pending.reduce(applyChange, snapshot.base);
 }
 
-function withPlantingDefaults(snapshot: FarmSnapshot): FarmSnapshot {
+// Fills in what older versions of the app did not store yet: rotation details and row crops.
+function withDefaults(snapshot: FarmSnapshot): FarmSnapshot {
   return {
     ...snapshot,
-    base: {...snapshot.base, plantings: snapshot.base.plantings.map(withRotationDefaults)},
-    pending: snapshot.pending.map(change => (change.table === 'plantings' && change.action === 'put'
-      ? {...change, value: withRotationDefaults(change.value)} : change)),
+    base: {
+      ...snapshot.base,
+      plantings: snapshot.base.plantings.map(withRotationDefaults),
+      rows: snapshot.base.rows.map(withRowDefaults),
+    },
+    pending: snapshot.pending.map(change => {
+      if (change.table === 'plantings' && change.action === 'put') return {...change, value: withRotationDefaults(change.value)};
+      if (change.table === 'plot_rows' && change.action === 'put') return {...change, value: withRowDefaults(change.value)};
+      return change;
+    }),
   };
 }
 
@@ -145,7 +153,7 @@ export class FarmStore {
         const snapshot: FarmSnapshot = parsed.version === 1
           ? {version: 2, base: {...parsed.base, rows: []}, pending: parsed.pending}
           : parsed;
-        this.snapshot = withPlantingDefaults(snapshot);
+        this.snapshot = withDefaults(snapshot);
       }
       this.loaded = true;
       this.announce();
@@ -240,7 +248,7 @@ export class FarmStore {
       const changes: Change[] = [];
       for (let number = max + 1; number <= count; number++) {
         changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {
-          id: newId(), fieldId, rowNumber: number, variety: null,
+          id: newId(), fieldId, rowNumber: number, crop: null, variety: null,
           plantedYear: null, endedYear: null, createdAt: new Date().toISOString(),
         }});
       }
@@ -248,9 +256,12 @@ export class FarmStore {
     });
   }
 
-  async assignRowVariety(fieldId: string, first: number, last: number, variety: string, year: number): Promise<void> {
+  async assignRowVariety(fieldId: string, first: number, last: number, crop: string | null, variety: string,
+    year: number): Promise<void> {
     const name = variety.trim();
+    const cropName = crop?.trim() || null;
     if (!name || name.length > 60) throw new Error('Вкажіть сорт до 60 символів');
+    if (cropName && cropName.length > 60) throw new Error('Вкажіть культуру до 60 символів');
     if (!Number.isInteger(year) || year < 2000 || year > new Date().getFullYear() + 1) {
       throw new Error('Вкажіть дійсний рік посадки');
     }
@@ -264,8 +275,15 @@ export class FarmStore {
       for (let number = first; number <= last; number++) {
         const previous = active.find(row => row.rowNumber === number);
         if (!previous) throw new Error(`Ряд ${number} не знайдено`);
-        if (previous.plantedYear === year &&
-          previous.variety?.trim().toLocaleLowerCase('uk') === name.toLocaleLowerCase('uk')) continue;
+        const sameVariety = previous.plantedYear === year &&
+          previous.variety?.trim().toLocaleLowerCase('uk') === name.toLocaleLowerCase('uk');
+        if (sameVariety && (previous.crop?.trim().toLocaleLowerCase('uk') ?? null) ===
+          (cropName?.toLocaleLowerCase('uk') ?? null)) continue;
+        // Only the crop name is added or corrected: the planting itself stays, records included.
+        if (sameVariety) {
+          changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {...previous, crop: cropName}});
+          continue;
+        }
         if (previous.plantedYear !== null && year < previous.plantedYear) {
           throw new Error(`Ряд ${number}: рік не може бути ранішим за попередню посадку`);
         }
@@ -273,7 +291,7 @@ export class FarmStore {
           record.details.rowPlantingIds?.includes(previous.id));
         if (previous.plantedYear === null || (year === previous.plantedYear && !hasLinkedRecord)) {
           changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {
-            ...previous, variety: name, plantedYear: year,
+            ...previous, crop: cropName, variety: name, plantedYear: year,
           }});
         } else {
           if (year === previous.plantedYear) {
@@ -283,7 +301,7 @@ export class FarmStore {
             ...previous, endedYear: year - 1,
           }});
           changes.push({key: newId(), table: 'plot_rows', action: 'put', value: {
-            id: newId(), fieldId, rowNumber: number, variety: name,
+            id: newId(), fieldId, rowNumber: number, crop: cropName, variety: name,
             plantedYear: year, endedYear: null, createdAt: new Date().toISOString(),
           }});
         }

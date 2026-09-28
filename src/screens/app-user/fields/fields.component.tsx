@@ -5,7 +5,7 @@ import {AppButton, AppIcon, InfoCard, Page} from '../../../shared/components/ui'
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
-import {currentRows, varietyGroups} from '../../../shared/core/rows/model';
+import {currentRows, rowsSummary, varietyGroups} from '../../../shared/core/rows/model';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
 import {useTheme, useThemedStyles} from '../../../shared/theme';
 import type {AppTheme, Scale} from '../../../shared/theme/theme';
@@ -51,10 +51,9 @@ export function FieldsScreen() {
           <View style={styles.row}>
             <View style={styles.rowBody}>
               <Text style={styles.name}>{field.name}</Text>
-              <Text style={styles.muted}>{[t(fieldTypeLabels[field.type]), field.crop,
-                currentRows(data.rows, field.id).length > 0
-                  ? varietyGroups(currentRows(data.rows, field.id)).map(group => group.variety).join(', ')
-                  : field.variety].filter(Boolean).join(' · ')}</Text>
+              <Text style={styles.muted}>{[t(fieldTypeLabels[field.type]),
+                rowsSummary(varietyGroups(currentRows(data.rows, field.id))) ||
+                [field.crop, field.variety].filter(Boolean).join(' · ')].filter(Boolean).join(' · ')}</Text>
             </View>
             <Text style={styles.area}>{formatArea(selectedAreaM2(field))}</Text>
             <AppIcon name="chevronRight" color={theme.colors.textMuted} size={24} strokeWidth={2.2} />

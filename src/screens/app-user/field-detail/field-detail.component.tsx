@@ -10,10 +10,10 @@ import {fieldTypeLabels, formatArea, selectedAreaM2} from '../../../shared/core/
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {formatKilograms} from '../../../shared/core/records/model';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
-import {currentRows, rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
+import {currentRows, rowsForSeason, rowsSummary, usesRows, varietyGroups, varietyLabel} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {FieldMapPreview} from '../../../shared/components/field-map-preview/field-map-preview.component';
-import {fieldRotation} from '../../../shared/core/rotation/model';
+import {fieldRotation, rotatesCrops, sameName} from '../../../shared/core/rotation/model';
 import {RotationCard} from './components/rotation-card/rotation-card.component';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldDetail'>;
@@ -53,11 +53,13 @@ export function FieldDetailScreen({route, navigation}: Props) {
       }},
     ]);
 
-  const subtitle = [t(fieldTypeLabels[field.type]), field.crop,
+  // Berry plots and orchards are described by their rows, other plots by their current crop.
+  const rowsDescription = rowsSummary(varietyGroups(rows));
+  const subtitle = [t(fieldTypeLabels[field.type]), rowsDescription || field.crop,
     rows.length > 0 ? null : field.variety].filter(Boolean).join(' · ');
 
   return <Page title={field.name} subtitle={subtitle} onBack={() => navigation.goBack()}>
-    {field.type === 'berries' && <AppButton
+    {usesRows(field) && <AppButton
       label={rows.length > 0 ? t("rowsAndVarietiesCount", [rows.length]) : t("addRowsAndVarieties")}
       variant="secondary" onPress={() => navigation.navigate('RowsSetup', {fieldId: field.id})} />}
     {field.polygon.length >= 3 && <FieldMapPreview polygon={field.polygon} />}
@@ -69,21 +71,24 @@ export function FieldDetailScreen({route, navigation}: Props) {
       {field.measuredAreaM2 !== null && <AreaRow label={t("measuredArea")} areaM2={field.measuredAreaM2}
         selected={field.areaSource === 'measured'} />}
     </InfoCard>
-    {/* The current crop is the rotation line marked «Іде зараз». */}
-    <RotationCard field={field} rotation={fieldRotation(data.plantings, field.id)} records={data.records}
+    {/* The current crop is the rotation line marked «Іде зараз»; perennials have rows instead. */}
+    {rotatesCrops(field) && <RotationCard field={field} rotation={fieldRotation(data.plantings, field.id)}
+      records={data.records}
       onOpen={plantingSeason => navigation.navigate('PlantingForm', {fieldId: field.id, season: plantingSeason})}
-      onAdd={() => navigation.navigate('PlantingForm', {fieldId: field.id})} />
-    {(field.type === 'berries' || rows.length > 0) && <InfoCard>
+      onAdd={() => navigation.navigate('PlantingForm', {fieldId: field.id})} />}
+    {(usesRows(field) || rows.length > 0) && <InfoCard>
       <Text style={styles.sectionTitle}>{t("rowsAndVarieties")}</Text>
       {rows.length === 0 ? <Text style={styles.hint}>{t("enterTheNumberOfRowsAndAssignAVarietyToEachOne", [], "both")}</Text> : <>
         <Text style={styles.hint}>{t("rowsCountPrefix", [], "after")}{rows.length}</Text>
         <Text style={styles.hint}>{t("varietiesAndSeasonalHarvest", [], "after")}{season}</Text>
         {groups.map(group => {
-          const totalKg = harvests.filter(record =>
-            record.details.varietySnapshot?.toLocaleLowerCase('uk') === group.variety.toLocaleLowerCase('uk'))
+          // Older harvests remember only the variety, so a missing crop matches any.
+          const totalKg = harvests.filter(record => !!record.details.varietySnapshot &&
+            sameName(record.details.varietySnapshot, group.variety) &&
+            (!record.details.cropSnapshot || !group.crop || sameName(record.details.cropSnapshot, group.crop)))
             .reduce((sum, record) => sum + (record.quantityKg ?? 0), 0);
-          return <View key={group.variety} style={styles.row}>
-            <Text style={styles.rowLabel}>{group.variety}{t("rowsSuffix", [], "both")}{group.rows.map(item => item.rowNumber).join(', ')}</Text>
+          return <View key={varietyLabel(group)} style={styles.row}>
+            <Text style={styles.rowLabel}>{varietyLabel(group)}{t("rowsSuffix", [], "both")}{group.rows.map(item => item.rowNumber).join(', ')}</Text>
             {totalKg > 0 && <Text style={styles.rowValue}>{formatKilograms(totalKg)}</Text>}
           </View>;
         })}
@@ -95,7 +100,7 @@ export function FieldDetailScreen({route, navigation}: Props) {
       <AppButton label={rows.length ? t("editRowsAndVarieties") : t("addRows")} variant="secondary"
         onPress={() => navigation.navigate('RowsSetup', {fieldId: field.id})} />
     </InfoCard>}
-    {field.type !== 'berries' && rows.length === 0 && field.type !== 'field' &&
+    {!usesRows(field) && rows.length === 0 && field.type !== 'field' &&
       <AppButton label={t("trackVarietiesByRow")} variant="quiet"
         onPress={() => navigation.navigate('RowsSetup', {fieldId: field.id})} />}
     <AppButton label={t("edit")} variant="secondary"

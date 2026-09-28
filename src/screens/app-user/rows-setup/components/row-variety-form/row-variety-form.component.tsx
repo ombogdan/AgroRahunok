@@ -1,7 +1,7 @@
 import {t} from '../../../../../shared/config/i18n';
 import React from 'react';
 import {Text, TextInput, View} from 'react-native';
-import {AppButton, InfoCard} from '../../../../../shared/components/ui';
+import {AppButton, AutocompleteInput, InfoCard} from '../../../../../shared/components/ui';
 import {useTheme} from '../../../../../shared/theme';
 import {useStyles} from './row-variety-form.styles';
 
@@ -11,6 +11,9 @@ type Props = {
   last: string;
   onFirstChange: (value: string) => void;
   onLastChange: (value: string) => void;
+  crop: string;
+  onCropChange: (value: string) => void;
+  cropSuggestions: string[];
   variety: string;
   onVarietyChange: (value: string) => void;
   year: string;
@@ -24,7 +27,7 @@ export function RowVarietyForm(props: Props) {
   const styles = useStyles();
   const {theme} = useTheme();
   return <InfoCard>
-    <Text style={styles.title}>{t("whichVarietyIsInEachRow")}</Text>
+    <Text style={styles.title}>{t("whatGrowsInEachRow")}</Text>
     <Text style={styles.muted}>{t("rowsCountPrefix", [], "after")}{props.rowCount}{t("initialVarietyHint")}</Text>
     <Text style={styles.muted}>{t("singleRowNumberHint")}</Text>
     <View style={styles.range}>
@@ -32,6 +35,11 @@ export function RowVarietyForm(props: Props) {
         placeholder={t("fromRowNo")} accessibilityLabel={t("fromRowNo")} style={[styles.input, styles.half]} />
       <TextInput value={props.last} onChangeText={props.onLastChange} keyboardType="number-pad"
         placeholder={t("toNoOptional")} accessibilityLabel={t("toRowNoOptional")} style={[styles.input, styles.half]} />
+    </View>
+    <View style={styles.section}>
+      <Text style={styles.label}>{t("cropLabel")}</Text>
+      <AutocompleteInput value={props.crop} onChangeText={props.onCropChange} suggestions={props.cropSuggestions}
+        placeholder={t("forExampleRaspberry")} accessibilityLabel={t("cropLabel")} />
     </View>
     <View style={styles.section}>
       <Text style={styles.label}>{t("variety")}</Text>

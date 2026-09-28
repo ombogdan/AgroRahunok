@@ -98,7 +98,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const rowGroups = varietyGroups(seasonRows);
   const selectedRows = seasonRows.filter(row => selectedRowIds.includes(row.id));
   const selectedGroups = varietyGroups(selectedRows);
-  const selectedVariety = selectedGroups.length === 1 ? selectedGroups[0].variety : null;
+  const selectedGroup = selectedGroups.length === 1 ? selectedGroups[0] : null;
   const seasonOptions = [...new Set([dateYear, dateYear + 1, season, ...records.map(item => item.season)])]
     .filter(year => year >= 2000 && year <= 2100).sort((a, b) => b - a);
   const quantity = parsePositiveNumber(quantityInput);
@@ -141,9 +141,10 @@ export function QuantityRecordScreen({route, navigation}: Props) {
         unitName: unit.name,
         kilogramsPerUnit: unit.kilogramsPerUnit,
         enteredQuantity: quantity,
-        ...(selectedVariety ? {
+        ...(selectedGroup ? {
           rowPlantingIds: selectedRows.map(row => row.id),
-          varietySnapshot: selectedVariety,
+          ...(selectedGroup.crop ? {cropSnapshot: selectedGroup.crop} : {}),
+          varietySnapshot: selectedGroup.variety,
           rowNumbersSnapshot: selectedRows.map(row => row.rowNumber).sort((a, b) => a - b),
         } : {}),
         ...(isSale ? {pricePerUnitKopecks: priceKopecks ?? undefined, buyer: buyer.trim() || undefined} : {}),
