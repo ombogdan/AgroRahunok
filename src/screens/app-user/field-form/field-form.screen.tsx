@@ -1,10 +1,11 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './field-form.styles';
 import React, {useState} from 'react';
 import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, AutocompleteInput, useToast} from '../../../shared/components/ui';
+import {AppButton, AppIcon, AutocompleteInput, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import type {AreaSource, AreaUnit, FieldType} from '../../../shared/core/fields/model';
 import {
@@ -47,8 +48,8 @@ export function FieldFormScreen({route, navigation}: Props) {
   const polygon = params.mode === 'map' || params.mode === 'walk' ? params.polygon : editing?.polygon ?? [];
   const isManual = params.mode === 'manual';
   const canChooseSource = !isManual && presetMeasuredM2 !== null;
-  const measuredLabel = params.mode === 'walk' ? 'Виміряна обходом' : params.mode === 'map' ? 'Виміряна на карті' : 'Виміряна';
-  const backLabel = params.mode === 'map' ? 'Карта' : params.mode === 'walk' ? 'Обхід' : 'Назад';
+  const measuredLabel = params.mode === 'walk' ? t("measuredByWalking") : params.mode === 'map' ? t("measuredOnMap") : t("measuredArea");
+  const backLabel = params.mode === 'map' ? t("map") : params.mode === 'walk' ? t("walkBoundary") : t("back");
 
   const initialDocM2 = editing?.documentAreaM2 ?? null;
   const initialUnit: AreaUnit = initialDocM2 !== null && initialDocM2 >= 5000 ? 'hectare' : 'sotka';
@@ -68,6 +69,7 @@ export function FieldFormScreen({route, navigation}: Props) {
   const [widthInput, setWidthInput] = useState('');
   const [areaSource, setAreaSource] = useState<AreaSource>(
     editing?.areaSource ?? (presetMeasuredM2 !== null ? 'measured' : 'document'));
+  const [moreOpen, setMoreOpen] = useState(!!editing);
   const [saving, setSaving] = useState(false);
 
   const now = new Date();
@@ -79,6 +81,7 @@ export function FieldFormScreen({route, navigation}: Props) {
     .filter(item => item.crop?.trim().toLocaleLowerCase('uk') === crop.trim().toLocaleLowerCase('uk'))
     .map(item => item.variety)) : [];
   const usesDimensions = isManual && manualMethod === 'dimensions';
+  const showDocumentArea = isManual || presetMeasuredM2 === null;
   const documentAreaM2 = usesDimensions ? null : parseAreaInput(areaInput, unit);
   const dimensionsAreaM2 = rectangleAreaM2(lengthInput, widthInput);
   const measuredAreaM2 = usesDimensions ? dimensionsAreaM2 : presetMeasuredM2;
@@ -105,22 +108,22 @@ export function FieldFormScreen({route, navigation}: Props) {
     const rememberPlanting = async (fieldId: string): Promise<boolean> => {
       if (!cropName) return true;
       try {
-        if (!store) throw new Error('Локальні дані ще завантажуються');
+        if (!store) throw new Error(t("localDataIsStillLoading"));
         await store.savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0});
         return true;
       } catch (error) {
-        logSupabaseError('Не вдалося зберегти культуру сезону', error);
+        logSupabaseError(t("couldNotSaveSeasonCrop"), error);
         return false;
       }
     };
     const rememberRows = async (fieldId: string): Promise<boolean> => {
       if (type !== 'berries') return true;
       try {
-        if (!store) throw new Error('Локальні дані ще завантажуються');
+        if (!store) throw new Error(t("localDataIsStillLoading"));
         await store.ensureRowCount(fieldId, rowCount);
         return true;
       } catch (error) {
-        logSupabaseError('Не вдалося зберегти ряди ділянки', error);
+        logSupabaseError(t("couldNotSaveFieldRows"), error);
         return false;
       }
     };
@@ -131,8 +134,8 @@ export function FieldFormScreen({route, navigation}: Props) {
         const rowsSaved = await rememberRows(editing.id);
         if (type === 'berries') navigation.replace('RowsSetup', {fieldId: editing.id});
         else navigation.goBack();
-        showToast({text: !rowsSaved ? 'Ділянку збережено. Додайте ряди на наступному екрані.'
-          : plantingSaved ? 'Зміни збережено' : 'Ділянку збережено, але культуру сезону — ні'});
+        showToast({text: !rowsSaved ? t("fieldSavedAddRowsOnTheNextScreen")
+          : plantingSaved ? t("changesSaved") : t("fieldSavedButTheSeasonCropWasNotSaved")});
         return;
       }
       const field = await addField(input);
@@ -143,24 +146,24 @@ export function FieldFormScreen({route, navigation}: Props) {
           {name: 'RowsSetup', params: {fieldId: field.id}}]
         : [{name: 'Tabs', params: {screen: 'Home'}}]});
       if (type === 'berries') {
-        showToast({text: !rowsSaved ? 'Ділянку збережено. Додайте ряди на цьому екрані.'
-          : plantingSaved ? 'Ряди створено. Тепер призначте їм сорти.'
-            : 'Ряди створено, але культуру сезону не збережено.'});
+        showToast({text: !rowsSaved ? t("fieldSavedAddRowsOnThisScreen")
+          : plantingSaved ? t("rowsCreatedNowAssignVarieties")
+            : t("rowsCreatedButTheSeasonCropWasNotSaved")});
         return;
       }
       showToast({
-        text: plantingSaved ? `Ділянку «${field.name}» збережено` : 'Ділянку збережено, але культуру сезону — ні',
-        actionLabel: 'Скасувати',
+        text: plantingSaved ? t("fieldSavedMessage", [field.name]) : t("fieldSavedButTheSeasonCropWasNotSaved"),
+        actionLabel: t("cancel"),
         onAction: () => {
           removeField(field.id).catch(error => {
-            logSupabaseError('Не вдалося скасувати додавання ділянки', error);
-            Alert.alert('Не вдалося скасувати', 'Ділянку можна видалити в її картці.');
+            logSupabaseError(t("couldNotUndoAddingTheField"), error);
+            Alert.alert(t("couldNotUndo"), t("youCanDeleteTheFieldFromItsDetails"));
           });
         },
       });
     } catch (error) {
-      logSupabaseError('Не вдалося зберегти ділянку', error);
-      Alert.alert('Не вдалося зберегти ділянку', 'Не вдалося записати дані на телефон. Спробуйте ще раз.');
+      logSupabaseError(t("couldNotSaveField"), error);
+      Alert.alert(t("couldNotSaveField"), t("couldNotSaveDataOnThePhonePleaseTryAgain"));
       setSaving(false);
     }
   };
@@ -171,97 +174,109 @@ export function FieldFormScreen({route, navigation}: Props) {
     placeholderTextColor: theme.colors.textMuted,
   };
 
+  const documentAreaForm = <View style={styles.section}>
+    <Text style={styles.label}>{showDocumentArea ? t("documentedAreaLabel") : t("documentedAreaOptional")}</Text>
+    <TextInput {...numberInputProps} value={areaInput} onChangeText={value => {
+      setAreaInput(value);
+      if (canChooseSource && areaSource === 'document' && parseAreaInput(value, unit) === null) {
+        setAreaSource('measured');
+      }
+    }} placeholder={unit === 'sotka' ? t("forExample20") : t("forExample22")} style={styles.input} />
+    {!documentInputValid && <Text style={styles.note}>{t("enterAPositiveNumberSuchAs20Or05")}</Text>}
+    <View style={styles.chips}>
+      <Chip label={t("ares")} selected={unit === 'sotka'} onPress={() => setUnit('sotka')} />
+      <Chip label={t("hectares")} selected={unit === 'hectare'} onPress={() => setUnit('hectare')} />
+    </View>
+  </View>;
+
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
     <View style={styles.header}>
       <FieldFlowHeader backLabel={backLabel} onBack={() => navigation.goBack()} />
-      <Text style={styles.title} accessibilityRole="header">{editing ? 'Змінити ділянку' : 'Про ділянку'}</Text>
+      <Text style={styles.title} accessibilityRole="header">{editing ? t("editField") : t("aboutTheField")}</Text>
     </View>
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
       automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
       <View style={styles.section}>
-        <Text style={styles.label}>Назва</Text>
-        <TextInput value={name} onChangeText={setName} placeholder="Наприклад, Малинник"
+        <Text style={styles.label}>{t("name")}</Text>
+        <TextInput value={name} onChangeText={setName} placeholder={t("forExampleRaspberryPlot")}
           placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
       </View>
       <View style={styles.section}>
-        <Text style={styles.label}>Тип</Text>
+        <Text style={styles.label}>{t("type")}</Text>
         <View style={styles.chips}>
-          {types.map(value => <Chip key={value} label={fieldTypeLabels[value]} selected={type === value}
+          {types.map(value => <Chip key={value} label={t(fieldTypeLabels[value])} selected={type === value}
             onPress={() => setType(value)} />)}
         </View>
       </View>
       {type === 'berries' && <View style={styles.section}>
-        <Text style={styles.label}>Ряди та сорти</Text>
-        <Text style={styles.note}>Скільки рядів у ягіднику? Після збереження відразу вкажете сорт і рік посадки для кожного ряду або групи рядів.</Text>
+        <Text style={styles.label}>{t("rowsAndVarieties")}</Text>
+        <Text style={styles.note}>{t("berryRowCountDescription")}</Text>
         <TextInput value={rowCountInput} onChangeText={setRowCountInput} keyboardType="number-pad"
-          inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder="Наприклад, 6"
-          placeholderTextColor={theme.colors.textMuted} accessibilityLabel="Кількість рядів"
+          inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder={t("forExample6")}
+          placeholderTextColor={theme.colors.textMuted} accessibilityLabel={t("numberOfRows")}
           style={styles.input} />
         {rowCountInput !== '' && !rowCountValid && <Text style={styles.note}>
-          {existingRowCount > 0 ? `Вкажіть не менше ${existingRowCount} і не більше 200 рядів.`
-            : 'Вкажіть від 1 до 200 рядів.'}
+          {existingRowCount > 0 ? t("rowCountRangeError", [existingRowCount])
+            : t("enterBetween1And200Rows")}
         </Text>}
-        {existingRowCount > 0 && <Text style={styles.note}>
-          Зараз є {existingRowCount} рядів. Змінити їхні сорти можна на наступному екрані.
-        </Text>}
+        {existingRowCount > 0 && <Text style={styles.note}>{t("currentlyThereAre", [], "both")}{existingRowCount}{t("rowsYouCanChangeTheirVarietiesOnTheNextScreen", [], "both")}</Text>}
       </View>}
-      <View style={styles.section}>
-        <Text style={styles.label}>Культура сезону {season} · необов’язково</Text>
-        <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
-          placeholder="Наприклад, Пшениця озима" accessibilityLabel={`Культура сезону ${season}`} />
-        {crop.trim() !== '' && <>
-          {type !== 'berries' && <>
-            <Text style={styles.label}>Сорт · необов’язково</Text>
-            <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
-              placeholder="Наприклад, Богдана" accessibilityLabel="Сорт" />
-          </>}
-          <Text style={styles.label}>Рік урожаю</Text>
-          <View style={styles.chips}>
-            {[now.getFullYear(), now.getFullYear() + 1].map(year => <Chip key={year} label={String(year)}
-              selected={season === year} onPress={() => setSeasonOverride(year)} />)}
-          </View>
-          <Text style={styles.note}>Осінній посів озимих — це врожай наступного року.</Text>
-        </>}
-      </View>
       {isManual && <View style={styles.section}>
-        <Text style={styles.label}>Як знаєте площу?</Text>
+        <Text style={styles.label}>{t("howDoYouKnowTheArea")}</Text>
         <View style={styles.chips}>
-          <Chip label="З документів" selected={manualMethod === 'document'} onPress={() => setManualMethod('document')} />
-          <Chip label="Довжина × ширина" selected={manualMethod === 'dimensions'}
+          <Chip label={t("fromDocuments")} selected={manualMethod === 'document'} onPress={() => setManualMethod('document')} />
+          <Chip label={t("lengthWidth")} selected={manualMethod === 'dimensions'}
             onPress={() => setManualMethod('dimensions')} />
         </View>
       </View>}
       {usesDimensions ? <View style={styles.section}>
-        <Text style={styles.label}>Довжина і ширина, метри</Text>
+        <Text style={styles.label}>{t("lengthAndWidthMetres")}</Text>
         <View style={styles.dimensions}>
           <TextInput {...numberInputProps} value={lengthInput} onChangeText={setLengthInput}
-            placeholder="Довжина" accessibilityLabel="Довжина в метрах" style={[styles.input, styles.dimensionInput]} />
+            placeholder={t("length")} accessibilityLabel={t("lengthInMetres")} style={[styles.input, styles.dimensionInput]} />
           <Text style={styles.times}>×</Text>
           <TextInput {...numberInputProps} value={widthInput} onChangeText={setWidthInput}
-            placeholder="Ширина" accessibilityLabel="Ширина в метрах" style={[styles.input, styles.dimensionInput]} />
+            placeholder={t("width")} accessibilityLabel={t("widthInMetres")} style={[styles.input, styles.dimensionInput]} />
         </View>
         {dimensionsAreaM2 !== null && <View style={styles.calcLine}>
           <Text style={styles.calcText}>
-            {`${lengthInput.trim()} м × ${widthInput.trim()} м = ${formatSotky(dimensionsAreaM2)} · ${formatHectares(dimensionsAreaM2, {exact: true})}`}
+            {t("rectangleAreaFormula", [lengthInput.trim(), widthInput.trim(), formatSotky(dimensionsAreaM2), formatHectares(dimensionsAreaM2, {exact: true})])}
           </Text>
         </View>}
-        <Text style={styles.note}>Для прямокутної ділянки. Якщо форма складніша, обведіть її на карті або обійдіть з телефоном.</Text>
-      </View> : <View style={styles.section}>
-        <Text style={styles.label}>{isManual ? 'Площа за документами' : 'Площа за документами · необов’язково'}</Text>
-        <TextInput {...numberInputProps} value={areaInput} onChangeText={value => {
-          setAreaInput(value);
-          if (canChooseSource && areaSource === 'document' && parseAreaInput(value, unit) === null) {
-            setAreaSource('measured');
-          }
-        }} placeholder={unit === 'sotka' ? 'Наприклад, 20' : 'Наприклад, 2,2'} style={styles.input} />
-        {!documentInputValid && <Text style={styles.note}>Введіть додатне число, наприклад 20 або 0,5.</Text>}
-        <View style={styles.chips}>
-          <Chip label="Сотки" selected={unit === 'sotka'} onPress={() => setUnit('sotka')} />
-          <Chip label="Гектари" selected={unit === 'hectare'} onPress={() => setUnit('hectare')} />
-        </View>
+        <Text style={styles.note}>{t("rectangleAreaHint")}</Text>
+      </View> : showDocumentArea && documentAreaForm}
+      {presetMeasuredM2 !== null && <View style={styles.section}>
+        <Text style={styles.label}>{measuredLabel}</Text>
+        <Text style={styles.areaValue}>{formatArea(presetMeasuredM2)}</Text>
       </View>}
-      {canChooseSource && <View style={styles.section}>
-        <Text style={styles.label}>Яку площу брати в розрахунки?</Text>
+      <Pressable accessibilityRole="button" accessibilityState={{expanded: moreOpen}}
+        onPress={() => setMoreOpen(open => !open)} style={styles.detailsToggle}>
+        <Text style={styles.label}>{t("cropAndOtherDetailsOptional")}</Text>
+        <AppIcon name={moreOpen ? 'chevronUp' : 'chevronDown'} color={theme.colors.textMuted} size={22} />
+      </Pressable>
+      {moreOpen && <>
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("seasonCrop", [], "after")}{season}{t("optional", [], "before")}</Text>
+          <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
+            placeholder={t("forExampleWinterWheat")} accessibilityLabel={t("cropForSeasonYear", [season])} />
+          {crop.trim() !== '' && <>
+            {type !== 'berries' && <>
+              <Text style={styles.label}>{t("varietyOptional")}</Text>
+              <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
+                placeholder={t("forExampleBohdana")} accessibilityLabel={t("variety")} />
+            </>}
+            <Text style={styles.label}>{t("harvestYear")}</Text>
+            <View style={styles.chips}>
+              {[now.getFullYear(), now.getFullYear() + 1].map(year => <Chip key={year} label={String(year)}
+                selected={season === year} onPress={() => setSeasonOverride(year)} />)}
+            </View>
+            <Text style={styles.note}>{t("autumnSownWinterCropsBelongToNextYearSHarvest")}</Text>
+          </>}
+        </View>
+        {!showDocumentArea && documentAreaForm}
+      </>}
+      {moreOpen && canChooseSource && documentAreaM2 !== null && <View style={styles.section}>
+        <Text style={styles.label}>{t("whichAreaShouldBeUsedInCalculations")}</Text>
         <Pressable accessibilityRole="radio" accessibilityState={{checked: areaSource === 'measured'}}
           onPress={() => setAreaSource('measured')}
           style={[styles.radio, areaSource === 'measured' && styles.radioSelected]}>
@@ -271,21 +286,21 @@ export function FieldFormScreen({route, navigation}: Props) {
         {documentAreaM2 !== null && <Pressable accessibilityRole="radio"
           accessibilityState={{checked: areaSource === 'document'}} onPress={() => setAreaSource('document')}
           style={[styles.radio, areaSource === 'document' && styles.radioSelected]}>
-          <Text style={styles.radioTitle}>{areaSource === 'document' ? '◉' : '◯'} За документами</Text>
+          <Text style={styles.radioTitle}>{areaSource === 'document' ? '◉' : '◯'}{t("documentedAreaOption", [], "before")}</Text>
           <Text style={styles.radioValue}>{formatArea(documentAreaM2)}</Text>
         </Pressable>}
-        <Text style={styles.note}>Збережемо обидві площі.</Text>
+        <Text style={styles.note}>{t("bothAreaValuesWillBeSaved")}</Text>
       </View>}
       <View style={styles.save}>
-        <AppButton label={saving ? 'Зберігаємо…' : type === 'berries' ? 'Далі: сорти рядів'
-          : editing ? 'Зберегти зміни' : 'Зберегти ділянку'}
+        <AppButton label={saving ? t("saving") : type === 'berries' ? t("nextRowVarieties")
+          : editing ? t("saveChanges") : t("saveField")}
           disabled={!canSave} onPress={() => { save(); }} />
       </View>
     </ScrollView>
     {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
       <View style={styles.keyboardBar}>
         <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>
-          <Text style={styles.keyboardDoneText}>Готово</Text>
+          <Text style={styles.keyboardDoneText}>{t("done")}</Text>
         </Pressable>
       </View>
     </InputAccessoryView>}

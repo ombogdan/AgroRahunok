@@ -1,3 +1,4 @@
+import {getLanguage, localeTag} from '../../config/i18n';
 import {area} from '@turf/area';
 
 export type FieldType = 'field' | 'garden' | 'berries' | 'orchard' | 'greenhouse';
@@ -20,8 +21,8 @@ export type Field = {
 export type NewField = Omit<Field, 'id' | 'createdAt'>;
 
 export const fieldTypeLabels: Record<FieldType, string> = {
-  field: 'Поле', garden: 'Город', berries: 'Ягідник',
-  orchard: 'Сад', greenhouse: 'Теплиця',
+  field: 'fieldType', garden: 'vegetableGarden', berries: 'berryPlot',
+  orchard: 'orchard', greenhouse: 'greenhouse',
 };
 
 const NBSP = ' ';
@@ -29,7 +30,7 @@ const NBSP = ' ';
 const SOTKY_THRESHOLD_M2 = 5000;
 
 const formatNumber = (value: number, minDigits: number, maxDigits: number) =>
-  new Intl.NumberFormat('uk-UA', {
+  new Intl.NumberFormat(localeTag(), {
     minimumFractionDigits: minDigits,
     maximumFractionDigits: maxDigits,
   }).format(value);
@@ -40,6 +41,7 @@ export function selectedAreaM2(field: Field): number {
 
 // Ukrainian agreement: 1/21 сотка, 2–4/22–24 сотки, 5–20/25 соток; fractions take «сотки».
 export function sotkyWord(value: number): string {
+  if (getLanguage() !== 'uk') return 'a';
   if (!Number.isInteger(value)) return 'сотки';
   const lastTwo = Math.abs(value) % 100;
   const last = lastTwo % 10;
@@ -57,7 +59,7 @@ export function formatSotky(areaM2: number): string {
 
 // `exact` keeps two decimals («2,00 га») for rows and the live map area; totals trim zeros («2,2 га»).
 export function formatHectares(areaM2: number, {exact = false}: {exact?: boolean} = {}): string {
-  return `${formatNumber(areaM2 / 10000, exact ? 2 : 0, 2)}${NBSP}га`;
+  return `${formatNumber(areaM2 / 10000, exact ? 2 : 0, 2)}${NBSP}${getLanguage() === 'uk' ? 'га' : 'ha'}`;
 }
 
 export function formatArea(areaM2: number): string {
@@ -147,13 +149,13 @@ export function polygonHasCrossingEdges(points: GeoPoint[]): boolean {
 // Earlier entries that contain what is typed (any case), in the given order, without the exact value itself.
 // With nothing typed yet it offers the first few, so a crop used before is one tap away.
 export function matchSuggestions(input: string, options: (string | null)[], limit = 5): string[] {
-  const query = input.trim().toLocaleLowerCase('uk');
+  const query = input.trim().toLocaleLowerCase(localeTag());
   const seen = new Set<string>();
   const result: string[] = [];
   for (const option of options) {
     const value = option?.trim();
     if (!value) continue;
-    const key = value.toLocaleLowerCase('uk');
+    const key = value.toLocaleLowerCase(localeTag());
     if (seen.has(key)) continue;
     seen.add(key);
     if (key === query || (query && !key.includes(query))) continue;

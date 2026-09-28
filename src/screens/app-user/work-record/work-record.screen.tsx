@@ -1,9 +1,10 @@
+import {t} from '../../../shared/config/i18n';
 import {Chip} from '../components/record-chip/record-chip.component';
 import {RowSelection} from '../components/row-selection/row-selection.component';
 import {useStyles} from './work-record.styles';
 import React, {useState} from 'react';
 import {
-  Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View,
+  Alert, InputAccessoryView, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -30,7 +31,7 @@ type DateChoice = 'today' | 'yesterday' | 'other';
 // The iOS number pads have no return key, so number fields get a «Готово» bar above them.
 const NUMBER_KEYBOARD_BAR = 'work-record-keyboard-bar';
 const performers: Performer[] = ['self', 'family', 'neighbour', 'hired'];
-const stepTitles: Record<Step, string> = {1: 'Де працювали?', 2: 'Що робили?', 3: 'Коли й скільки?'};
+const stepTitles: Record<Step, string> = {1: 'whereDidYouWork', 2: 'whatWorkWasDone', 3: 'whenAndHowMuch'};
 
 
 function moneyInputValue(kopecks: number): string {
@@ -68,7 +69,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [costMode, setCostMode] = useState<CostMode>(initialCostMode);
   const [costInput, setCostInput] = useState(initialCost);
-  const [detailsOpen, setDetailsOpen] = useState(!!editing && (!!editing.note || !!editing.details.performer));
+  const [detailsOpen, setDetailsOpen] = useState(!!editing);
   const [performer, setPerformer] = useState<Performer | null>(editing?.details.performer ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
@@ -132,37 +133,37 @@ export function WorkRecordScreen({route, navigation}: Props) {
       if (editing) {
         await updateRecord(editing.id, input);
         navigation.goBack();
-        showToast({text: 'Зміни збережено'});
+        showToast({text: t("changesSaved")});
         return;
       }
       const record = await addRecord(input);
       navigation.goBack();
-      const parts = [workTypeLabels[workType], field.name, costKopecks ? formatMoney(costKopecks) : null];
+      const parts = [t(workTypeLabels[workType]), field.name, costKopecks ? formatMoney(costKopecks) : null];
       showToast({
-        text: `Записано: ${parts.filter(Boolean).join(' · ')}`,
-        actionLabel: 'Скасувати',
+        text: t("recordedValue", [parts.filter(Boolean).join(' · ')]),
+        actionLabel: t("cancel"),
         onAction: () => {
           removeRecord(record.id).catch(error => {
-            logSupabaseError('Не вдалося скасувати запис', error);
-            Alert.alert('Не вдалося скасувати', 'Запис можна видалити в журналі.');
+            logSupabaseError(t("couldNotUndoTheRecord"), error);
+            Alert.alert(t("couldNotUndo"), t("youCanDeleteTheRecordInTheLogbook"));
           });
         },
       });
     } catch (error) {
-      logSupabaseError('Не вдалося зберегти запис', error);
-      Alert.alert('Не вдалося зберегти запис', 'Не вдалося записати дані на телефон.');
+      logSupabaseError(t("couldNotSaveRecord"), error);
+      Alert.alert(t("couldNotSaveRecord"), t("couldNotSaveDataOnThePhone"));
       setSaving(false);
     }
   };
 
   const confirmDelete = () => {
     if (!editing) return;
-    Alert.alert('Видалити запис?', 'Запис буде видалено назавжди.', [
-      {text: 'Скасувати', style: 'cancel'},
-      {text: 'Видалити', style: 'destructive', onPress: () => {
+    Alert.alert(t("confirmDeleteRecordTitle"), t("theRecordWillBePermanentlyDeleted"), [
+      {text: t("cancel"), style: 'cancel'},
+      {text: t("delete"), style: 'destructive', onPress: () => {
         removeRecord(editing.id).then(() => navigation.goBack()).catch(error => {
-          logSupabaseError('Не вдалося видалити запис', error);
-          Alert.alert('Не вдалося видалити запис', 'Не вдалося записати зміни на телефон.');
+          logSupabaseError(t("couldNotDeleteRecord"), error);
+          Alert.alert(t("couldNotDeleteRecord"), t("couldNotSaveChangesOnThePhone"));
         });
       }},
     ]);
@@ -170,19 +171,20 @@ export function WorkRecordScreen({route, navigation}: Props) {
 
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
     <View style={styles.header}>
-      <FieldFlowHeader title={editing ? 'Змінити запис' : undefined} onBack={goBack}
-        rightLabel="Скасувати" onRight={() => navigation.goBack()} />
+      <FieldFlowHeader title={editing ? t("editRecord") : undefined} onBack={goBack}
+        rightLabel={t("cancel")} onRight={() => navigation.goBack()} />
       {!editing && <>
-        <Text style={styles.stepLabel}>Робота · крок {visibleStep} з {visibleStepCount}</Text>
+        <Text style={styles.stepLabel}>{t("workStep", [], "after")}{visibleStep}{t("of", [], "both")}{visibleStepCount}</Text>
         <View style={styles.progress}>
           {Array.from({length: visibleStepCount}, (_, index) => <View key={index}
             style={[styles.progressBar, index < visibleStep && styles.progressDone]} />)}
         </View>
       </>}
-      <Text style={styles.title} accessibilityRole="header">{stepTitles[step]}</Text>
+      <Text style={styles.title} accessibilityRole="header">{t(stepTitles[step])}</Text>
     </View>
+    <KeyboardAvoidingView style={styles.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
-      automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
+      contentContainerStyle={styles.content}>
 
       {step === 1 && <>
         {fields.map(item => <Pressable key={item.id} accessibilityRole="button"
@@ -190,7 +192,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
           style={[styles.tile, item.id === fieldId && styles.tileSelected]}>
           <Text style={styles.tileName}>{item.name}</Text>
           <Text style={styles.tileDetail}>
-            {[item.crop || fieldTypeLabels[item.type], item.variety, formatArea(selectedAreaM2(item))].filter(Boolean).join(' · ')}
+            {[item.crop || t(fieldTypeLabels[item.type]), item.variety, formatArea(selectedAreaM2(item))].filter(Boolean).join(' · ')}
           </Text>
         </Pressable>)}
       </>}
@@ -201,99 +203,99 @@ export function WorkRecordScreen({route, navigation}: Props) {
             onPress={() => { setWorkType(type); setStep(3); }}
             style={[styles.workTile, type === workType && styles.tileSelected]}>
             <AppIcon name={type} color={theme.colors.primary} size={34} strokeWidth={1.8} />
-            <Text style={styles.workLabel}>{workTypeLabels[type]}</Text>
+            <Text style={styles.workLabel}>{t(workTypeLabels[type])}</Text>
           </Pressable>)}
         </View>
       </>}
 
       {step === 3 && field && workType && <>
         <View style={styles.pills}>
-          <Pressable accessibilityRole="button" accessibilityHint="Змінити ділянку" style={styles.pill}
+          <Pressable accessibilityRole="button" accessibilityHint={t("editField")} style={styles.pill}
             onPress={() => { setShowFieldStep(true); setStep(1); }}><Text style={styles.pillText}>{field.name}</Text></Pressable>
-          <Pressable accessibilityRole="button" accessibilityHint="Змінити роботу" style={styles.pill}
-            onPress={() => setStep(2)}><Text style={styles.pillText}>{workTypeLabels[workType]}</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityHint={t("editWorkRecord")} style={styles.pill}
+            onPress={() => setStep(2)}><Text style={styles.pillText}>{t(workTypeLabels[workType])}</Text></Pressable>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Коли</Text>
+          <Text style={styles.label}>{t("when")}</Text>
           <View style={styles.chips}>
-            <Chip label="Сьогодні" selected={dateChoice === 'today'} onPress={() => {
+            <Chip label={t("today")} selected={dateChoice === 'today'} onPress={() => {
               setDateChoice('today'); setSeasonOverride(null);
             }} />
-            <Chip label="Вчора" selected={dateChoice === 'yesterday'} onPress={() => {
+            <Chip label={t("yesterday")} selected={dateChoice === 'yesterday'} onPress={() => {
               setDateChoice('yesterday'); setSeasonOverride(null);
             }} />
-            <Chip label={dateChoice === 'other' ? `Інша дата · ${otherDate}` : 'Інша дата'}
+            <Chip label={dateChoice === 'other' ? t("selectedOtherDate", [otherDate]) : t("otherDate")}
               selected={dateChoice === 'other'} onPress={() => { Keyboard.dismiss(); setCalendarOpen(true); }} />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Сезон (рік урожаю)</Text>
-          <View style={styles.chips}>
-            {seasonOptions.map(year => <Chip key={year} label={String(year)}
-              selected={season === year} onPress={() => setSeasonOverride(year)} />)}
-          </View>
-          <Text style={styles.note}>Робота потрапить до сезону {season}. Осінні роботи під озимі належать до врожаю наступного року.</Text>
-        </View>
-
-        {rowGroups.length > 0 && <RowSelection groups={rowGroups} selectedIds={selectedRowIds}
-          onChange={setSelectedRowIds} mode="work" />}
-
-        <View style={styles.section}>
-          <Text style={styles.label}>Скільки коштувало</Text>
-          <View style={styles.segmented}>
-            {(['sum', 'perHa'] as const).map(mode => <Pressable key={mode} accessibilityRole="button"
-              accessibilityState={{selected: costMode === mode}} onPress={() => setCostMode(mode)}
-              style={[styles.segment, costMode === mode && styles.segmentSelected]}>
-              <Text style={styles.segmentText}>{mode === 'sum' ? 'Сумою' : 'За гектар'}</Text>
-            </Pressable>)}
-          </View>
+          <Text style={styles.label}>{costMode === 'sum' ? t("costOptional") : t("costPerHectare")}</Text>
           <View style={styles.numberField}>
             <TextInput value={costInput} onChangeText={setCostInput} keyboardType="decimal-pad"
               inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder="0"
               placeholderTextColor={theme.colors.textMuted} style={styles.numberInput}
-              accessibilityLabel={costMode === 'sum' ? 'Сума в гривнях' : 'Ціна за гектар у гривнях'} />
-            <Text style={styles.suffix}>{costMode === 'sum' ? 'грн' : 'грн/га'}</Text>
+              accessibilityLabel={costMode === 'sum' ? t("amountInUah") : t("pricePerHectareInUah")} />
+            <Text style={styles.suffix}>{costMode === 'sum' ? t("uah") : t("uahHa")}</Text>
           </View>
           {costMode === 'perHa' && valueKopecks !== null && costKopecks !== null && <View style={styles.calcLine}>
             <Text style={styles.calcText}>
-              {`${formatMoney(valueKopecks)}/га × ${formatHectares(areaM2)} = ${formatMoney(costKopecks)}`}
+              {t("costPerHectareFormula", [formatMoney(valueKopecks), formatHectares(areaM2), formatMoney(costKopecks)])}
             </Text>
           </View>}
-          {costInvalid
-            ? <Text style={styles.error}>Введіть суму числом, наприклад 3000 або 2,50.</Text>
-            : costInput.trim() === '' && <Text style={styles.note}>Можна залишити порожнім і дописати пізніше.</Text>}
-          {selectedRows.length > 0 && costMode === 'perHa' && <Text style={styles.error}>
-            Для роботи по рядах оберіть «Сумою» або всю ділянку.
-          </Text>}
+          {costInvalid && <Text style={styles.error}>{t("enterAnAmountSuchAs3000Or250")}</Text>}
+          {selectedRows.length > 0 && costMode === 'perHa' && <Text style={styles.error}>{t("selectedRowsCostModeHint", [], "both")}</Text>}
         </View>
 
         <Pressable accessibilityRole="button" accessibilityState={{expanded: detailsOpen}}
           onPress={() => setDetailsOpen(open => !open)} style={styles.detailsToggle}>
-          <Text style={styles.label}>Подробиці</Text>
+          <Text style={styles.label}>{t("detailsOptional")}</Text>
           <AppIcon name={detailsOpen ? 'chevronUp' : 'chevronDown'} color={theme.colors.textMuted} size={22} />
         </Pressable>
         {detailsOpen && <>
           <View style={styles.section}>
-            <Text style={styles.label}>Хто робив</Text>
+            <Text style={styles.label}>{t("howShouldTheCostBeCalculated")}</Text>
+            <View style={styles.segmented}>
+              {(['sum', 'perHa'] as const).map(mode => <Pressable key={mode} accessibilityRole="button"
+                accessibilityState={{selected: costMode === mode}} onPress={() => setCostMode(mode)}
+                style={[styles.segment, costMode === mode && styles.segmentSelected]}>
+                <Text style={styles.segmentText}>{mode === 'sum' ? t("totalAmount") : t("perHectare")}</Text>
+              </Pressable>)}
+            </View>
+          </View>
+          <View style={styles.section}>
+            <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
             <View style={styles.chips}>
-              {performers.map(value => <Chip key={value} label={performerLabels[value]} selected={performer === value}
+              {seasonOptions.map(year => <Chip key={year} label={String(year)}
+                selected={season === year} onPress={() => setSeasonOverride(year)} />)}
+            </View>
+            <Text style={styles.note}>{t("automatically", [], "after")}{season}{t("winterCropSeasonHint")}</Text>
+          </View>
+          {rowGroups.length > 0 && <RowSelection groups={rowGroups} selectedIds={selectedRowIds}
+            onChange={setSelectedRowIds} mode="work" />}
+          <View style={styles.section}>
+            <Text style={styles.label}>{t("whoDidTheWork")}</Text>
+            <View style={styles.chips}>
+              {performers.map(value => <Chip key={value} label={t(performerLabels[value])} selected={performer === value}
                 onPress={() => setPerformer(current => (current === value ? null : value))} />)}
             </View>
           </View>
           <View style={styles.section}>
-            <Text style={styles.label}>Нотатка</Text>
+            <Text style={styles.label}>{t("note")}</Text>
             <TextInput value={note} onChangeText={setNote} multiline maxLength={500}
-              placeholder="Наприклад, насіння 450 кг" placeholderTextColor={theme.colors.textMuted}
+              placeholder={t("forExampleSeed450Kg")} placeholderTextColor={theme.colors.textMuted}
               style={[styles.input, styles.noteInput]} />
           </View>
         </>}
 
-        <AppButton label={saving ? 'Зберігаємо…' : 'Зберегти'} disabled={!canSave} onPress={() => { save(); }} />
-        {editing && <AppButton label="Видалити запис" variant="danger" onPress={confirmDelete} />}
+        {editing && <AppButton label={t("deleteRecord")} variant="danger" onPress={confirmDelete} />}
       </>}
     </ScrollView>
+    {step === 3 && <View style={styles.footer}>
+      <AppButton label={saving ? t("saving") : t("save")} disabled={!canSave} onPress={() => { save(); }} />
+    </View>}
+    </KeyboardAvoidingView>
     <CalendarDatePicker visible={calendarOpen} selectedDate={parseDateInput(otherDate) ?? today}
       onClose={() => setCalendarOpen(false)} onSelect={date => {
         setOtherDate(formatDateInput(date));
@@ -304,7 +306,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
     {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
       <View style={styles.keyboardBar}>
         <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>
-          <Text style={styles.keyboardDoneText}>Готово</Text>
+          <Text style={styles.keyboardDoneText}>{t("done")}</Text>
         </Pressable>
       </View>
     </InputAccessoryView>}

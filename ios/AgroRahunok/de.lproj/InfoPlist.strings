@@ -1,0 +1,2 @@
+CFBundleDisplayName = "AgroRahunok";
+NSLocationWhenInUseUsageDescription = "Dein Standort wird beim Anlegen einer Fläche auf der Karte angezeigt.";

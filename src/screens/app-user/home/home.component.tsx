@@ -1,3 +1,4 @@
+import {localeTag, t} from '../../../shared/config/i18n';
 import {useStyles} from './home.styles';
 import React from 'react';
 import {ActivityIndicator, Pressable, ScrollView, Text, View} from 'react-native';
@@ -52,7 +53,7 @@ export function HomeScreen() {
   const spentKopecks = -seasonAmounts.filter(amount => amount < 0).reduce((sum, amount) => sum + amount, 0);
   const incomeKopecks = seasonAmounts.filter(amount => amount > 0).reduce((sum, amount) => sum + amount, 0);
   const fieldById = new Map(fields.map(field => [field.id, field]));
-  const date = new Intl.DateTimeFormat('uk-UA', {
+  const date = new Intl.DateTimeFormat(localeTag(), {
     weekday: 'long', day: 'numeric', month: 'long',
   }).format(new Date());
 
@@ -60,42 +61,41 @@ export function HomeScreen() {
     <View style={styles.heading}>
       <View style={styles.headingTop}>
         <Text style={styles.date}>{date.charAt(0).toUpperCase() + date.slice(1)}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Налаштування"
+        <Pressable accessibilityRole="button" accessibilityLabel={t("settings")}
                    onPress={() => navigation.navigate('Settings')} style={styles.settingsButton}>
           <AppIcon name="settings" color={theme.colors.textMuted} size={24}/>
         </Pressable>
       </View>
-      <Text style={styles.title} accessibilityRole="header">Моє господарство</Text>
+      <Text style={styles.title} accessibilityRole="header">{t("myFarm")}</Text>
     </View>
     <ScrollView contentContainerStyle={styles.content}>
       {loadState === 'ready' && pendingCount > 0 && <Text style={styles.syncHint}>
-        {syncState === 'syncing' ? 'Синхронізуємо…' : `На телефоні · очікує синхронізації: ${pendingCount}`}
+        {syncState === 'syncing' ? t("syncing") : t("pendingSyncCount", [pendingCount])}
       </Text>}
       {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large"/>}
       {loadState === 'error' && <InfoCard>
-        <Text style={styles.emptyTitle}>Не вдалося завантажити ділянки</Text>
-        <Text style={styles.emptyText}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
-        <AppButton label="Повторити" onPress={reload}/>
+        <Text style={styles.emptyTitle}>{t("couldNotLoadFields")}</Text>
+        <Text style={styles.emptyText}>{t("couldNotOpenDataOnThePhoneRestartTheApp")}</Text>
+        <AppButton label={t("tryAgain")} onPress={reload}/>
       </InfoCard>}
       {loadState === 'ready' && fields.length === 0 && <>
         <InfoCard>
           <View style={styles.empty}>
             <View style={styles.iconCircle}><AppIcon name="map" color={theme.colors.primary} size={56}/></View>
-            <Text style={styles.emptyTitle}>Додайте першу ділянку</Text>
-            <Text style={styles.emptyText}>Обведіть її на карті, обійдіть з телефоном або введіть площу з документів. Це
-              займе хвилину.</Text>
-            <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')}/>
+            <Text style={styles.emptyTitle}>{t("addYourFirstField")}</Text>
+            <Text style={styles.emptyText}>{t("addFieldMethodsDescription")}</Text>
+            <AppButton label={t("addField")} onPress={() => navigation.navigate('FieldMethod')}/>
           </View>
         </InfoCard>
-        <Text style={styles.hint}>Після цього тут з’являться ваша земля, роботи й гроші за сезон.</Text>
+        <Text style={styles.hint}>{t("homeEmptySeasonDescription")}</Text>
       </>}
       {loadState === 'ready' && fields.length > 0 && <>
         <View style={styles.yearSection}>
-          <Text style={styles.yearLabel}>Рік урожаю</Text>
+          <Text style={styles.yearLabel}>{t("harvestYear")}</Text>
           <View style={styles.yearOptions}>
             {availableSeasons.map(year => <Pressable key={year} accessibilityRole="button"
                                                      accessibilityState={{selected: season === year}}
-                                                     accessibilityLabel={`Сезон ${year}`}
+                                                     accessibilityLabel={t("seasonYear", [year])}
                                                      onPress={() => setSelectedSeason(year)}
                                                      style={[styles.yearOption, season === year && styles.yearOptionSelected]}>
               <Text style={[styles.yearOptionText, season === year && styles.yearOptionTextSelected]}>{year}</Text>
@@ -103,12 +103,12 @@ export function HomeScreen() {
           </View>
         </View>
         <InfoCard>
-          <Text style={styles.summaryLabel}>Уся земля</Text>
+          <Text style={styles.summaryLabel}>{t("totalLand")}</Text>
           <View style={styles.totalRow}>
             <Text style={styles.total}>{formatHectares(totalM2)}</Text>
             <Text style={styles.subTotal}>{formatSotky(totalM2)}</Text>
           </View>
-          <Text style={styles.hint}>Площа ділянок зараз · культури сезону {season}</Text>
+          <Text style={styles.hint}>{t("currentFieldAreaSeasonCrops", [], "after")}{season}</Text>
           <View style={styles.bar} accessible={false}>
             {fields.map(field =>
               <View key={field.id}
@@ -133,7 +133,7 @@ export function HomeScreen() {
                 <View style={styles.rowBody}>
                   <Text style={styles.rowTitle}>{field.name}</Text>
                   <Text
-                    style={styles.rowDetail}>{cropDetails || `${fieldTypeLabels[field.type]} · культуру не записано`}</Text>
+                    style={styles.rowDetail}>{cropDetails || t("cropNotRecordedForField", [t(fieldTypeLabels[field.type])])}</Text>
                 </View>
                 <Text style={styles.rowArea}>{formatArea(selectedAreaM2(field))}</Text>
               </Pressable>);
@@ -141,40 +141,38 @@ export function HomeScreen() {
         </InfoCard>
         <InfoCard>
           <View style={styles.seasonHeader}>
-            <Text style={styles.seasonTitle}>Сезон {season}</Text>
+            <Text style={styles.seasonTitle}>{t("season", [], "after")}{season}</Text>
             {(season === currentYear || (season === currentYear + 1 &&
                 seasonRecords.some(record => Number(record.occurredOn.slice(0, 4)) === currentYear))) &&
-              <View style={styles.badge}><Text style={styles.badgeText}>Іде зараз</Text></View>}
+              <View style={styles.badge}><Text style={styles.badgeText}>{t("inProgress")}</Text></View>}
           </View>
           <View style={styles.moneyRow}>
-            <Text style={styles.moneyLabel}>Витрачено</Text>
+            <Text style={styles.moneyLabel}>{t("spent")}</Text>
             {spentKopecks > 0
               ? <Text style={styles.moneyBig}>{formatMoney(spentKopecks)}</Text>
-              : <Text style={styles.moneyMuted}>ще немає</Text>}
+              : <Text style={styles.moneyMuted}>{t("noneYet")}</Text>}
           </View>
           <View style={styles.moneyRow}>
-            <Text style={styles.moneyLabel}>Доходи</Text>
-            <Text style={styles.moneyMuted}>{incomeKopecks > 0 ? formatMoney(incomeKopecks) : 'ще немає'}</Text>
+            <Text style={styles.moneyLabel}>{t("incomeTotal")}</Text>
+            <Text style={styles.moneyMuted}>{incomeKopecks > 0 ? formatMoney(incomeKopecks) : t("noneYet")}</Text>
           </View>
           <AppButton
-            label="Відкрити «Гроші» ›"
+            label={t("openFinances")}
             variant="quiet"
             onPress={() => navigation.navigate('Tabs', {screen: 'Money'})}/>
         </InfoCard>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Записи сезону</Text>
+          <Text style={styles.sectionTitle}>{t("seasonRecords")}</Text>
           {seasonRecords.length > 0 &&
             <Pressable
               accessibilityRole="button"
               style={styles.link}
               onPress={() => navigation.navigate('Tabs', {screen: 'Journal'})}>
-              <Text style={styles.linkText}>Усі записи</Text>
+              <Text style={styles.linkText}>{t("allRecords")}</Text>
             </Pressable>}
         </View>
         {seasonRecords.length === 0
-          ? <Text style={styles.hint}>
-            У сезоні {season} записів ще немає. Натисніть «+ Записати» внизу, щоб додати роботу.
-          </Text>
+          ? <Text style={styles.hint}>{t("inSeason", [], "both")}{season}{t("noRecordsYetTapAddRecordBelowToLogWork", [], "both")}</Text>
           : <InfoCard>
             <View style={styles.recordsCard}>
               {seasonRecords.slice(0, 3).map((record, index) =>
@@ -183,7 +181,7 @@ export function HomeScreen() {
                   record={record}
                   first={index === 0}
                   field={record.fieldId === null ? undefined : fieldById.get(record.fieldId)}
-                  detail={record.fieldId === null ? 'Усе господарство'
+                  detail={record.fieldId === null ? t("wholeFarm")
                     : [fieldById.get(record.fieldId)?.name, seasonPlantings.get(record.fieldId)?.crop]
                       .filter(Boolean).join(' · ')}
                   onPress={record.kind === 'work' ? () => navigation.navigate('WorkRecord', {recordId: record.id})

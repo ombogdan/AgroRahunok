@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './field-map.styles';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Platform, Pressable, Text, View} from 'react-native';
@@ -16,13 +17,13 @@ import {requestLocationPermission, showLocationUnavailable} from '../../../share
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldMap'>;
 
 function mapHint(count: number, crossing: boolean): string {
-  if (crossing) return 'Контур перетинається. Пересуньте або приберіть точку.';
-  if (count === 0) return 'Торкніться першого кута ділянки';
+  if (crossing) return t("theBoundaryCrossesItselfMoveOrRemoveAPoint");
+  if (count === 0) return t("tapTheFirstFieldCorner");
   if (count < 3) {
     const left = 3 - count;
-    return `Ще ${left} ${left === 1 ? 'точка' : 'точки'} — і з’явиться площа`;
+    return t("morePointsNeededHint", [left, t(left === 1 ? 'pointSingular' : 'pointPlural')]);
   }
-  return `Точок: ${count}. Торкніться, щоб додати ще, або утримуйте точку, щоб пересунути`;
+  return t("mapPointCountHint", [count]);
 }
 
 export function FieldMapScreen({navigation}: Props) {
@@ -68,7 +69,10 @@ export function FieldMapScreen({navigation}: Props) {
   const addPoint = (event: MapPressEvent) => {
     const {coordinate, action} = event.nativeEvent;
     if (action === 'marker-press') return;
-    setPoints(current => [...current, coordinate]);
+    setPoints(current => current.some(point =>
+      Math.abs(point.latitude - coordinate.latitude) < 0.0000001 &&
+      Math.abs(point.longitude - coordinate.longitude) < 0.0000001)
+      ? current : [...current, coordinate]);
   };
 
   const movePoint = (index: number, coordinate: GeoPoint) => {
@@ -94,7 +98,7 @@ export function FieldMapScreen({navigation}: Props) {
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <View style={styles.top}>
-      <FieldFlowHeader title="Обведіть ділянку" onBack={() => navigation.goBack()}/>
+      <FieldFlowHeader title={t("drawTheFieldBoundary")} onBack={() => navigation.goBack()}/>
       <Text style={styles.area}>
         {points.length >= 3 ? `${formatHectares(areaM2, {exact: true})} · ${formatSotky(areaM2)}` : formatHectares(0)}
       </Text>
@@ -126,33 +130,35 @@ export function FieldMapScreen({navigation}: Props) {
             coordinate={point}
             draggable
             pinColor={theme.colors.accent}
-            centerOffset={Platform.OS === 'ios' ? {x: 0, y: -scale(12)} : undefined}
+            centerOffset={Platform.OS === 'ios' ? {x: 0, y: -scale(15)} : undefined}
             anchor={{x: 0.5, y: 1}}
+            tappable={false}
+            stopPropagation
             onDragEnd={(event: {
               nativeEvent: { coordinate: GeoPoint }
             }) => movePoint(index, event.nativeEvent.coordinate)}/>)}
       </MapView>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Моє місце"
+        accessibilityLabel={t("myLocation")}
         onPress={() => {
           locate().catch(showLocationUnavailable);
         }} style={styles.locate}>
         <AppIcon name="locate" color={theme.colors.primary} size={20} strokeWidth={2.2}/>
-        <Text style={styles.locateText}>Моє місце</Text>
+        <Text style={styles.locateText}>{t("myLocation")}</Text>
       </Pressable>
     </View>
     <View style={styles.bottom}>
       <View style={styles.button}>
         <AppButton
-          label="Прибрати точку"
+          label={t("removePoint")}
           variant="secondary"
           disabled={points.length === 0}
           onPress={() => setPoints(current => current.slice(0, -1))}/>
       </View>
       <View style={styles.button}>
         <AppButton
-          label="Готово"
+          label={t("done")}
           disabled={points.length < 3 || areaM2 < 1 || crossing}
           onPress={() => navigation.navigate('FieldForm', {
             mode: 'map',

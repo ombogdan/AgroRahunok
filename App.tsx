@@ -8,9 +8,11 @@ import {AuthProvider} from './src/shared/core/providers/auth/AuthProvider';
 import {FarmDataProvider} from './src/shared/core/offline/FarmDataProvider';
 import {SubscriptionProvider} from './src/shared/core/providers/subscription/SubscriptionProvider';
 import {ThemeProvider, useTheme} from './src/shared/theme';
+import {LanguageProvider, useLanguage} from './src/shared/config/i18n';
 
 function AppContent() {
   const {theme, isDark} = useTheme();
+  const {language} = useLanguage();
 
   return (
     <>
@@ -18,7 +20,7 @@ function AppContent() {
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={theme.colors.background}
       />
-      <RootNavigator />
+      <RootNavigator key={language} />
     </>
   );
 }
@@ -30,6 +32,7 @@ export default function App() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
+          <LanguageProvider>
           <AuthProvider>
             <FarmDataProvider>
                 <SubscriptionProvider>
@@ -39,6 +42,7 @@ export default function App() {
                 </SubscriptionProvider>
             </FarmDataProvider>
           </AuthProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

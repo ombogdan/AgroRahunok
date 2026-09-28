@@ -1,3 +1,4 @@
+import {t} from '../../../../shared/config/i18n';
 import {useStyles} from './record-dock.styles';
 import React, {useState} from 'react';
 import {View} from 'react-native';
@@ -20,7 +21,7 @@ export function TabBarWithDock(props: BottomTabBarProps) {
 
   return <>
     {fields.length > 0 && <View style={styles.dock}>
-      <AppButton label={onFieldsTab ? '+ Додати ділянку' : '+ Записати'}
+      <AppButton label={onFieldsTab ? t("addField") : t("addRecord")}
         onPress={() => (onFieldsTab ? navigation.navigate('FieldMethod') : setSheetOpen(true))} />
     </View>}
     <BottomTabBar {...props} />

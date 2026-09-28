@@ -3,6 +3,7 @@ import type {AppTheme, Scale} from '../../../shared/theme/theme';
 
 const createStyles = (theme: AppTheme, scale: Scale) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
+  body: {flex: 1},
   header: {paddingHorizontal: scale(20), paddingBottom: scale(12), backgroundColor: theme.colors.background},
   title: {color: theme.colors.text, fontSize: scale(28), lineHeight: scale(34), fontWeight: '700' as const},
   content: {paddingHorizontal: scale(20), paddingTop: scale(8), paddingBottom: scale(32), gap: scale(18)},
@@ -20,6 +21,11 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   error: {color: theme.colors.danger, fontSize: scale(15), lineHeight: scale(20)},
   custom: {gap: scale(12), padding: scale(16), backgroundColor: theme.colors.surfaceAlt, borderRadius: scale(16),
     borderWidth: scale(1), borderColor: theme.colors.border},
+  detailsToggle: {minHeight: scale(56), paddingHorizontal: scale(18), borderRadius: scale(20),
+    borderWidth: scale(1), borderColor: theme.colors.border, backgroundColor: theme.colors.surface,
+    flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const},
+  footer: {paddingHorizontal: scale(20), paddingTop: scale(12), paddingBottom: scale(12),
+    borderTopWidth: scale(1), borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface},
   keyboardBar: {flexDirection: 'row' as const, justifyContent: 'flex-end' as const,
     paddingHorizontal: scale(12), backgroundColor: theme.colors.surface,
     borderTopWidth: scale(1), borderTopColor: theme.colors.border},

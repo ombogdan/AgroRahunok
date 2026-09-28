@@ -1,10 +1,11 @@
+import {t} from '../../../shared/config/i18n';
 import {Chip} from '../components/record-chip/record-chip.component';
 import {useStyles} from './other-record.styles';
 import React, {useState} from 'react';
 import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
-import {AppButton, CalendarDatePicker, Page, useToast} from '../../../shared/components/ui';
+import {AppButton, AppIcon, CalendarDatePicker, Page, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import type {NewRecord} from '../../../shared/core/records/model';
@@ -22,6 +23,7 @@ import {useTheme} from '../../../shared/theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'OtherRecord'>;
 type DateChoice = 'today' | 'yesterday' | 'other';
 const categories = ['Податок', 'Тара', 'Ремонт', 'Інше'];
+const categoryKeys: Record<string, string> = {Податок: 'tax', Тара: 'packaging', Ремонт: 'repairs', Інше: 'other'};
 const NUMBER_KEYBOARD_BAR = 'other-record-keyboard-bar';
 
 
@@ -47,6 +49,7 @@ export function OtherRecordScreen({route, navigation}: Props) {
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
   const [otherDate, setOtherDate] = useState(editing && initialDate === 'other' ? formatDateInput(editing.occurredOn) : '');
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(!!editing);
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
   const [saving, setSaving] = useState(false);
@@ -73,34 +76,34 @@ export function OtherRecordScreen({route, navigation}: Props) {
       if (editing) {
         await updateRecord(editing.id, input);
         navigation.goBack();
-        showToast({text: 'Зміни збережено'});
+        showToast({text: t("changesSaved")});
         return;
       }
       const record = await addRecord(input);
       navigation.goBack();
       showToast({
         text: `${categoryName}: ${isIncome ? '+' : '−'}${formatMoney(amountKopecks)}`,
-        actionLabel: 'Скасувати',
+        actionLabel: t("cancel"),
         onAction: () => {
-          removeRecord(record.id).catch(error => logSupabaseError('Не вдалося скасувати запис', error));
+          removeRecord(record.id).catch(error => logSupabaseError(t("couldNotUndoTheRecord"), error));
         },
       });
     } catch (error) {
-      logSupabaseError('Не вдалося зберегти суму', error);
-      Alert.alert('Не вдалося зберегти запис', 'Не вдалося записати дані на телефон.');
+      logSupabaseError(t("couldNotSaveAmount"), error);
+      Alert.alert(t("couldNotSaveRecord"), t("couldNotSaveDataOnThePhone"));
       setSaving(false);
     }
   };
 
   const confirmDelete = () => {
     if (!editing) return;
-    Alert.alert('Видалити запис?', 'Запис буде видалено назавжди.', [
-      {text: 'Скасувати', style: 'cancel'},
+    Alert.alert(t("confirmDeleteRecordTitle"), t("theRecordWillBePermanentlyDeleted"), [
+      {text: t("cancel"), style: 'cancel'},
       {
-        text: 'Видалити', style: 'destructive', onPress: () => {
+        text: t("delete"), style: 'destructive', onPress: () => {
           removeRecord(editing.id).then(() => navigation.goBack()).catch(error => {
-            logSupabaseError('Не вдалося видалити запис', error);
-            Alert.alert('Не вдалося видалити запис', 'Не вдалося записати зміни на телефон.');
+            logSupabaseError(t("couldNotDeleteRecord"), error);
+            Alert.alert(t("couldNotDeleteRecord"), t("couldNotSaveChangesOnThePhone"));
           });
         }
       },
@@ -108,73 +111,78 @@ export function OtherRecordScreen({route, navigation}: Props) {
   };
 
   return <>
-    <Page title={editing ? 'Змінити суму' : 'Інша витрата чи дохід'} onBack={() => navigation.goBack()}>
+    <Page title={editing ? t("editAmount") : t("otherExpenseOrIncome")} onBack={() => navigation.goBack()}
+      footer={<AppButton label={saving ? t("saving") : t("save")} disabled={!canSave} onPress={() => { save(); }} />}>
       <View style={styles.section}>
-        <Text style={styles.label}>Що записати?</Text>
+        <Text style={styles.label}>{t("whatWouldYouLikeToRecord")}</Text>
         <View style={styles.chips}>
-          <Chip label="Витрата" selected={!isIncome} onPress={() => setIsIncome(false)}/>
-          <Chip label="Дохід" selected={isIncome} onPress={() => setIsIncome(true)}/>
+          <Chip label={t("expense")} selected={!isIncome} onPress={() => setIsIncome(false)}/>
+          <Chip label={t("incomeSingle")} selected={isIncome} onPress={() => setIsIncome(true)}/>
         </View>
       </View>
       <View style={styles.section}>
-        <Text style={styles.label}>Категорія</Text>
+        <Text style={styles.label}>{t("category")}</Text>
         <View style={styles.chips}>
-          {categories.map(item => <Chip key={item} label={item} selected={category === item}
+          {categories.map(item => <Chip key={item} label={t(categoryKeys[item])} selected={category === item}
                                         onPress={() => setCategory(item)}/>)}
         </View>
         {category === 'Інше' && <TextInput value={customCategory} onChangeText={setCustomCategory}
-                                           maxLength={60} placeholder="Назва категорії"
+                                           maxLength={60} placeholder={t("categoryName")}
                                            placeholderTextColor={theme.colors.textMuted}
-                                           accessibilityLabel="Назва категорії" style={styles.input}/>}
+                                           accessibilityLabel={t("categoryName")} style={styles.input}/>}
       </View>
       <View style={styles.section}>
-        <Text style={styles.label}>До чого належить?</Text>
-        <View style={styles.chips}>
-          <Chip label="Усе господарство" selected={fieldId === null} onPress={() => setFieldId(null)}/>
-          {fields.map(field => <Chip key={field.id} label={field.name} selected={fieldId === field.id}
-                                     onPress={() => setFieldId(field.id)}/>)}
-        </View>
-        <Text style={styles.note}>Загальні суми не розподіляються між ділянками.</Text>
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.label}>Сума</Text>
+        <Text style={styles.label}>{t("amount")}</Text>
         <TextInput value={amountInput} onChangeText={setAmountInput} keyboardType="decimal-pad"
-                   inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder="0 грн"
-                   placeholderTextColor={theme.colors.textMuted} accessibilityLabel="Сума в гривнях"
+                   inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder={t("zeroCostExample")}
+                   placeholderTextColor={theme.colors.textMuted} accessibilityLabel={t("amountInUah")}
                    style={[styles.input, styles.amount]}/>
       </View>
       <View style={styles.section}>
-        <Text style={styles.label}>Коли</Text>
+        <Text style={styles.label}>{t("when")}</Text>
         <View style={styles.chips}>
-          <Chip label="Сьогодні" selected={dateChoice === 'today'} onPress={() => {
+          <Chip label={t("today")} selected={dateChoice === 'today'} onPress={() => {
             setDateChoice('today');
             setSeasonOverride(null);
           }}/>
-          <Chip label="Вчора" selected={dateChoice === 'yesterday'} onPress={() => {
+          <Chip label={t("yesterday")} selected={dateChoice === 'yesterday'} onPress={() => {
             setDateChoice('yesterday');
             setSeasonOverride(null);
           }}/>
-          <Chip label={dateChoice === 'other' ? `Інша дата · ${otherDate}` : 'Інша дата'}
+          <Chip label={dateChoice === 'other' ? t("selectedOtherDate", [otherDate]) : t("otherDate")}
             selected={dateChoice === 'other'} onPress={() => { Keyboard.dismiss(); setCalendarOpen(true); }}/>
         </View>
       </View>
-      <View style={styles.section}>
-        <Text style={styles.label}>Сезон (рік урожаю)</Text>
-        <View style={styles.chips}>
-          {seasonOptions.map(year => <Chip key={year} label={String(year)} selected={season === year}
-                                           onPress={() => setSeasonOverride(year)}/>)}
+      <Pressable accessibilityRole="button" accessibilityState={{expanded: detailsOpen}}
+        onPress={() => setDetailsOpen(open => !open)} style={styles.detailsToggle}>
+        <Text style={styles.label}>{t("detailsOptional")}</Text>
+        <AppIcon name={detailsOpen ? 'chevronUp' : 'chevronDown'} color={theme.colors.textMuted} size={22} />
+      </Pressable>
+      {detailsOpen && <>
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("whatIsThisFor")}</Text>
+          <View style={styles.chips}>
+            <Chip label={t("wholeFarm")} selected={fieldId === null} onPress={() => setFieldId(null)}/>
+            {fields.map(field => <Chip key={field.id} label={field.name} selected={fieldId === field.id}
+              onPress={() => setFieldId(field.id)}/>)}
+          </View>
+          <Text style={styles.note}>{t("farmWideAmountsAreNotAllocatedToFields")}</Text>
         </View>
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.label}>Нотатка · необов’язково</Text>
-        <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
-                   placeholder="Додайте подробиці" placeholderTextColor={theme.colors.textMuted}
-                   accessibilityLabel="Нотатка" style={styles.input}/>
-      </View>
-      <AppButton label={saving ? 'Зберігаємо…' : 'Зберегти'} disabled={!canSave} onPress={() => {
-        save();
-      }}/>
-      {editing && <AppButton label="Видалити запис" variant="danger" onPress={confirmDelete}/>}
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("seasonHarvestYear")}</Text>
+          <View style={styles.chips}>
+            {seasonOptions.map(year => <Chip key={year} label={String(year)} selected={season === year}
+              onPress={() => setSeasonOverride(year)}/>)}
+          </View>
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("noteOptional")}</Text>
+          <TextInput value={note} onChangeText={setNote} maxLength={500} multiline
+            placeholder={t("addDetails")} placeholderTextColor={theme.colors.textMuted}
+            accessibilityLabel={t("note")} style={styles.input}/>
+        </View>
+      </>}
+      {editing && <AppButton label={t("deleteRecord")} variant="danger" onPress={confirmDelete}/>}
     </Page>
     <CalendarDatePicker visible={calendarOpen} selectedDate={parseDateInput(otherDate) ?? today}
       onClose={() => setCalendarOpen(false)} onSelect={date => {
@@ -186,7 +194,7 @@ export function OtherRecordScreen({route, navigation}: Props) {
     {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
       <View style={styles.keyboardBar}>
         <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>
-          <Text style={styles.keyboardDoneText}>Готово</Text>
+          <Text style={styles.keyboardDoneText}>{t("done")}</Text>
         </Pressable>
       </View>
     </InputAccessoryView>}

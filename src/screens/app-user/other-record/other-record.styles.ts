@@ -4,6 +4,9 @@ import type {AppTheme, Scale} from '../../../shared/theme/theme';
 const createStyles = (theme: AppTheme, scale: Scale) => ({
   section: {gap: scale(14), padding: scale(18), borderRadius: scale(20), borderWidth: scale(1),
     borderColor: theme.colors.border, backgroundColor: theme.colors.surface},
+  detailsToggle: {minHeight: scale(56), paddingHorizontal: scale(18), borderRadius: scale(20),
+    borderWidth: scale(1), borderColor: theme.colors.border, backgroundColor: theme.colors.surface,
+    flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const},
   label: {color: theme.colors.text, fontSize: scale(17), fontWeight: '600' as const},
   chips: {flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: scale(8)},
   input: {minHeight: scale(58), paddingHorizontal: scale(16), borderRadius: scale(12), borderWidth: scale(1),

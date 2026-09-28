@@ -1,3 +1,4 @@
+import {getLanguage, t} from '../../../shared/config/i18n';
 import React, {useState} from 'react';
 import {Alert} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -25,7 +26,7 @@ export function RowsSetupScreen({route, navigation}: Props) {
   const [yearInput, setYearInput] = useState(String(new Date().getFullYear()));
   const [saving, setSaving] = useState(false);
 
-  if (!field) return <Page title="Ділянку не знайдено" onBack={() => navigation.goBack()} />;
+  if (!field) return <Page title={t("fieldNotFound")} onBack={() => navigation.goBack()} />;
 
   const requestedCount = Number(countInput);
   const canAdd = !!store && /^\d+$/.test(countInput) && requestedCount > rows.length &&
@@ -45,7 +46,7 @@ export function RowsSetupScreen({route, navigation}: Props) {
       await store.ensureRowCount(field.id, requestedCount);
       setCountInput('');
     } catch (error) {
-      Alert.alert('Не вдалося додати ряди', error instanceof Error ? error.message : 'Спробуйте ще раз.');
+      Alert.alert(t("couldNotAddRows"), getLanguage() === 'uk' && error instanceof Error ? error.message : t('pleaseTryAgain'));
     } finally { setSaving(false); }
   };
 
@@ -58,17 +59,17 @@ export function RowsSetupScreen({route, navigation}: Props) {
       setLastInput('');
       setVariety('');
     } catch (error) {
-      Alert.alert('Не вдалося призначити сорт', error instanceof Error ? error.message : 'Спробуйте ще раз.');
+      Alert.alert(t("couldNotAssignVariety"), getLanguage() === 'uk' && error instanceof Error ? error.message : t('pleaseTryAgain'));
     } finally { setSaving(false); }
   };
 
   const removeLast = () => {
     if (!store || !canRemoveLast || saving) return;
-    Alert.alert(`Прибрати ряд №${lastRow.rowNumber}?`, 'Можна прибрати лише порожній останній ряд.', [
-      {text: 'Скасувати', style: 'cancel'},
-      {text: 'Прибрати', style: 'destructive', onPress: () => {
+    Alert.alert(t("confirmRemoveRowTitle", [lastRow.rowNumber]), t("onlyTheLastEmptyRowCanBeRemoved"), [
+      {text: t("cancel"), style: 'cancel'},
+      {text: t("remove"), style: 'destructive', onPress: () => {
         store.removeLastEmptyRow(field.id).catch(error => {
-          Alert.alert('Не вдалося прибрати ряд', error instanceof Error ? error.message : 'Спробуйте ще раз.');
+          Alert.alert(t("couldNotRemoveRow"), getLanguage() === 'uk' && error instanceof Error ? error.message : t('pleaseTryAgain'));
         });
       }},
     ]);
@@ -81,7 +82,7 @@ export function RowsSetupScreen({route, navigation}: Props) {
     setYearInput(String(row.plantedYear ?? new Date().getFullYear()));
   };
 
-  return <Page title="Ряди та сорти" subtitle={field.name} onBack={() => navigation.goBack()}>
+  return <Page title={t("rowsAndVarieties")} subtitle={field.name} onBack={() => navigation.goBack()}>
     {rows.length === 0 && <RowCountCard count={0} value={countInput} onChange={setCountInput}
       canAdd={canAdd} saving={saving} onAdd={addRows} />}
     {rows.length > 0 && <>
@@ -93,7 +94,7 @@ export function RowsSetupScreen({route, navigation}: Props) {
       <RowCountCard count={rows.length} value={countInput} onChange={setCountInput}
         canAdd={canAdd} saving={saving} onAdd={addRows}
         canRemoveLast={canRemoveLast} onRemoveLast={removeLast} />
-      <AppButton label="Готово" variant="secondary" onPress={() => navigation.goBack()} />
+      <AppButton label={t("done")} variant="secondary" onPress={() => navigation.goBack()} />
     </>}
   </Page>;
 }

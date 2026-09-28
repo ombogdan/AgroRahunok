@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './insights.styles';
 import React from 'react';
 import {Text, View} from 'react-native';
@@ -9,26 +10,23 @@ export function InsightsScreen() {
   const common = useScreenStyles();
   const styles = useStyles();
   return (
-    <Page title="Підсумки" subtitle="Площа, урожай і гроші за сезон">
+    <Page title={t("summary")} subtitle={t("areaHarvestAndFinancesBySeason")}>
       <DemoBadge />
       <InfoCard>
-        <Text style={common.sectionTitle}>Земля за культурами</Text>
+        <Text style={common.sectionTitle}>{t("areaByCrop")}</Text>
         <View style={common.row}>
-          <Text style={common.body}>Озима пшениця</Text>
-          <Text style={common.pillText}>2 га</Text>
+          <Text style={common.body}>{t("winterWheat")}</Text>
+          <Text style={common.pillText}>{t("twoHectaresExample")}</Text>
         </View>
         <View style={styles.track}><View style={styles.bar} /></View>
         <View style={common.row}>
-          <Text style={common.body}>Малина</Text>
-          <Text style={common.pillText}>20 соток</Text>
+          <Text style={common.body}>{t("raspberry")}</Text>
+          <Text style={common.pillText}>{t("twentyAresExample")}</Text>
         </View>
       </InfoCard>
       <InfoCard>
-        <Text style={common.sectionTitle}>Економіка сезону</Text>
-        <Text style={common.muted}>
-          Доходи, витрати й результат зʼявляться після внесення реальних
-          записів. Базові підсумки залишаться безкоштовними.
-        </Text>
+        <Text style={common.sectionTitle}>{t("seasonFinances")}</Text>
+        <Text style={common.muted}>{t("financesEmptyDescription", [], "both")}</Text>
       </InfoCard>
     </Page>
   );

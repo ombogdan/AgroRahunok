@@ -1,3 +1,4 @@
+import {t} from '../../../config/i18n';
 import {useStyles} from './autocomplete-input.styles';
 import React, {useState} from 'react';
 import {Keyboard, Pressable, Text, TextInput, View} from 'react-native';
@@ -25,7 +26,7 @@ export function AutocompleteInput({value, onChangeText, suggestions, placeholder
       style={[styles.input, open && styles.inputOpen]} />
     {open && <View style={styles.list}>
       {suggestions.map((suggestion, index) => <Pressable key={suggestion} accessibilityRole="button"
-        accessibilityHint="Підставити в поле" onPress={() => {
+        accessibilityHint={t("fillField")} onPress={() => {
           onChangeText(suggestion);
           Keyboard.dismiss();
         }} style={[styles.option, index > 0 && styles.divider]}>

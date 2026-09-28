@@ -1,3 +1,4 @@
+import {t} from '../../../config/i18n';
 import {useStyles} from './back-button.styles';
 import React from 'react';
 import {Pressable, Text} from 'react-native';
@@ -5,7 +6,7 @@ import {useScale, useTheme} from '../../../theme';
 import {AppIcon} from '../app-icon/app-icon.component';
 
 
-export function BackButton({label = 'Назад', onPress}: {label?: string; onPress: () => void}) {
+export function BackButton({label = t("back"), onPress}: {label?: string; onPress: () => void}) {
   const styles = useStyles();
   const {theme} = useTheme();
   const scale = useScale();

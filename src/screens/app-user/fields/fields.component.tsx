@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import React from 'react';
 import {ActivityIndicator, Pressable, Text, View} from 'react-native';
 import {AppButton, AppIcon, InfoCard, Page} from '../../../shared/components/ui';
@@ -28,21 +29,21 @@ export function FieldsScreen() {
   const {data} = useFarmData();
   const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
 
-  return <Page title="Ділянки" subtitle="Ваша земля і її площа">
+  return <Page title={t("fields")} subtitle={t("yourLandAndItsArea")}>
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
-      <Text style={styles.emptyTitle}>Не вдалося завантажити ділянки</Text>
-      <Text style={styles.muted}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
-      <AppButton label="Повторити" onPress={reload} />
+      <Text style={styles.emptyTitle}>{t("couldNotLoadFields")}</Text>
+      <Text style={styles.muted}>{t("couldNotOpenDataOnThePhoneRestartTheApp")}</Text>
+      <AppButton label={t("tryAgain")} onPress={reload} />
     </InfoCard>}
     {loadState === 'ready' && <>
       {fields.length > 0 && <InfoCard>
-        <Text style={styles.label}>Уся земля</Text>
+        <Text style={styles.label}>{t("totalLand")}</Text>
         <Text style={styles.total}>{formatHectares(totalM2)}</Text>
       </InfoCard>}
       {fields.length === 0 && <InfoCard>
-        <Text style={styles.emptyTitle}>Ділянок ще немає</Text>
-        <Text style={styles.muted}>Додайте першу ділянку на карті або введіть площу вручну.</Text>
+        <Text style={styles.emptyTitle}>{t("noFieldsYet")}</Text>
+        <Text style={styles.muted}>{t("addFirstFieldDescription")}</Text>
       </InfoCard>}
       {fields.map(field => <Pressable key={field.id} accessibilityRole="button"
         onPress={() => navigation.navigate('FieldDetail', {fieldId: field.id})}>
@@ -50,7 +51,7 @@ export function FieldsScreen() {
           <View style={styles.row}>
             <View style={styles.rowBody}>
               <Text style={styles.name}>{field.name}</Text>
-              <Text style={styles.muted}>{[fieldTypeLabels[field.type], field.crop,
+              <Text style={styles.muted}>{[t(fieldTypeLabels[field.type]), field.crop,
                 currentRows(data.rows, field.id).length > 0
                   ? varietyGroups(currentRows(data.rows, field.id)).map(group => group.variety).join(', ')
                   : field.variety].filter(Boolean).join(' · ')}</Text>
@@ -61,7 +62,7 @@ export function FieldsScreen() {
         </InfoCard>
       </Pressable>)}
       {/* With plots, «+ Додати ділянку» sits in the dock above the tabs. */}
-      {fields.length === 0 && <AppButton label="+ Додати ділянку" onPress={() => navigation.navigate('FieldMethod')} />}
+      {fields.length === 0 && <AppButton label={t("addField")} onPress={() => navigation.navigate('FieldMethod')} />}
     </>}
   </Page>;
 }

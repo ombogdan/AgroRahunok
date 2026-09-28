@@ -1,0 +1,2 @@
+CFBundleDisplayName = "AgroRahunok";
+NSLocationWhenInUseUsageDescription = "Lokalizacja służy do pokazania Twojej pozycji na mapie podczas dodawania pola.";

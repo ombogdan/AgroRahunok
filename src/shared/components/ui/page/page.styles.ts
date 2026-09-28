@@ -3,6 +3,7 @@ import type {AppTheme, Scale} from '../../../theme/theme';
 
 const createStyles = (theme: AppTheme, scale: Scale) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
+  body: {flex: 1},
   // The header stays put while only the content below it scrolls.
   header: {
     paddingHorizontal: scale(theme.spacing.lg),
@@ -17,6 +18,9 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
     paddingBottom: scale(theme.spacing.xxl),
     gap: scale(theme.spacing.lg),
   },
+  footer: {paddingHorizontal: scale(theme.spacing.lg), paddingTop: scale(theme.spacing.md),
+    paddingBottom: scale(theme.spacing.md), borderTopWidth: scale(1),
+    borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface},
   title: {
     color: theme.colors.text,
     fontSize: scale(theme.typography.title),

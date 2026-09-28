@@ -1,3 +1,4 @@
+import {localeTag, t} from '../../../../shared/config/i18n';
 import {useStyles} from './record-row.styles';
 import React from 'react';
 import {Pressable, Text, View} from 'react-native';
@@ -8,13 +9,13 @@ import type {FarmRecord} from '../../../../shared/core/records/model';
 import {formatKilograms, formatMoney, workTypeLabels} from '../../../../shared/core/records/model';
 import {useTheme} from '../../../../shared/theme';
 
-const kindTitles = {harvest: 'Збір урожаю', sale: 'Продаж', other: 'Інша витрата чи дохід'} as const;
+const kindTitles = {harvest: 'harvestRecord', sale: 'sale', other: 'otherExpenseOrIncome'} as const;
 const kindIcons = {harvest: 'basket', sale: 'cash', other: 'plusMinus'} as const;
 
 export function recordTitle(record: FarmRecord): string {
-  if (record.kind === 'work') return record.workType ? workTypeLabels[record.workType] : 'Робота';
-  if (record.kind === 'other') return record.details.category || kindTitles.other;
-  return kindTitles[record.kind];
+  if (record.kind === 'work') return record.workType ? t(workTypeLabels[record.workType]) : t("work");
+  if (record.kind === 'other') return record.details.category ? t(({Податок: 'tax', Тара: 'packaging', Ремонт: 'repairs', Інше: 'other'} as Record<string, string>)[record.details.category] ?? record.details.category) : t(kindTitles.other);
+  return t(kindTitles[record.kind]);
 }
 
 export function recordIcon(record: FarmRecord): AppIconName {
@@ -38,13 +39,13 @@ export function RecordRow({record, field, first, detail, onPress}: {
   const styles = useStyles();
   const {theme} = useTheme();
   const quantityDetail = record.details.enteredQuantity && record.details.unitName
-    ? `${new Intl.NumberFormat('uk-UA', {maximumFractionDigits: 3}).format(record.details.enteredQuantity)} × ${record.details.unitName}`
+    ? `${new Intl.NumberFormat(localeTag(), {maximumFractionDigits: 3}).format(record.details.enteredQuantity)} × ${record.details.unitName === 'кг' ? t('kilogramUnit') : record.details.unitName === 'ц' ? `100 ${t('kilogramUnit')}` : record.details.unitName === 'т' ? 't' : record.details.unitName}`
     : null;
-  const location = detail ?? (record.fieldId === null ? 'Усе господарство'
+  const location = detail ?? (record.fieldId === null ? t("wholeFarm")
     : [field?.name, record.details.varietySnapshot ? null : field?.crop].filter(Boolean).join(' · '));
   const rowDetail = record.details.varietySnapshot
     ? `${record.details.varietySnapshot}${record.details.rowNumbersSnapshot?.length
-      ? ` · ряди ${record.details.rowNumbersSnapshot.join(', ')}` : ''}` : null;
+      ? t("rowNumbersSuffix", [record.details.rowNumbersSnapshot.join(', ')]) : ''}` : null;
   const subtitle = [location, rowDetail, quantityDetail, record.kind === 'sale' ? record.details.buyer : null]
     .filter(Boolean).join(' · ');
   return <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress}

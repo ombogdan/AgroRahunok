@@ -1,3 +1,4 @@
+import {t} from '../shared/config/i18n';
 import React from 'react';
 import {ActivityIndicator, View} from 'react-native';
 import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
@@ -28,10 +29,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const tabs: Record<keyof MainTabParamList, {label: string; icon: AppIconName}> = {
-  Home: {label: 'Головна', icon: 'home'},
-  Fields: {label: 'Ділянки', icon: 'plots'},
-  Journal: {label: 'Журнал', icon: 'journal'},
-  Money: {label: 'Гроші', icon: 'money'},
+  Home: {label: 'home', icon: 'home'},
+  Fields: {label: 'fields', icon: 'plots'},
+  Journal: {label: 'logbook', icon: 'journal'},
+  Money: {label: 'finances', icon: 'money'},
 };
 
 const tabIcons = {
@@ -69,7 +70,7 @@ function MainTabs() {
         },
         tabBarLabelStyle: {fontSize: scale(13), fontWeight: '700'},
         tabBarIcon: tabIcons[route.name],
-        tabBarLabel: tabs[route.name].label,
+        tabBarLabel: t(tabs[route.name].label),
       })}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Fields" component={FieldsScreen} />

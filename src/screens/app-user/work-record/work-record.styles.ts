@@ -3,6 +3,7 @@ import type {AppTheme, Scale} from '../../../shared/theme/theme';
 
 const createStyles = (theme: AppTheme, scale: Scale) => ({
   safe: {flex: 1, backgroundColor: theme.colors.background},
+  body: {flex: 1},
   header: {paddingHorizontal: scale(20), paddingBottom: scale(16), gap: scale(14), backgroundColor: theme.colors.background},
   content: {paddingHorizontal: scale(20), paddingTop: scale(8), paddingBottom: scale(32), gap: scale(18)},
   stepLabel: {color: theme.colors.textMuted, fontSize: scale(15), fontWeight: '600' as const},
@@ -47,6 +48,8 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   detailsToggle: {minHeight: scale(56), flexDirection: 'row' as const, alignItems: 'center' as const,
     justifyContent: 'space-between' as const, paddingHorizontal: scale(18), borderRadius: scale(20),
     borderWidth: scale(1), borderColor: theme.colors.border, backgroundColor: theme.colors.surface},
+  footer: {paddingHorizontal: scale(20), paddingTop: scale(12), paddingBottom: scale(12),
+    borderTopWidth: scale(1), borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface},
   keyboardBar: {flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingHorizontal: scale(12),
     backgroundColor: theme.colors.surface, borderTopWidth: scale(1), borderTopColor: theme.colors.border},
   keyboardDone: {minHeight: scale(44), paddingHorizontal: scale(8), justifyContent: 'center' as const},

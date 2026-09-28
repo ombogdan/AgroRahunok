@@ -1,3 +1,4 @@
+import {t} from '../../../../../shared/config/i18n';
 import React from 'react';
 import {Text, TextInput, View} from 'react-native';
 import {AppButton, InfoCard} from '../../../../../shared/components/ui';
@@ -17,22 +18,20 @@ type Props = {
 export function RowCountCard({count, value, onChange, canAdd, saving, onAdd, canRemoveLast, onRemoveLast}: Props) {
   const styles = useStyles();
   return <InfoCard>
-    <Text style={styles.title}>{count === 0 ? 'Скільки у вас рядів?' : 'Змінити кількість рядів'}</Text>
+    <Text style={styles.title}>{count === 0 ? t("howManyRowsDoYouHave") : t("editNumberOfRows")}</Text>
     <Text style={styles.muted}>{count === 0
-      ? 'Ряди нумеруються від 1. Після створення призначте сорт одному рядові або відразу групі.'
-      : `Зараз: ${count}. Можна додати ряди або прибрати останній, якщо він порожній.`}</Text>
+      ? t("rowSetupHint")
+      : t("currentRowCountHint", [count])}</Text>
     <View style={styles.section}>
-      <Text style={styles.label}>{count === 0 ? 'Кількість рядів' : 'Нова загальна кількість'}</Text>
+      <Text style={styles.label}>{count === 0 ? t("numberOfRows") : t("newTotalQuantity")}</Text>
       <TextInput value={value} onChangeText={onChange} keyboardType="number-pad"
-        placeholder={count === 0 ? 'Наприклад, 6' : 'Наприклад, 8'}
-        accessibilityLabel={count === 0 ? 'Кількість рядів' : 'Нова загальна кількість рядів'}
+        placeholder={count === 0 ? t("forExample6") : t("forExample8")}
+        accessibilityLabel={count === 0 ? t("numberOfRows") : t("newTotalNumberOfRows")}
         style={styles.input} />
-      {value !== '' && !canAdd && <Text style={styles.error}>
-        Вкажіть число більше за {count}, максимум 200.
-      </Text>}
-      <AppButton label={saving ? 'Зберігаємо…' : count === 0 ? 'Створити ряди' : 'Додати ряди'}
+      {value !== '' && !canAdd && <Text style={styles.error}>{t("enterANumberGreaterThan", [], "both")}{count}{t("maximum200", [], "after")}</Text>}
+      <AppButton label={saving ? t("saving") : count === 0 ? t("createRows") : t("addRows")}
         disabled={!canAdd} onPress={onAdd} />
-      {canRemoveLast && onRemoveLast && <AppButton label={`Прибрати порожній ряд №${count}`}
+      {canRemoveLast && onRemoveLast && <AppButton label={t("removeEmptyRowLabel", [count])}
         variant="quiet" onPress={onRemoveLast} />}
     </View>
   </InfoCard>;

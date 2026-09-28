@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './money.styles';
 import React from 'react';
 import {ActivityIndicator, Pressable, Text, View} from 'react-native';
@@ -38,53 +39,51 @@ export function MoneyScreen() {
   const general = summarizeSeason(records, season, null);
   const hasGeneral = seasonRecords.some(record => record.fieldId === null);
 
-  return <Page title="Гроші" subtitle="Результат із ваших записів">
+  return <Page title={t("finances")} subtitle={t("balanceFromYourRecords")}>
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
-      <Text style={styles.sectionTitle}>Не вдалося завантажити записи</Text>
-      <Text style={styles.note}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
-      <AppButton label="Повторити" onPress={reload} />
+      <Text style={styles.sectionTitle}>{t("couldNotLoadRecords")}</Text>
+      <Text style={styles.note}>{t("couldNotOpenDataOnThePhoneRestartTheApp")}</Text>
+      <AppButton label={t("tryAgain")} onPress={reload} />
     </InfoCard>}
     {loadState === 'ready' && <>
       <View style={styles.chips}>
         {availableSeasons.map(year => <Pressable key={year} accessibilityRole="button"
-          accessibilityState={{selected: year === season}} accessibilityLabel={`Сезон ${year}`}
+          accessibilityState={{selected: year === season}} accessibilityLabel={t("seasonYear", [year])}
           onPress={() => setSelectedSeason(year)} style={[styles.chip, year === season && styles.chipSelected]}>
           <Text style={[styles.chipText, year === season && styles.chipTextSelected]}>{year}</Text>
         </Pressable>)}
       </View>
-      {seasonRecords.length === 0 ? <EmptyFeature icon="money" title="Записів за цей сезон ще немає"
-        detail="Додайте роботу, збір урожаю або продаж — тут з’являться підсумки." /> : <>
+      {seasonRecords.length === 0 ? <EmptyFeature icon="money" title={t("noRecordsForThisSeasonYet")}
+        detail={t("recordWorkAHarvestOrASaleToSeeYourTotalsHere")} /> : <>
         <InfoCard>
-          <Text style={styles.label}>Результат сезону {season}</Text>
+          <Text style={styles.label}>{t("seasonBalance", [], "after")}{season}</Text>
           <Text style={[styles.result, total.resultKopecks > 0 && styles.positive,
             total.resultKopecks < 0 && styles.negative]}>{signedMoney(total.resultKopecks)}</Text>
-          <View style={styles.row}><Text style={styles.rowLabel}>Доходи</Text>
+          <View style={styles.row}><Text style={styles.rowLabel}>{t("incomeTotal")}</Text>
             <Text style={styles.rowValue}>{formatMoney(total.incomeKopecks)}</Text></View>
-          <View style={styles.row}><Text style={styles.rowLabel}>Витрати</Text>
+          <View style={styles.row}><Text style={styles.rowLabel}>{t("expenses")}</Text>
             <Text style={styles.rowValue}>{formatMoney(total.expenseKopecks)}</Text></View>
-          {!hasMoney && <Text style={styles.note}>Суми ще не внесено.</Text>}
-          {total.expensesWithoutAmount > 0 && <Text style={styles.note}>
-            Робіт без вартості: {total.expensesWithoutAmount}. Результат і собівартість поки неповні.
-          </Text>}
+          {!hasMoney && <Text style={styles.note}>{t("noAmountsRecordedYet")}</Text>}
+          {total.expensesWithoutAmount > 0 && <Text style={styles.note}>{t("jobsWithoutACost", [], "both")}{total.expensesWithoutAmount}{t("theBalanceAndProductionCostsAreIncompleteForNow", [], "after")}</Text>}
         </InfoCard>
         {total.harvestedKg > 0 && <InfoCard>
-          <Text style={styles.sectionTitle}>Урожай сезону</Text>
-          <View style={styles.row}><Text style={styles.rowLabel}>Зібрано</Text>
+          <Text style={styles.sectionTitle}>{t("seasonHarvest")}</Text>
+          <View style={styles.row}><Text style={styles.rowLabel}>{t("harvestedTotal")}</Text>
             <Text style={styles.rowValue}>{formatKilograms(total.harvestedKg)}</Text></View>
-          {total.soldKg > 0 && <View style={styles.row}><Text style={styles.rowLabel}>Продано</Text>
+          {total.soldKg > 0 && <View style={styles.row}><Text style={styles.rowLabel}>{t("soldTotal")}</Text>
             <Text style={styles.rowValue}>{formatKilograms(total.soldKg)}</Text></View>}
-          <Text style={styles.note}>Собівартість рахуємо окремо для кожної ділянки нижче.</Text>
+          <Text style={styles.note}>{t("fieldProductionCostsHint")}</Text>
         </InfoCard>}
         {hasGeneral && <InfoCard>
-          <Text style={styles.sectionTitle}>Загальні суми</Text>
-          <View style={styles.row}><Text style={styles.rowLabel}>Доходи</Text>
+          <Text style={styles.sectionTitle}>{t("farmWideAmounts")}</Text>
+          <View style={styles.row}><Text style={styles.rowLabel}>{t("incomeTotal")}</Text>
             <Text style={styles.rowValue}>{formatMoney(general.incomeKopecks)}</Text></View>
-          <View style={styles.row}><Text style={styles.rowLabel}>Витрати</Text>
+          <View style={styles.row}><Text style={styles.rowLabel}>{t("expenses")}</Text>
             <Text style={styles.rowValue}>{formatMoney(general.expenseKopecks)}</Text></View>
-          <Text style={styles.note}>Ці суми входять у результат господарства, але не розподілені між ділянками.</Text>
+          <Text style={styles.note}>{t("unallocatedAmountsHint")}</Text>
         </InfoCard>}
-        {activeFields.length > 0 && <Text style={styles.sectionTitle}>За ділянками</Text>}
+        {activeFields.length > 0 && <Text style={styles.sectionTitle}>{t("byField")}</Text>}
         {activeFields.map(field => {
           const summary = summarizeSeason(records, season, field.id);
           const planting = seasonPlantings.get(field.id);
@@ -93,25 +92,23 @@ export function MoneyScreen() {
           return <InfoCard key={field.id}>
             <Text style={styles.fieldName}>{field.name}</Text>
             <Text style={styles.note}>{[planting?.crop, formatArea(areaM2)].filter(Boolean).join(' · ')}</Text>
-            <View style={styles.row}><Text style={styles.rowLabel}>Результат</Text>
+            <View style={styles.row}><Text style={styles.rowLabel}>{t("balance")}</Text>
               <Text style={styles.rowValue}>{signedMoney(summary.resultKopecks)}</Text></View>
-            <View style={styles.row}><Text style={styles.rowLabel}>Доходи / витрати</Text>
+            <View style={styles.row}><Text style={styles.rowLabel}>{t("incomeExpenses")}</Text>
               <Text style={styles.rowValue}>{formatMoney(summary.incomeKopecks)} / {formatMoney(summary.expenseKopecks)}</Text>
             </View>
             {summary.harvestedKg > 0 && <>
-              <View style={styles.row}><Text style={styles.rowLabel}>Зібрано</Text>
+              <View style={styles.row}><Text style={styles.rowLabel}>{t("harvestedTotal")}</Text>
                 <Text style={styles.rowValue}>{formatKilograms(summary.harvestedKg)}</Text></View>
               {cropYield !== null && <View style={styles.row}>
-                <Text style={styles.rowLabel}>Урожайність</Text>
-                <Text style={styles.rowValue}>{number(cropYield)} {areaM2 < 5000 ? 'кг/сотку' : 'ц/га'}</Text>
+                <Text style={styles.rowLabel}>{t("yield")}</Text>
+                <Text style={styles.rowValue}>{number(cropYield)} {areaM2 < 5000 ? t("kgAre") : t("qHa")}</Text>
               </View>}
               {summary.costPerKgKopecks !== null && <View style={styles.row}>
-                <Text style={styles.rowLabel}>Ціна беззбитковості</Text>
-                <Text style={styles.rowValue}>{formatMoney(summary.costPerKgKopecks)}/кг</Text>
+                <Text style={styles.rowLabel}>{t("breakEvenPrice")}</Text>
+                <Text style={styles.rowValue}>{formatMoney(summary.costPerKgKopecks)}{t("perKilogramUnit")}</Text>
               </View>}
-              {summary.expensesWithoutAmount > 0 && <Text style={styles.note}>
-                Ціну беззбитковості покажемо, коли додасте вартість усіх робіт.
-              </Text>}
+              {summary.expensesWithoutAmount > 0 && <Text style={styles.note}>{t("breakEvenRequiresCostsHint", [], "both")}</Text>}
             </>}
           </InfoCard>;
         })}

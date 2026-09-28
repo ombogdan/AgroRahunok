@@ -1,3 +1,4 @@
+import {getLanguage, localeTag, t} from '../../config/i18n';
 export type RecordKind = 'work' | 'harvest' | 'sale' | 'other';
 export type WorkType = 'oranka' | 'dysk' | 'borona' | 'kult' | 'posiv' | 'posadka' | 'sap' |
   'obpr' | 'pidzh' | 'poliv' | 'mulch' | 'obriz' | 'zbir' | 'inshe';
@@ -41,13 +42,13 @@ export const workTypes: WorkType[] = ['oranka', 'dysk', 'borona', 'kult', 'posiv
   'sap', 'obpr', 'pidzh', 'mulch', 'obriz', 'zbir', 'inshe'];
 
 export const workTypeLabels: Record<WorkType, string> = {
-  oranka: 'Оранка', dysk: 'Дискування', borona: 'Боронування', kult: 'Культивація',
-  posiv: 'Посів', posadka: 'Посадка', sap: 'Сапання', obpr: 'Обприскування',
-  pidzh: 'Підживлення', poliv: 'Полив', mulch: 'Мульчування', obriz: 'Обрізка', zbir: 'Збір', inshe: 'Інше',
+  oranka: 'ploughing', dysk: 'discHarrowing', borona: 'harrowing', kult: 'cultivation',
+  posiv: 'sowing', posadka: 'planting', sap: 'hoeing', obpr: 'spraying',
+  pidzh: 'fertilising', poliv: 'irrigation', mulch: 'mulching', obriz: 'pruning', zbir: 'harvestWork', inshe: 'other',
 };
 
 export const performerLabels: Record<Performer, string> = {
-  self: 'Самостійно', family: 'Родина', neighbour: 'Сусід', hired: 'Наймана техніка',
+  self: 'myself', family: 'family', neighbour: 'neighbour', hired: 'hiredMachinery',
 };
 
 const NBSP = ' ';
@@ -77,9 +78,10 @@ export function fromLocalIsoDate(value: string): Date {
 export function dateLabel(isoDate: string, today = new Date()): string {
   const date = fromLocalIsoDate(isoDate);
   const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-  if (isoDate === toLocalIsoDate(today)) return 'Сьогодні';
-  if (isoDate === toLocalIsoDate(yesterday)) return 'Вчора';
-  const label = `${date.getDate()}${NBSP}${MONTHS[date.getMonth()]}`;
+  if (isoDate === toLocalIsoDate(today)) return t('today');
+  if (isoDate === toLocalIsoDate(yesterday)) return t('yesterday');
+  const label = getLanguage() === 'uk' ? `${date.getDate()}${NBSP}${MONTHS[date.getMonth()]}` :
+    new Intl.DateTimeFormat(localeTag(), {day: 'numeric', month: 'long'}).format(date);
   return date.getFullYear() === today.getFullYear() ? label : `${label} ${date.getFullYear()}`;
 }
 
@@ -109,11 +111,11 @@ export function parseMoneyInput(value: string): number | null {
 // «3 000 грн» or «2,50 грн»; the sign is left to the caller.
 export function formatMoney(kopecks: number): string {
   const hryvnias = Math.abs(kopecks) / 100;
-  const formatted = new Intl.NumberFormat('uk-UA', {
+  const formatted = new Intl.NumberFormat(localeTag(), {
     minimumFractionDigits: Number.isInteger(hryvnias) ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(hryvnias);
-  return `${formatted}${NBSP}грн`;
+  return `${formatted}${NBSP}${getLanguage() === 'uk' ? 'грн' : 'UAH'}`;
 }
 
 // The cost of a job: typed directly, or a per-hectare rate multiplied by the plot's area.
@@ -131,5 +133,5 @@ export function saleAmountKopecks(quantity: number, pricePerUnitKopecks: number)
 }
 
 export function formatKilograms(kg: number): string {
-  return `${new Intl.NumberFormat('uk-UA', {maximumFractionDigits: 3}).format(kg)}${NBSP}кг`;
+  return `${new Intl.NumberFormat(localeTag(), {maximumFractionDigits: 3}).format(kg)}${NBSP}${getLanguage() === 'uk' ? 'кг' : 'kg'}`;
 }

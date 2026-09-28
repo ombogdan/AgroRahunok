@@ -1,3 +1,4 @@
+import {t} from '../../config/i18n';
 import {useStyles} from './field-flow-header.styles';
 import React from 'react';
 import {Pressable, Text, View} from 'react-native';
@@ -5,7 +6,7 @@ import {BackButton} from '../ui';
 import {useScale} from '../../theme';
 
 
-export function FieldFlowHeader({backLabel = 'Назад', title, onBack, rightLabel, onRight}: {
+export function FieldFlowHeader({backLabel = t("back"), title, onBack, rightLabel, onRight}: {
   backLabel?: string; title?: string; onBack: () => void; rightLabel?: string; onRight?: () => void;
 }) {
   const styles = useStyles();

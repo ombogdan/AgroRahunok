@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './field-walk.styles';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Alert, Text, Vibration, View} from 'react-native';
@@ -25,24 +26,24 @@ const RETURN_RADIUS_M = 5;
 
 function walkHint(phase: Phase, accuracy: number | null, points: number, lengthM: number, nearStart: boolean):
   {text: string; tone: HintTone} {
-  if (accuracy === null) return {text: 'Шукаємо сигнал GPS…', tone: 'normal'};
-  const accuracyText = `±${Math.round(accuracy)} м`;
+  if (accuracy === null) return {text: t("lookingForGpsSignal"), tone: 'normal'};
+  const accuracyText = t("gpsAccuracyMeters", [Math.round(accuracy)]);
   if (accuracy > TRACK_MAX_ACCURACY_M && phase !== 'paused') {
-    const advice = phase === 'tracking' ? 'точки не записуються' : 'вийдіть на відкрите місце';
-    return {text: `Слабкий сигнал GPS (${accuracyText}) — ${advice}. Зачекайте.`, tone: 'warning'};
+    const advice = phase === 'tracking' ? t("pointsAreNotBeingRecorded") : t("moveToAnOpenArea");
+    return {text: t("weakGpsSignalHint", [accuracyText, advice]), tone: 'warning'};
   }
   if (phase === 'idle') {
     return {
-      text: `Станьте на кут ділянки й натисніть «Почати». Точність ${accuracyText}.`,
+      text: t("startBoundaryWalkHint", [accuracyText]),
       tone: 'normal',
     };
   }
   if (nearStart) {
-    return {text: 'Ви біля точки старту. Натисніть «Завершити», щоб замкнути контур.', tone: 'success'};
+    return {text: t("youAreNearTheStartTapDoneToCloseTheBoundary"), tone: 'success'};
   }
-  const progress = `Пройдено ${Math.round(lengthM)} м · точок: ${points}`;
-  if (phase === 'paused') return {text: `Пауза. ${progress}`, tone: 'normal'};
-  return {text: `Йдіть межею ділянки. ${progress} · ${accuracyText}`, tone: 'normal'};
+  const progress = t("walkDistanceAndPoints", [Math.round(lengthM), points]);
+  if (phase === 'paused') return {text: t("walkPausedStatus", [progress]), tone: 'normal'};
+  return {text: t("walkBoundaryStatus", [progress, accuracyText]), tone: 'normal'};
 }
 
 export function FieldWalkScreen({navigation}: Props) {
@@ -87,9 +88,9 @@ export function FieldWalkScreen({navigation}: Props) {
   useEffect(() => navigation.addListener('beforeRemove', event => {
     if (trackRef.current.length === 0 || event.data.action.type === 'RESET') return;
     event.preventDefault();
-    Alert.alert('Скасувати обхід?', 'Записаний трек буде втрачено.', [
-      {text: 'Залишитися', style: 'cancel'},
-      {text: 'Скасувати обхід', style: 'destructive', onPress: () => navigation.dispatch(event.data.action)},
+    Alert.alert(t("confirmCancelBoundaryWalkTitle"), t("theRecordedTrackWillBeLost"), [
+      {text: t("stay"), style: 'cancel'},
+      {text: t("cancelBoundaryWalk"), style: 'destructive', onPress: () => navigation.dispatch(event.data.action)},
     ]);
   }), [navigation]);
 
@@ -141,9 +142,9 @@ export function FieldWalkScreen({navigation}: Props) {
     }
   };
 
-  const restart = () => Alert.alert('Почати заново?', 'Записаний трек буде видалено.', [
-    {text: 'Скасувати', style: 'cancel'},
-    {text: 'Почати заново', style: 'destructive', onPress: () => {
+  const restart = () => Alert.alert(t("confirmStartOverTitle"), t("theRecordedTrackWillBeDeleted"), [
+    {text: t("cancel"), style: 'cancel'},
+    {text: t("startOver"), style: 'destructive', onPress: () => {
       setTrack([]);
       changePhase('idle');
     }},
@@ -162,7 +163,7 @@ export function FieldWalkScreen({navigation}: Props) {
     {/* The screen must not sleep mid-walk: a locked phone stops receiving GPS fixes. */}
     {phase === 'tracking' && <KeepAwake />}
     <View style={styles.top}>
-      <FieldFlowHeader title="Обійдіть ділянку" onBack={() => navigation.goBack()} />
+      <FieldFlowHeader title={t("walkTheFieldBoundary")} onBack={() => navigation.goBack()} />
       <Text style={styles.area}>
         {track.length >= 3 ? `${formatHectares(areaM2, {exact: true})} · ${formatSotky(areaM2)}` : formatHectares(0)}
       </Text>
@@ -182,29 +183,29 @@ export function FieldWalkScreen({navigation}: Props) {
         {track.length >= 3 && <Polygon coordinates={track} fillColor="rgba(227,164,59,0.28)"
           strokeColor="transparent" strokeWidth={scale(0)} />}
         {track.length >= 2 && <Polyline coordinates={track} strokeColor={theme.colors.accent} strokeWidth={scale(4)} />}
-        {track.length > 0 && <Marker coordinate={track[0]} pinColor={theme.colors.primary} title="Початок обходу" />}
+        {track.length > 0 && <Marker coordinate={track[0]} pinColor={theme.colors.primary} title={t("startOfBoundaryWalk")} />}
       </MapView>
     </View>
     <View style={styles.bottom}>
-      {phase === 'idle' && <AppButton label="Почати" onPress={start} />}
+      {phase === 'idle' && <AppButton label={t("start")} onPress={start} />}
       {phase === 'tracking' && <View style={styles.row}>
         <View style={styles.button}>
-          <AppButton label="Пауза" variant="secondary" onPress={() => changePhase('paused')} />
+          <AppButton label={t("pause")} variant="secondary" onPress={() => changePhase('paused')} />
         </View>
         <View style={styles.button}>
-          <AppButton label="Завершити" disabled={!canFinish} onPress={finish} />
+          <AppButton label={t("finish")} disabled={!canFinish} onPress={finish} />
         </View>
       </View>}
       {phase === 'paused' && <>
         <View style={styles.row}>
           <View style={styles.button}>
-            <AppButton label="Почати заново" variant="secondary" onPress={restart} />
+            <AppButton label={t("startOver")} variant="secondary" onPress={restart} />
           </View>
           <View style={styles.button}>
-            <AppButton label="Продовжити" variant="secondary" onPress={() => changePhase('tracking')} />
+            <AppButton label={t("continue")} variant="secondary" onPress={() => changePhase('tracking')} />
           </View>
         </View>
-        <AppButton label="Завершити" disabled={!canFinish} onPress={finish} />
+        <AppButton label={t("finish")} disabled={!canFinish} onPress={finish} />
       </>}
     </View>
   </SafeAreaView>;

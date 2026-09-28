@@ -1,3 +1,4 @@
+import {t} from '../../../../../shared/config/i18n';
 import React from 'react';
 import {Pressable, Text, View} from 'react-native';
 import {InfoCard} from '../../../../../shared/components/ui';
@@ -15,7 +16,7 @@ export function RowScheme({fieldId, rows, history, onSelect}: Props) {
   const styles = useStyles();
   const currentYear = new Date().getFullYear();
   return <InfoCard>
-    <Text style={styles.title}>Схема рядів</Text>
+    <Text style={styles.title}>{t("rowLayout")}</Text>
     {rows.map(row => {
       const previous = history.filter(item => item.fieldId === fieldId &&
         item.rowNumber === row.rowNumber && item.endedYear !== null)
@@ -23,12 +24,11 @@ export function RowScheme({fieldId, rows, history, onSelect}: Props) {
       return <Pressable key={row.id} accessibilityRole="button" onPress={() => onSelect(row)} style={styles.row}>
         <Text style={styles.number}>№{row.rowNumber}</Text>
         <View style={styles.body}>
-          <Text style={styles.variety}>{row.variety ?? 'Сорт ще не вказано'}</Text>
+          <Text style={styles.variety}>{row.variety ?? t("varietyNotSpecified")}</Text>
           {row.plantedYear !== null && <Text style={styles.muted}>
-            {row.plantedYear > currentYear ? 'Заплановано на' : 'Посаджено'}: {row.plantedYear}
+            {row.plantedYear > currentYear ? t("plannedFor") : t("planted")}: {row.plantedYear}
           </Text>}
-          {previous.map(old => <Text key={old.id} style={styles.muted}>
-            Було: {old.variety} · {old.plantedYear}–{old.endedYear}
+          {previous.map(old => <Text key={old.id} style={styles.muted}>{t("previous", [], "both")}{old.variety} · {old.plantedYear}–{old.endedYear}
           </Text>)}
         </View>
       </Pressable>;

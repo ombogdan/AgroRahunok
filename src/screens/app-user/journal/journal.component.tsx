@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './journal.styles';
 import React, {useMemo, useState} from 'react';
 import {ActivityIndicator, Pressable, ScrollView, Text, View} from 'react-native';
@@ -32,24 +33,24 @@ export function JournalScreen() {
   const visible = fieldFilter ? records.filter(record => record.fieldId === fieldFilter) : records;
   const groups = useMemo(() => groupByDay(visible), [visible]);
 
-  return <Page title="Журнал">
+  return <Page title={t("logbook")}>
     {loadState === 'loading' && <ActivityIndicator color={theme.colors.primary} size="large" />}
     {loadState === 'error' && <InfoCard>
-      <Text style={styles.errorTitle}>Не вдалося завантажити записи</Text>
-      <Text style={styles.muted}>Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.</Text>
-      <AppButton label="Повторити" onPress={reload} />
+      <Text style={styles.errorTitle}>{t("couldNotLoadRecords")}</Text>
+      <Text style={styles.muted}>{t("couldNotOpenDataOnThePhoneRestartTheApp")}</Text>
+      <AppButton label={t("tryAgain")} onPress={reload} />
     </InfoCard>}
     {loadState === 'ready' && records.length === 0 && <EmptyFeature
       icon="journal"
-      title="Записів ще немає"
+      title={t("noRecordsYet")}
       detail={fields.length > 0
-        ? 'Натисніть «+ Записати» внизу, щоб додати першу роботу.'
-        : 'Спершу додайте ділянку, потім тут з’являться роботи, збори й продажі.'}
+        ? t("tapAddRecordBelowToLogYourFirstJob")
+        : t("addAFieldFirstWorkHarvestsAndSalesWillAppearHere")}
     />}
     {loadState === 'ready' && records.length > 0 && <>
       {fields.length > 1 && <ScrollView horizontal showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filters}>
-        {[{id: null, name: 'Усі'}, ...fields].map(item => {
+        {[{id: null, name: t("all")}, ...fields].map(item => {
           const selected = fieldFilter === item.id;
           return <Pressable key={item.id ?? 'all'} accessibilityRole="button" accessibilityState={{selected}}
             onPress={() => setFieldFilter(item.id)} style={[styles.chip, selected && styles.chipSelected]}>

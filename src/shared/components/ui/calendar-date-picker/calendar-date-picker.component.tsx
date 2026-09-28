@@ -1,12 +1,11 @@
+import {localeTag, t} from '../../../config/i18n';
 import React, {useEffect, useState} from 'react';
 import {Modal, Pressable, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {fromLocalIsoDate, toLocalIsoDate} from '../../../core/records/model';
 import {useStyles} from './calendar-date-picker.styles';
 
-const months = ['січень', 'лютий', 'березень', 'квітень', 'травень', 'червень',
-  'липень', 'серпень', 'вересень', 'жовтень', 'листопад', 'грудень'];
-const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+const weekdays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 type Props = {
   visible: boolean;
@@ -43,36 +42,36 @@ export function CalendarDatePicker({visible, selectedDate, onSelect, onClose}: P
 
   return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <View style={[styles.overlay, {paddingTop: insets.top, paddingBottom: insets.bottom}]}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Закрити календар" />
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t("closeCalendar")} />
       <View style={styles.card} accessibilityViewIsModal>
         <View style={styles.heading}>
-          <Text style={styles.title}>Оберіть дату</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Закрити календар"
+          <Text style={styles.title}>{t("chooseADate")}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("closeCalendar")}
             onPress={onClose} style={styles.close}><Text style={styles.closeText}>✕</Text></Pressable>
         </View>
         <View style={styles.monthRow}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Попередній місяць"
+          <Pressable accessibilityRole="button" accessibilityLabel={t("previousMonth")}
             onPress={() => changeMonth(-1)} style={styles.arrow}><Text style={styles.arrowText}>‹</Text></Pressable>
-          <Text style={styles.month}>{months[month.getMonth()]} {month.getFullYear()}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Наступний місяць"
+          <Text style={styles.month}>{new Intl.DateTimeFormat(localeTag(), {month: 'long', year: 'numeric'}).format(month)}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("nextMonth")}
             onPress={() => changeMonth(1)} style={styles.arrow}><Text style={styles.arrowText}>›</Text></Pressable>
         </View>
         <View style={styles.yearRow}>
           <Pressable accessibilityRole="button" onPress={() => changeMonth(-12)} style={styles.yearButton}>
-            <Text style={styles.yearText}>− Рік</Text>
+            <Text style={styles.yearText}>{t("previousYear")}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => changeMonth(12)} style={styles.yearButton}>
-            <Text style={styles.yearText}>+ Рік</Text>
+            <Text style={styles.yearText}>{t("nextYear")}</Text>
           </Pressable>
         </View>
         <View style={styles.grid}>
-          {weekdays.map(day => <View key={day} style={styles.dayCell}><Text style={styles.weekday}>{day}</Text></View>)}
+          {weekdays.map(day => <View key={day} style={styles.dayCell}><Text style={styles.weekday}>{t(day)}</Text></View>)}
           {cells.map((day, index) => {
             if (day === null) return <View key={`empty-${index}`} style={styles.dayCell} />;
             const isoDate = toLocalIsoDate(new Date(month.getFullYear(), month.getMonth(), day));
             const selected = isoDate === selectedDate;
             return <View key={isoDate} style={styles.dayCell}>
-              <Pressable accessibilityRole="button" accessibilityLabel={`${day} ${months[month.getMonth()]} ${month.getFullYear()}`}
+              <Pressable accessibilityRole="button" accessibilityLabel={new Intl.DateTimeFormat(localeTag(), {day: 'numeric', month: 'long', year: 'numeric'}).format(new Date(month.getFullYear(), month.getMonth(), day))}
                 accessibilityState={{selected}} onPress={() => onSelect(isoDate)}
                 style={[styles.dayButton, selected && styles.daySelected]}>
                 <Text style={[styles.dayText, selected && styles.daySelectedText]}>{day}</Text>
@@ -81,7 +80,7 @@ export function CalendarDatePicker({visible, selectedDate, onSelect, onClose}: P
           })}
         </View>
         <Pressable accessibilityRole="button" onPress={() => onSelect(today)} style={styles.todayButton}>
-          <Text style={styles.todayText}>Сьогодні</Text>
+          <Text style={styles.todayText}>{t("today")}</Text>
         </Pressable>
       </View>
     </View>

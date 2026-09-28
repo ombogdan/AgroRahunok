@@ -1,12 +1,13 @@
+import {t} from '../../config/i18n';
 import {Alert, Linking, PermissionsAndroid, Platform} from 'react-native';
 
 export function showLocationUnavailable() {
   Alert.alert(
-    'Не вдалося визначити ваше місце',
-    'Перевірте, чи дозволено застосунку бачити геопозицію в параметрах телефону. Ділянку можна обвести й без цього — знайдіть її на карті вручну.',
+    t('locationUnavailableTitle'),
+    t('locationUnavailableDescription'),
     [
-      {text: 'Не зараз', style: 'cancel'},
-      {text: 'Відкрити параметри', onPress: () => { Linking.openSettings().catch(() => undefined); }},
+      {text: t('notNow'), style: 'cancel'},
+      {text: t('openPhoneSettings'), onPress: () => { Linking.openSettings().catch(() => undefined); }},
     ],
   );
 }

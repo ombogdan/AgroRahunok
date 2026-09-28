@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './sign-in.styles';
 import React, {useState} from 'react';
 import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
@@ -22,7 +23,7 @@ export function SignInScreen() {
       // A cancelled sheet just returns to this screen without an error.
       await signInWithGoogle();
     } catch (cause) {
-      if (__DEV__) console.warn('Вхід через Google не вдався', cause);
+      if (__DEV__) console.warn(t("googleSignInFailed"), cause);
       setError(signInErrorMessage(cause));
     } finally {
       setBusy(false);
@@ -36,15 +37,13 @@ export function SignInScreen() {
           <View style={styles.iconCircle}>
             <AppIcon name="plots" color={theme.colors.primary} size={48} />
           </View>
-          <Text style={styles.title}>АгроРахунок</Text>
-          <Text style={styles.subtitle}>
-            Ваша земля, роботи, урожай і гроші — в одному місці.
-          </Text>
+          <Text style={styles.title}>{t("appName")}</Text>
+          <Text style={styles.subtitle}>{t("yourFieldsWorkHarvestAndFinancesInOnePlace", [], "both")}</Text>
         </View>
         <InfoCard>
-          <Text style={styles.cardTitle}>Увійдіть у господарство</Text>
-          <Text style={styles.fine}>Почніть з акаунта Google. Вхід Apple додамо згодом.</Text>
-          <AppButton label={busy ? 'Входимо…' : 'Продовжити з Google'} onPress={handleGoogleSignIn} disabled={busy} />
+          <Text style={styles.cardTitle}>{t("signInToYourFarm")}</Text>
+          <Text style={styles.fine}>{t("startWithAGoogleAccountAppleSignInIsComingLater")}</Text>
+          <AppButton label={busy ? t("signingIn") : t("continueWithGoogle")} onPress={handleGoogleSignIn} disabled={busy} />
           {busy && <ActivityIndicator color={theme.colors.primary} />}
           {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
         </InfoCard>

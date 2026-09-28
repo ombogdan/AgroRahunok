@@ -1,3 +1,4 @@
+import {t} from '../../../shared/config/i18n';
 import {useStyles} from './field-method.styles';
 import React from 'react';
 import {ScrollView, Text, View} from 'react-native';
@@ -15,16 +16,16 @@ export function FieldMethodScreen({navigation}: Props) {
     <View style={styles.header}>
       <FieldFlowHeader onBack={() => navigation.goBack()} />
       <View style={styles.heading}>
-        <Text style={styles.title} accessibilityRole="header">Нова ділянка</Text>
-        <Text style={styles.subtitle}>Як зручніше визначити площу?</Text>
+        <Text style={styles.title} accessibilityRole="header">{t("newField")}</Text>
+        <Text style={styles.subtitle}>{t("howWouldYouLikeToMeasureTheArea")}</Text>
       </View>
     </View>
     <ScrollView contentContainerStyle={styles.content}>
-      <MethodOption title="Обвести на карті" detail="Торкніться кутів ділянки на супутниковій карті"
+      <MethodOption title={t("drawOnMap")} detail={t("tapTheFieldCornersOnTheSatelliteMap")}
         icon="draw" onPress={() => navigation.navigate('FieldMap')} />
-      <MethodOption title="Обійти з телефоном" detail="Пройдіть межею — площа порахується сама"
+      <MethodOption title={t("walkWithPhone")} detail={t("walkTheBoundaryToCalculateAreaAutomatically")}
         icon="feet" onPress={() => navigation.navigate('FieldWalk')} />
-      <MethodOption title="Ввести вручну" detail="Площа з документів у сотках або гектарах"
+      <MethodOption title={t("enterManually")} detail={t("documentedAreaInAresOrHectares")}
         icon="ruler" onPress={() => navigation.navigate('FieldForm', {mode: 'manual'})} />
     </ScrollView>
   </SafeAreaView>;

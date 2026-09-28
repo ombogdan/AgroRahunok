@@ -1,3 +1,4 @@
+import {t} from '../../../config/i18n';
 import {useStyles} from './toast.styles';
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import type {PropsWithChildren} from 'react';
@@ -54,7 +55,7 @@ export function ToastProvider({children}: PropsWithChildren) {
         {toast.actionLabel && <Pressable accessibilityRole="button" onPress={runAction} style={styles.action}>
           <Text style={styles.actionText}>{toast.actionLabel}</Text>
         </Pressable>}
-        <Pressable accessibilityRole="button" accessibilityLabel="Закрити повідомлення" onPress={hide}
+        <Pressable accessibilityRole="button" accessibilityLabel={t("closeMessage")} onPress={hide}
           style={styles.close}><Text style={styles.closeText}>✕</Text></Pressable>
       </View>
     </View>}

@@ -1,0 +1,2 @@
+CFBundleDisplayName = "АгроРахунок";
+NSLocationWhenInUseUsageDescription = "Потрібно, щоб показати ваше місце на карті під час додавання ділянки.";

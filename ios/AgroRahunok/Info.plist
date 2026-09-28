@@ -9,6 +9,12 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>uk</string>
+		<string>en</string>
+		<string>pl</string>
+		<string>ro</string>
+		<string>fr</string>
+		<string>de</string>
+		<string>es</string>
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>АгроРахунок</string>
