@@ -13,6 +13,8 @@ import {useSeason} from '../../../shared/core/records/SeasonProvider';
 import {currentRows, rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {FieldMapPreview} from '../../../shared/components/field-map-preview/field-map-preview.component';
+import {fieldRotation} from '../../../shared/core/rotation/model';
+import {RotationCard} from './components/rotation-card/rotation-card.component';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldDetail'>;
 
@@ -67,12 +69,10 @@ export function FieldDetailScreen({route, navigation}: Props) {
       {field.measuredAreaM2 !== null && <AreaRow label={t("measuredArea")} areaM2={field.measuredAreaM2}
         selected={field.areaSource === 'measured'} />}
     </InfoCard>
-    {field.crop ? <InfoCard>
-      <Text style={styles.label}>{t("currentCrop")}</Text>
-      <Text style={styles.crop}>{field.crop}</Text>
-      {field.variety && rows.length === 0
-        ? <Text style={styles.label}>{t("varietyPrefix", [], "after")}{field.variety}</Text> : null}
-    </InfoCard> : null}
+    {/* The current crop is the rotation line marked «Іде зараз». */}
+    <RotationCard field={field} rotation={fieldRotation(data.plantings, field.id)} records={data.records}
+      onOpen={plantingSeason => navigation.navigate('PlantingForm', {fieldId: field.id, season: plantingSeason})}
+      onAdd={() => navigation.navigate('PlantingForm', {fieldId: field.id})} />
     {(field.type === 'berries' || rows.length > 0) && <InfoCard>
       <Text style={styles.sectionTitle}>{t("rowsAndVarieties")}</Text>
       {rows.length === 0 ? <Text style={styles.hint}>{t("enterTheNumberOfRowsAndAssignAVarietyToEachOne", [], "both")}</Text> : <>

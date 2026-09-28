@@ -8,26 +8,31 @@ import {useScale, useTheme} from '../../../theme';
 import {AppButton} from '../app-button/app-button.component';
 import {useStyles} from './calendar-date-picker.styles';
 
-// Records are about work already done: the calendar runs from 2000 up to today.
+// Records are about work already done, so the calendar runs from 2000 up to today;
+// plans such as the crop rotation may reach into the future.
 const FIRST_DATE = new Date(2000, 0, 1);
+const LAST_PLANNED_DATE = new Date(2100, 11, 31);
 
 type Props = {
   visible: boolean;
   selectedDate: string;
   onSelect: (isoDate: string) => void;
   onClose: () => void;
+  allowFuture?: boolean;
 };
+
+const lastDate = (allowFuture?: boolean) => (allowFuture ? LAST_PLANNED_DATE : new Date());
 
 // The phone's own date picker: the calendar dialog on Android, the inline calendar in a bottom sheet on iOS.
 export function CalendarDatePicker(props: Props) {
   return Platform.OS === 'android' ? <AndroidDatePicker {...props} /> : <IosDatePicker {...props} />;
 }
 
-function AndroidDatePicker({visible, selectedDate, onSelect, onClose}: Props) {
+function AndroidDatePicker({visible, selectedDate, onSelect, onClose, allowFuture}: Props) {
   // The dialog opens once per `visible`; the latest callbacks are read when it closes.
-  const latest = useRef({selectedDate, onSelect, onClose});
+  const latest = useRef({selectedDate, onSelect, onClose, allowFuture});
   useEffect(() => {
-    latest.current = {selectedDate, onSelect, onClose};
+    latest.current = {selectedDate, onSelect, onClose, allowFuture};
   });
 
   useEffect(() => {
@@ -36,7 +41,7 @@ function AndroidDatePicker({visible, selectedDate, onSelect, onClose}: Props) {
       value: fromLocalIsoDate(latest.current.selectedDate),
       mode: 'date',
       minimumDate: FIRST_DATE,
-      maximumDate: new Date(),
+      maximumDate: lastDate(latest.current.allowFuture),
       onValueChange: (_, date) => latest.current.onSelect(toLocalIsoDate(date)),
       onDismiss: () => latest.current.onClose(),
     });
@@ -48,7 +53,7 @@ function AndroidDatePicker({visible, selectedDate, onSelect, onClose}: Props) {
   return null;
 }
 
-function IosDatePicker({visible, selectedDate, onSelect, onClose}: Props) {
+function IosDatePicker({visible, selectedDate, onSelect, onClose, allowFuture}: Props) {
   const styles = useStyles();
   const {theme, isDark} = useTheme();
   const scale = useScale();
@@ -75,7 +80,7 @@ function IosDatePicker({visible, selectedDate, onSelect, onClose}: Props) {
           themeVariant={isDark ? 'dark' : 'light'}
           accentColor={theme.colors.primary}
           minimumDate={FIRST_DATE}
-          maximumDate={new Date()}
+          maximumDate={lastDate(allowFuture)}
           onValueChange={(_, date) => setDraft(date)} />
         <View style={styles.buttons}>
           <View style={styles.button}>

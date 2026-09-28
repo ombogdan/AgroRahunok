@@ -15,6 +15,9 @@ import {TRACK_MAX_ACCURACY_M, distanceM, nextTrackPoint, trackLengthM} from '../
 import {useScale, useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
 import {requestLocationPermission, showLocationUnavailable} from '../../../shared/core/location/permissions';
+import {
+  DEFAULT_MAP_REGION, rememberMapRegion, useLastMapRegion,
+} from '../../../shared/core/location/lastMapRegion';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldWalk'>;
 type Phase = 'idle' | 'tracking' | 'paused';
@@ -52,6 +55,8 @@ export function FieldWalkScreen({route, navigation}: Props) {
   const scale = useScale();
   // With a plot id the walk replaces that plot's contour and returns to its edit form.
   const editFieldId = route.params?.fieldId ?? null;
+  // The map starts where it was last left and moves to the walker with the first GPS fix.
+  const lastRegion = useLastMapRegion();
   const mapRef = useRef<MapView>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [track, setTrack] = useState<GeoPoint[]>([]);
@@ -183,11 +188,12 @@ export function FieldWalkScreen({route, navigation}: Props) {
       <Text style={hintStyle} accessibilityLiveRegion="polite">{hint.text}</Text>
     </View>
     <View style={styles.map}>
-      <MapView
+      {lastRegion !== undefined && <MapView
         ref={mapRef}
         style={styles.map}
         mapType="hybrid"
-        initialRegion={{latitude: 49, longitude: 31.5, latitudeDelta: 6, longitudeDelta: 6}}
+        initialRegion={lastRegion ?? DEFAULT_MAP_REGION}
+        onRegionChangeComplete={rememberMapRegion}
         showsUserLocation={showLocation}
         userLocationPriority="high"
         userLocationUpdateInterval={1000}
@@ -197,7 +203,7 @@ export function FieldWalkScreen({route, navigation}: Props) {
           strokeColor="transparent" strokeWidth={scale(0)} />}
         {track.length >= 2 && <Polyline coordinates={track} strokeColor={theme.colors.accent} strokeWidth={scale(4)} />}
         {track.length > 0 && <Marker coordinate={track[0]} pinColor={theme.colors.primary} title={t("startOfBoundaryWalk")} />}
-      </MapView>
+      </MapView>}
     </View>
     <View style={styles.bottom}>
       {phase === 'idle' && <AppButton label={t("start")} onPress={start} />}

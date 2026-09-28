@@ -21,14 +21,15 @@ import {
 import {useScale, useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
 import {requestLocationPermission, showLocationUnavailable} from '../../../shared/core/location/permissions';
+import {
+  DEFAULT_MAP_REGION, rememberMapRegion, useLastMapRegion,
+} from '../../../shared/core/location/lastMapRegion';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldMap'>;
 // `appendPoints` is off while adjusting an existing contour: a tap then adds a corner to the nearest edge.
 type Shape = {points: GeoPoint[]; appendPoints: boolean};
 // Every change is kept, so a wrong drag or tap can be taken back step by step.
 type Contour = Shape & {history: Shape[]};
-
-const UKRAINE_REGION = {latitude: 49, longitude: 31.5, latitudeDelta: 6, longitudeDelta: 6};
 
 function mapHint(count: number, crossing: boolean, adjusting: boolean): string {
   if (crossing) return t("theBoundaryCrossesItselfMoveOrRemoveAPoint");
@@ -53,10 +54,17 @@ export function FieldMapScreen({route, navigation}: Props) {
     history: [],
   }));
   const {points} = contour;
-  const [initialRegion] = useState(() => (points.length >= 3 ? regionForPoints(points) : UKRAINE_REGION));
+  const lastRegion = useLastMapRegion();
+  // An existing contour opens in view; otherwise the map returns to where it was last left.
+  const [contourRegion] = useState(() => (points.length >= 3 ? regionForPoints(points) : null));
+  const initialRegion = contourRegion ?? (lastRegion === undefined ? null : lastRegion ?? DEFAULT_MAP_REGION);
   const mapRef = useRef<MapView>(null);
-  // An existing contour stays in view instead of jumping to where the phone is.
+  // The first GPS fix recenters the map only when there is nothing else to show: no contour and
+  // no place the map was left at before. «Моє місце» recenters on request.
   const centeredOnLocation = useRef(points.length >= 3);
+  useEffect(() => {
+    if (lastRegion) centeredOnLocation.current = true;
+  }, [lastRegion]);
   const lastLocation = useRef<GeoPoint | null>(null);
   const locationFailed = useRef(false);
   const [showLocation, setShowLocation] = useState(false);
@@ -162,13 +170,14 @@ export function FieldMapScreen({route, navigation}: Props) {
       <Text style={styles.hint}>{mapHint(points.length, crossing, adjusting && !contour.appendPoints)}</Text>
     </View>
     <View style={styles.map}>
-      <MapView
+      {initialRegion && <MapView
         ref={mapRef}
         style={styles.map}
         mapType="hybrid"
         initialRegion={initialRegion}
         showsUserLocation={showLocation}
         onUserLocationChange={handleUserLocation}
+        onRegionChangeComplete={rememberMapRegion}
         onPress={addPoint}>
         {points.length >= 3 &&
           <Polygon
@@ -194,7 +203,7 @@ export function FieldMapScreen({route, navigation}: Props) {
             onDragEnd={(event: {
               nativeEvent: { coordinate: GeoPoint }
             }) => movePoint(index, event.nativeEvent.coordinate)}/>)}
-      </MapView>
+      </MapView>}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t("myLocation")}

@@ -30,11 +30,19 @@ async function push(change: Change): Promise<void> {
     return;
   }
   if (change.table === 'plantings') {
-    const planting = change.value;
     // The records trigger may have made this row first, so identify it by field and season.
+    if (change.action === 'delete') {
+      const {error} = await supabase.from('plantings').delete()
+        .eq('field_id', change.fieldId).eq('season', change.season);
+      if (error) throw error;
+      return;
+    }
+    const planting = change.value;
     const {error} = await supabase.from('plantings').upsert({
       field_id: planting.fieldId, season: planting.season, crop: planting.crop,
-      variety: planting.variety, area_m2: planting.areaM2,
+      variety: planting.variety, area_m2: planting.areaM2, work_start_on: planting.workStartOn,
+      sown_on: planting.sownOn, harvest_on: planting.harvestOn,
+      planned_yield_kg_per_ha: planting.plannedYieldKgPerHa, note: planting.note,
     }, {onConflict: 'field_id,season'});
     if (error) throw error;
     return;

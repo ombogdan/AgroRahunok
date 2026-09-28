@@ -25,6 +25,8 @@ export type RootStackParamList = {
     | {mode: 'edit'; fieldId: string; boundary?: NewBoundary};
   FieldDetail: {fieldId: string};
   RowsSetup: {fieldId: string};
+  // A plot's crop for a harvest year: edits the planting of `season` when it exists, otherwise adds one.
+  PlantingForm: {fieldId: string; season?: number};
   WorkRecord: {recordId?: string} | undefined;
   QuantityRecord: {kind: 'harvest' | 'sale'; recordId?: string};
   OtherRecord: {recordId?: string} | undefined;

@@ -38,15 +38,23 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   subTotal: {color: theme.colors.textMuted, fontSize: scale(17)},
   bar: {flexDirection: 'row' as const, gap: scale(3), height: scale(12)},
   segment: {minWidth: scale(10), borderRadius: scale(999)},
+  // The plot's name and area share the first line; its crop button sits under the name.
   fieldRow: {
     minHeight: scale(44), borderTopWidth: scale(1), borderTopColor: theme.colors.border, paddingTop: scale(12),
-    flexDirection: 'row' as const, alignItems: 'center' as const, gap: scale(12)
+    flexDirection: 'row' as const, alignItems: 'flex-start' as const, gap: scale(12)
   },
-  dot: {width: scale(12), height: scale(12), borderRadius: scale(6)},
-  rowBody: {flex: 1, gap: scale(2)},
-  rowTitle: {color: theme.colors.text, fontSize: scale(17), fontWeight: '600' as const},
-  rowDetail: {color: theme.colors.textMuted, fontSize: scale(15)},
-  rowArea: {color: theme.colors.text, fontSize: scale(17), fontWeight: '600' as const},
+  dot: {width: scale(12), height: scale(12), borderRadius: scale(6), marginTop: scale(5)},
+  rowBody: {flex: 1, gap: scale(8), alignItems: 'flex-start' as const},
+  rowTitle: {color: theme.colors.text, fontSize: scale(17), lineHeight: scale(22), fontWeight: '600' as const},
+  cropButton: {
+    minHeight: scale(36), paddingHorizontal: scale(12), paddingVertical: scale(6), borderRadius: scale(999),
+    backgroundColor: theme.colors.primarySoft, flexDirection: 'row' as const, alignItems: 'center' as const,
+    gap: scale(6), maxWidth: '100%' as const
+  },
+  cropButtonPressed: {opacity: 0.7},
+  cropButtonText: {flexShrink: 1, color: theme.colors.primary, fontSize: scale(15), lineHeight: scale(20),
+    fontWeight: '600' as const},
+  rowArea: {color: theme.colors.text, fontSize: scale(17), lineHeight: scale(22), fontWeight: '600' as const},
   seasonHeader: {
     flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const,
     flexWrap: 'wrap' as const, gap: scale(8)
@@ -74,15 +82,6 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   sectionTitle: {color: theme.colors.text, fontSize: scale(22), lineHeight: scale(28), fontWeight: '700' as const},
   yearSection: {gap: scale(8)},
   yearLabel: {color: theme.colors.textMuted, fontSize: scale(17), fontWeight: '600' as const},
-  yearOptions: {flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: scale(8)},
-  yearOption: {
-    minHeight: scale(44), paddingHorizontal: scale(18), borderWidth: scale(2), borderColor: theme.colors.border,
-    borderRadius: scale(999), backgroundColor: theme.colors.surface, alignItems: 'center' as const,
-    justifyContent: 'center' as const
-  },
-  yearOptionSelected: {borderColor: theme.colors.primary, backgroundColor: theme.colors.primary},
-  yearOptionText: {color: theme.colors.text, fontSize: scale(17), fontWeight: '600' as const},
-  yearOptionTextSelected: {color: theme.colors.onPrimary},
   link: {minHeight: scale(44), justifyContent: 'center' as const},
   linkText: {color: theme.colors.primary, fontSize: scale(17), fontWeight: '600' as const},
   recordsCard: {paddingVertical: scale(4)},

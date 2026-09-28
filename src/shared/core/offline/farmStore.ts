@@ -1,5 +1,6 @@
 import type {Field, NewField} from '../fields/model';
-import type {Planting, PlantingInput} from '../fields/plantingsRepository';
+import type {NewPlanting, Planting, PlantingInput} from '../fields/plantingsRepository';
+import {withRotationDefaults} from '../fields/plantingsRepository';
 import type {FarmRecord, NewRecord} from '../records/model';
 import type {QuantityUnit} from '../records/quantityUnitsRepository';
 import {currentRows} from '../rows/model';
@@ -19,6 +20,8 @@ export type Change =
   | {key: string; table: 'records'; action: 'put'; value: FarmRecord}
   | {key: string; table: 'records'; action: 'delete'; id: string}
   | {key: string; table: 'plantings'; action: 'put'; value: Planting}
+  // Plantings are unique per plot and season, which is also how the server finds them.
+  | {key: string; table: 'plantings'; action: 'delete'; fieldId: string; season: number}
   | {key: string; table: 'units'; action: 'put'; value: QuantityUnit}
   | {key: string; table: 'plot_rows'; action: 'put'; value: RowPlanting}
   | {key: string; table: 'plot_rows'; action: 'delete'; id: string};
@@ -59,7 +62,14 @@ export function applyChange(data: FarmData, change: Change): FarmData {
     return {...data, records: data.records.filter(item => item.id !== change.id)};
   }
   if (change.table === 'plantings') {
-    return {...data, plantings: replaceById(data.plantings, change.value)};
+    if (change.action === 'delete') {
+      return {...data, plantings: data.plantings.filter(item =>
+        item.fieldId !== change.fieldId || item.season !== change.season)};
+    }
+    const value = change.value;
+    // The server may know this season's planting under another id (a record created it first).
+    return {...data, plantings: [...data.plantings.filter(item => item.id !== value.id &&
+      (item.fieldId !== value.fieldId || item.season !== value.season)), value]};
   }
   if (change.table === 'units') return {...data, units: replaceById(data.units, change.value)};
   if (change.action === 'put') return {...data, rows: replaceById(data.rows, change.value)};
@@ -68,6 +78,21 @@ export function applyChange(data: FarmData, change: Change): FarmData {
 
 export function visibleData(snapshot: FarmSnapshot): FarmData {
   return snapshot.pending.reduce(applyChange, snapshot.base);
+}
+
+function withPlantingDefaults(snapshot: FarmSnapshot): FarmSnapshot {
+  return {
+    ...snapshot,
+    base: {...snapshot.base, plantings: snapshot.base.plantings.map(withRotationDefaults)},
+    pending: snapshot.pending.map(change => (change.table === 'plantings' && change.action === 'put'
+      ? {...change, value: withRotationDefaults(change.value)} : change)),
+  };
+}
+
+export class PlantingSeasonTakenError extends Error {
+  constructor(readonly season: number) {
+    super(`Planting for ${season} already exists`);
+  }
 }
 
 // All writes, including sync acknowledgements, serialize through one local transaction queue.
@@ -117,9 +142,10 @@ export class FarmStore {
         if ((parsed.version !== 1 && parsed.version !== 2) || !parsed.base || !Array.isArray(parsed.pending)) {
           throw new Error('Невідома версія локальних даних');
         }
-        this.snapshot = parsed.version === 1
+        const snapshot: FarmSnapshot = parsed.version === 1
           ? {version: 2, base: {...parsed.base, rows: []}, pending: parsed.pending}
           : parsed;
+        this.snapshot = withPlantingDefaults(snapshot);
       }
       this.loaded = true;
       this.announce();
@@ -168,13 +194,32 @@ export class FarmStore {
     await this.enqueue({key: newId(), table: 'records', action: 'delete', id});
   }
 
+  // The field form sets only the crop of a season; dates and plans from the rotation stay.
   async savePlanting(input: PlantingInput): Promise<void> {
     const old = this.data.plantings.find(item => item.fieldId === input.fieldId && item.season === input.season);
-    const value: Planting = {
-      id: old?.id ?? newId(), fieldId: input.fieldId, season: input.season,
-      crop: input.crop, variety: input.variety, areaM2: input.areaM2,
-    };
+    const value = withRotationDefaults({...old, id: old?.id ?? newId(), fieldId: input.fieldId,
+      season: input.season, crop: input.crop, variety: input.variety, areaM2: input.areaM2});
     await this.enqueue({key: newId(), table: 'plantings', action: 'put', value});
+  }
+
+  // Saves a crop rotation line. `previousSeason` is the year it had before editing: moving it to another
+  // year removes the old one, and a year that already has a planting on this plot is refused.
+  async putPlanting(input: NewPlanting, previousSeason?: number): Promise<void> {
+    await this.commit(current => {
+      const plantings = visibleData(current).plantings;
+      const sameSeason = plantings.find(item => item.fieldId === input.fieldId && item.season === input.season);
+      if (sameSeason && previousSeason !== input.season) throw new PlantingSeasonTakenError(input.season);
+      const changes: Change[] = [];
+      if (previousSeason !== undefined && previousSeason !== input.season) {
+        changes.push({key: newId(), table: 'plantings', action: 'delete', fieldId: input.fieldId, season: previousSeason});
+      }
+      changes.push({key: newId(), table: 'plantings', action: 'put', value: {...input, id: sameSeason?.id ?? newId()}});
+      return {...current, pending: [...current.pending, ...changes]};
+    });
+  }
+
+  async removePlanting(fieldId: string, season: number): Promise<void> {
+    await this.enqueue({key: newId(), table: 'plantings', action: 'delete', fieldId, season});
   }
 
   async addUnit(name: string, kilogramsPerUnit: number): Promise<QuantityUnit> {

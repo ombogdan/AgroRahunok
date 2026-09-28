@@ -10,7 +10,6 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   rowValue: {color: theme.colors.text, fontSize: scale(17), fontWeight: '600' as const},
   badge: {borderRadius: scale(999), paddingHorizontal: scale(10), paddingVertical: scale(3), backgroundColor: theme.colors.primarySoft},
   badgeText: {color: theme.colors.primary, fontSize: scale(13), fontWeight: '700' as const},
-  crop: {color: theme.colors.text, fontSize: scale(22), lineHeight: scale(28), fontWeight: '700' as const},
   sectionTitle: {color: theme.colors.text, fontSize: scale(22), lineHeight: scale(28), fontWeight: '700' as const},
   hint: {color: theme.colors.textMuted, fontSize: scale(15), lineHeight: scale(21)},
 });

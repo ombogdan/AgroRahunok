@@ -6,20 +6,22 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {
-  fieldTypeLabels,
   formatArea,
   formatHectares,
   formatSotky,
   selectedAreaM2
 } from '../../../shared/core/fields/model';
+import type {Field} from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
 import {formatMoney} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
+import {fieldRotation, rotatesCrops, seasonOnField} from '../../../shared/core/rotation/model';
 import {useTheme} from '../../../shared/theme';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
 import {RecordRow} from '../components/record-row/record-row.component';
+import {YearStepper} from '../components/year-stepper/year-stepper.component';
 
 
 export function HomeScreen() {
@@ -35,16 +37,19 @@ export function HomeScreen() {
   const totalM2 = fields.reduce((sum, field) => sum + selectedAreaM2(field), 0);
   const now = new Date();
   const currentYear = now.getFullYear();
-  const availableSeasons = [...new Set([
-    currentYear,
-    ...(selectedSeason === null ? [] : [selectedSeason]),
-    ...records.map(record => record.season),
-    ...plantings.map(planting => planting.season),
-  ])].sort((a, b) => b - a);
-  const season = selectedSeason ?? availableSeasons[0];
+  // Any harvest year can be opened with the arrows, including next year's plan.
+  const season = selectedSeason ?? currentYear;
   const seasonRecords = records.filter(record => record.season === season);
   const seasonPlantings = new Map(plantings.filter(planting => planting.season === season)
     .map(planting => [planting.fieldId, planting]));
+  // The crop from the plot's rotation line for the season. Berries and orchards keep their one crop,
+  // and a plot missing the line for the season it is in now still shows its current crop.
+  const cropOf = (field: Field): string | null => {
+    const planting = seasonPlantings.get(field.id);
+    if (planting) return planting.crop;
+    if (!rotatesCrops(field)) return field.crop;
+    return season === seasonOnField(now, fieldRotation(plantings, field.id), field.crop) ? field.crop : null;
+  };
   // As in the design: wheat in the wheat colour, every other recorded crop in green.
   const cropColor = (crop: string | null) =>
     (crop ? /пшениц/i.test(crop) ? theme.colors.accent : theme.colors.primary : theme.colors.border);
@@ -92,15 +97,7 @@ export function HomeScreen() {
       {loadState === 'ready' && fields.length > 0 && <>
         <View style={styles.yearSection}>
           <Text style={styles.yearLabel}>{t("harvestYear")}</Text>
-          <View style={styles.yearOptions}>
-            {availableSeasons.map(year => <Pressable key={year} accessibilityRole="button"
-                                                     accessibilityState={{selected: season === year}}
-                                                     accessibilityLabel={t("seasonYear", [year])}
-                                                     onPress={() => setSelectedSeason(year)}
-                                                     style={[styles.yearOption, season === year && styles.yearOptionSelected]}>
-              <Text style={[styles.yearOptionText, season === year && styles.yearOptionTextSelected]}>{year}</Text>
-            </Pressable>)}
-          </View>
+          <YearStepper value={season} onChange={setSelectedSeason}/>
         </View>
         <InfoCard>
           <Text style={styles.summaryLabel}>{t("totalLand")}</Text>
@@ -114,26 +111,33 @@ export function HomeScreen() {
               <View key={field.id}
                     style={[styles.segment, {
                       flex: selectedAreaM2(field),
-                      backgroundColor: cropColor(seasonPlantings.get(field.id)?.crop ?? null)
+                      backgroundColor: cropColor(cropOf(field))
                     }]}/>)}
           </View>
           {fields.map(field => {
+            const crop = cropOf(field);
             const rowVarieties = varietyGroups(rowsForSeason(data.rows, field.id, season))
               .map(group => group.variety);
-            const cropDetails = [seasonPlantings.get(field.id)?.crop ?? field.crop,
-              rowVarieties.length > 0 ? rowVarieties.join(', ') : seasonPlantings.get(field.id)?.variety]
-              .filter(Boolean).join(' · ');
+            const cropDetails = crop ? [crop, rowVarieties.length > 0 ? rowVarieties.join(', ')
+              : seasonPlantings.get(field.id)?.variety].filter(Boolean).join(' · ') : null;
             return (
               <Pressable
                 key={field.id}
                 accessibilityRole="button"
                 style={styles.fieldRow}
                 onPress={() => navigation.navigate('FieldDetail', {fieldId: field.id})}>
-                <View style={[styles.dot, {backgroundColor: cropColor(seasonPlantings.get(field.id)?.crop ?? null)}]}/>
+                <View style={[styles.dot, {backgroundColor: cropColor(crop)}]}/>
                 <View style={styles.rowBody}>
                   <Text style={styles.rowTitle}>{field.name}</Text>
-                  <Text
-                    style={styles.rowDetail}>{cropDetails || t("cropNotRecordedForField", [t(fieldTypeLabels[field.type])])}</Text>
+                  {/* The season's crop opens straight in the crop rotation, to add or change it. */}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${field.name}, ${season}: ${cropDetails ?? t("addCrop")}`}
+                    onPress={() => navigation.navigate('PlantingForm', {fieldId: field.id, season})}
+                    style={({pressed}) => [styles.cropButton, pressed && styles.cropButtonPressed]}>
+                    <Text style={styles.cropButtonText}>{cropDetails ?? t("addCrop")}</Text>
+                    {cropDetails ? <AppIcon name="pencil" color={theme.colors.primary} size={16}/> : null}
+                  </Pressable>
                 </View>
                 <Text style={styles.rowArea}>{formatArea(selectedAreaM2(field))}</Text>
               </Pressable>);

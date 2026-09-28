@@ -30,6 +30,10 @@ const PATHS = {
   mulch: 'M3 18h18M5 14h14M7 10h10M9 6h6M5 18l2 3M19 18l-2 3',
   obriz: 'M3 6a3 3 0 1 0 6 0 3 3 0 1 0-6 0M3 18a3 3 0 1 0 6 0 3 3 0 1 0-6 0M8.1 7.9 20 18M8.1 16.1 20 6',
   dots: 'M5 12h.01M12 12h.01M19 12h.01',
+  calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+  close: 'M18 6 6 18M6 6l12 12',
+  pencil: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
+  warning: 'M12 3 2 21h20zM12 10v5M12 18h.01',
   // Work types without their own drawing reuse the design's basket and dots.
   zbir: 'M3.5 10h17l-1.6 9.1a1 1 0 0 1-1 .9H6.1a1 1 0 0 1-1-.9zM8 10l3-6M16 10l-3-6M9 14v3M12 14v3M15 14v3',
   inshe: 'M5 12h.01M12 12h.01M19 12h.01',

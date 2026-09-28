@@ -20,6 +20,7 @@ import {
 } from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {seasonFor} from '../../../shared/core/records/model';
+import {rotatesCrops} from '../../../shared/core/rotation/model';
 import {currentRows} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
@@ -87,6 +88,8 @@ export function FieldFormScreen({route, navigation}: Props) {
     .map(item => item.variety)) : [];
   const usesDimensions = isManual && manualMethod === 'dimensions';
   const showDocumentArea = isManual || presetMeasuredM2 === null;
+  // A field, garden or greenhouse gets its crops year by year in the crop rotation, not here.
+  const asksCrop = !rotatesCrops({type});
   const documentAreaM2 = usesDimensions ? null : parseAreaInput(areaInput, unit);
   const dimensionsAreaM2 = rectangleAreaM2(lengthInput, widthInput);
   const measuredAreaM2 = usesDimensions ? dimensionsAreaM2 : presetMeasuredM2;
@@ -102,16 +105,19 @@ export function FieldFormScreen({route, navigation}: Props) {
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
-    const cropName = crop.trim() || null;
+    // Without the crop question the plot keeps the crop its rotation gave it.
+    const cropName = asksCrop ? crop.trim() || null : editing?.crop ?? null;
+    const varietyName = !asksCrop ? editing?.variety ?? null
+      : !cropName ? null
+        : type === 'berries' ? (editing?.type === 'berries' ? editing.variety : null)
+          : variety.trim() || null;
     const input = {
-      name: name.trim(), type, crop: cropName,
-      variety: cropName ? type === 'berries'
-        ? (editing?.type === 'berries' ? editing.variety : null) : variety.trim() || null : null,
+      name: name.trim(), type, crop: cropName, variety: varietyName,
       documentAreaM2, measuredAreaM2, areaSource: effectiveSource, polygon,
     };
     // Finish saving the planting before returning home, so its season is available there immediately.
     const rememberPlanting = async (fieldId: string): Promise<boolean> => {
-      if (!cropName) return true;
+      if (!asksCrop || !cropName) return true;
       try {
         if (!store) throw new Error(t("localDataIsStillLoading"));
         await store.savePlanting({fieldId, season, crop: cropName, variety: input.variety, areaM2: selectedAreaM2 ?? 0});
@@ -258,8 +264,10 @@ export function FieldFormScreen({route, navigation}: Props) {
         <Text style={styles.areaValue}>{formatArea(presetMeasuredM2)}</Text>
       </View>}
       {/* Always open: optional fields hidden behind a toggle were never filled in. */}
-      <Text style={styles.detailsHeading} accessibilityRole="header">{t("cropAndOtherDetailsOptional")}</Text>
-      <View style={styles.section}>
+      {(asksCrop || !showDocumentArea) && <Text style={styles.detailsHeading} accessibilityRole="header">
+        {asksCrop ? t("cropAndOtherDetailsOptional") : t("detailsOptional")}
+      </Text>}
+      {asksCrop && <View style={styles.section}>
         <Text style={styles.label}>{t("seasonCrop", [], "after")}{season}{t("optional", [], "before")}</Text>
         <AutocompleteInput value={crop} onChangeText={setCrop} suggestions={cropSuggestions}
           placeholder={t("forExampleWinterWheat")} accessibilityLabel={t("cropForSeasonYear", [season])} />
@@ -276,7 +284,7 @@ export function FieldFormScreen({route, navigation}: Props) {
           </View>
           <Text style={styles.note}>{t("autumnSownWinterCropsBelongToNextYearSHarvest")}</Text>
         </>}
-      </View>
+      </View>}
       {!showDocumentArea && documentAreaForm}
       {canChooseSource && documentAreaM2 !== null && <View style={styles.section}>
         <Text style={styles.label}>{t("whichAreaShouldBeUsedInCalculations")}</Text>

@@ -20,6 +20,7 @@ import {
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
+import {fieldRotation, seasonOnField} from '../../../shared/core/rotation/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
@@ -78,7 +79,10 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const field = fields.find(item => item.id === fieldId) ?? null;
   const occurredOn = dateChoice === 'today' ? today : dateChoice === 'yesterday' ? yesterday : parseDateInput(otherDate);
   const occurredDate = fromLocalIsoDate(occurredOn ?? today);
-  const defaultSeason = seasonFor(occurredDate, field?.crop ?? null);
+  // The crop rotation's start of works decides when autumn jobs already count for next year.
+  const defaultSeason = field
+    ? seasonOnField(occurredDate, fieldRotation(data.plantings, field.id), field.crop)
+    : seasonFor(occurredDate, null);
   const season = seasonOverride ?? defaultSeason;
   const seasonRows = field ? rowsForSeason(data.rows, field.id, season) : [];
   const rowGroups = varietyGroups(seasonRows);

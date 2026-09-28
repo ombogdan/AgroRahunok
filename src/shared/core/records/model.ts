@@ -76,13 +76,18 @@ export function fromLocalIsoDate(value: string): Date {
 
 // «Сьогодні», «Вчора», «24 вересня» or «24 вересня 2025» for another year.
 export function dateLabel(isoDate: string, today = new Date()): string {
-  const date = fromLocalIsoDate(isoDate);
   const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
   if (isoDate === toLocalIsoDate(today)) return t('today');
   if (isoDate === toLocalIsoDate(yesterday)) return t('yesterday');
+  return calendarDateLabel(isoDate, today);
+}
+
+// «24 вересня», or «24 вересня 2025» for another year (or always with `withYear`), also for today's date.
+export function calendarDateLabel(isoDate: string, today = new Date(), withYear = false): string {
+  const date = fromLocalIsoDate(isoDate);
   const label = getLanguage() === 'uk' ? `${date.getDate()}${NBSP}${MONTHS[date.getMonth()]}` :
     new Intl.DateTimeFormat(localeTag(), {day: 'numeric', month: 'long'}).format(date);
-  return date.getFullYear() === today.getFullYear() ? label : `${label} ${date.getFullYear()}`;
+  return !withYear && date.getFullYear() === today.getFullYear() ? label : `${label} ${date.getFullYear()}`;
 }
 
 // Reads «26.09.2026» or «26.9.2026»; null for anything that is not a real calendar date.
