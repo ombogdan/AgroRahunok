@@ -46,8 +46,9 @@ export function RecordRow({record, field, first, detail, onPress}: {
   const rowDetail = record.details.varietySnapshot
     ? `${[record.details.cropSnapshot, record.details.varietySnapshot].filter(Boolean).join(' · ')}${record.details.rowNumbersSnapshot?.length
       ? t("rowNumbersSuffix", [record.details.rowNumbersSnapshot.join(', ')]) : ''}` : null;
-  const subtitle = [location, rowDetail, quantityDetail, record.kind === 'sale' ? record.details.buyer : null]
-    .filter(Boolean).join(' · ');
+  const materialsDetail = record.details.materials?.map(material => material.name).join(', ') || null;
+  const subtitle = [location, rowDetail, materialsDetail, quantityDetail,
+    record.kind === 'sale' ? record.details.buyer : null].filter(Boolean).join(' · ');
   return <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress}
     style={[styles.row, !first && styles.divider]}>
     <View style={styles.circle}><AppIcon name={recordIcon(record)} color={theme.colors.primary} size={24} /></View>

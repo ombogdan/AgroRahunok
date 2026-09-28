@@ -33,6 +33,13 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   hint: {color: theme.colors.textMuted, fontSize: scale(15), lineHeight: scale(20)},
   syncHint: {color: theme.colors.textMuted, fontSize: scale(14), lineHeight: scale(19)},
   summaryLabel: {color: theme.colors.textMuted, fontSize: scale(17), fontWeight: '600' as const},
+  // «Уся земля» and the way to see it all on the map share one line.
+  totalHeader: {flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const,
+    gap: scale(12)},
+  mapButton: {minHeight: scale(40), paddingHorizontal: scale(14), borderRadius: scale(999),
+    backgroundColor: theme.colors.primarySoft, flexDirection: 'row' as const, alignItems: 'center' as const,
+    gap: scale(6)},
+  mapButtonText: {color: theme.colors.primary, fontSize: scale(15), fontWeight: '700' as const},
   totalRow: {flexDirection: 'row' as const, alignItems: 'baseline' as const, flexWrap: 'wrap' as const, gap: scale(8)},
   total: {color: theme.colors.text, fontSize: scale(40), lineHeight: scale(48), fontWeight: '700' as const},
   subTotal: {color: theme.colors.textMuted, fontSize: scale(17)},

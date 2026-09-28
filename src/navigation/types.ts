@@ -24,6 +24,7 @@ export type RootStackParamList = {
     | {mode: 'map' | 'walk'; polygon: GeoPoint[]; measuredAreaM2: number}
     | {mode: 'edit'; fieldId: string; boundary?: NewBoundary};
   FieldDetail: {fieldId: string};
+  FarmMap: undefined;
   RowsSetup: {fieldId: string};
   // A plot's crop for a harvest year: edits the planting of `season` when it exists, otherwise adds one.
   PlantingForm: {fieldId: string; season?: number};

@@ -1,9 +1,11 @@
 // The config itself, not the i18n index, which also brings the React provider: models stay plain.
 import {localeTag, t} from '../../config/i18n/i18n.config';
 import type {Field} from '../fields/model';
-import type {Planting} from '../fields/plantingsRepository';
+import type {Planting} from '../fields/planting';
 import type {FarmRecord} from '../records/model';
 import {seasonFor, toLocalIsoDate} from '../records/model';
+import type {RowPlanting} from '../rows/model';
+import {rowsForSeason, rowsSummary, usesRows, varietyGroups} from '../rows/model';
 
 // A plot's crop rotation, newest harvest year first.
 export function fieldRotation(plantings: Planting[], fieldId: string): Planting[] {
@@ -67,4 +69,19 @@ export function actualYieldKgPerHa(records: FarmRecord[], fieldId: string, seaso
   const harvestedKg = records.filter(record => record.kind === 'harvest' && record.fieldId === fieldId &&
     record.season === season).reduce((sum, record) => sum + (record.quantityKg ?? 0), 0);
   return harvestedKg > 0 && areaM2 > 0 ? (harvestedKg * 10000) / areaM2 : null;
+}
+
+// What a plot grows in a season, as the home screen and the farm map show it. Berry plots and orchards
+// show their rows; other plots their crop rotation line, or the plot's current crop in the season it is in now.
+export function seasonCropOf(field: Field, season: number, plantings: Planting[], rows: RowPlanting[],
+  today = new Date()): {crop: string | null; label: string | null} {
+  const groups = varietyGroups(rowsForSeason(rows, field.id, season));
+  if (usesRows(field)) {
+    return {crop: groups.find(group => group.crop)?.crop ?? field.crop, label: rowsSummary(groups) || null};
+  }
+  const planting = plantings.find(item => item.fieldId === field.id && item.season === season);
+  const isCurrent = season === seasonOnField(today, fieldRotation(plantings, field.id), field.crop);
+  const crop = planting ? planting.crop : isCurrent ? field.crop : null;
+  const variety = groups.length > 0 ? groups.map(group => group.variety).join(', ') : planting?.variety;
+  return {crop, label: crop ? [crop, variety].filter(Boolean).join(' · ') : null};
 }

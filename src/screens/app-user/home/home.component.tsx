@@ -11,13 +11,12 @@ import {
   formatSotky,
   selectedAreaM2
 } from '../../../shared/core/fields/model';
-import type {Field} from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
-import {rowsForSeason, rowsSummary, usesRows, varietyGroups} from '../../../shared/core/rows/model';
+import {usesRows} from '../../../shared/core/rows/model';
 import {formatMoney} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
-import {fieldRotation, rotatesCrops, seasonOnField} from '../../../shared/core/rotation/model';
+import {seasonCropOf} from '../../../shared/core/rotation/model';
 import {useTheme} from '../../../shared/theme';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
 import {RecordRow} from '../components/record-row/record-row.component';
@@ -42,14 +41,8 @@ export function HomeScreen() {
   const seasonRecords = records.filter(record => record.season === season);
   const seasonPlantings = new Map(plantings.filter(planting => planting.season === season)
     .map(planting => [planting.fieldId, planting]));
-  // The crop from the plot's rotation line for the season. Berries and orchards keep their one crop,
-  // and a plot missing the line for the season it is in now still shows its current crop.
-  const cropOf = (field: Field): string | null => {
-    const planting = seasonPlantings.get(field.id);
-    if (planting) return planting.crop;
-    if (!rotatesCrops(field)) return field.crop;
-    return season === seasonOnField(now, fieldRotation(plantings, field.id), field.crop) ? field.crop : null;
-  };
+  const seasonCrops = new Map(fields.map(field =>
+    [field.id, seasonCropOf(field, season, plantings, data.rows, now)]));
   // As in the design: wheat in the wheat colour, every other recorded crop in green.
   const cropColor = (crop: string | null) =>
     (crop ? /пшениц/i.test(crop) ? theme.colors.accent : theme.colors.primary : theme.colors.border);
@@ -100,7 +93,15 @@ export function HomeScreen() {
           <YearStepper value={season} onChange={setSelectedSeason}/>
         </View>
         <InfoCard>
-          <Text style={styles.summaryLabel}>{t("totalLand")}</Text>
+          <View style={styles.totalHeader}>
+            <Text style={styles.summaryLabel}>{t("totalLand")}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("showOnMap")} hitSlop={4}
+                       onPress={() => navigation.navigate('FarmMap')}
+                       style={({pressed}) => [styles.mapButton, pressed && styles.cropButtonPressed]}>
+              <AppIcon name="map" color={theme.colors.primary} size={18}/>
+              <Text style={styles.mapButtonText}>{t("onTheMap")}</Text>
+            </Pressable>
+          </View>
           <View style={styles.totalRow}>
             <Text style={styles.total}>{formatHectares(totalM2)}</Text>
             <Text style={styles.subTotal}>{formatSotky(totalM2)}</Text>
@@ -111,17 +112,13 @@ export function HomeScreen() {
               <View key={field.id}
                     style={[styles.segment, {
                       flex: selectedAreaM2(field),
-                      backgroundColor: cropColor(cropOf(field))
+                      backgroundColor: cropColor(seasonCrops.get(field.id)?.crop ?? null)
                     }]}/>)}
           </View>
           {fields.map(field => {
-            const rowGroups = varietyGroups(rowsForSeason(data.rows, field.id, season));
             // Berry plots and orchards show what grows in their rows; other plots their crop for the season.
             const rowPlot = usesRows(field);
-            const crop = rowPlot ? rowGroups.find(group => group.crop)?.crop ?? field.crop : cropOf(field);
-            const cropDetails = rowPlot ? rowsSummary(rowGroups) || null
-              : crop ? [crop, rowGroups.length > 0 ? rowGroups.map(group => group.variety).join(', ')
-                : seasonPlantings.get(field.id)?.variety].filter(Boolean).join(' · ') : null;
+            const {crop, label: cropDetails} = seasonCrops.get(field.id) ?? {crop: null, label: null};
             const emptyLabel = rowPlot ? t("addRowsButton") : t("addCrop");
             return (
               <Pressable

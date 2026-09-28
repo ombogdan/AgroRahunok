@@ -5,11 +5,25 @@ export type WorkType = 'oranka' | 'dysk' | 'borona' | 'kult' | 'posiv' | 'posadk
   'obpr' | 'pidzh' | 'poliv' | 'mulch' | 'obriz' | 'zbir' | 'inshe';
 export type CostMode = 'sum' | 'perHa';
 export type Performer = 'self' | 'family' | 'neighbour' | 'hired';
+// What a job used up: seed from the crop rotation, fertiliser (with its NPK), crop protection or anything else.
+export type MaterialKind = 'seed' | 'fertilizer' | 'protection' | 'other';
+export type MaterialUnit = 'kg' | 't' | 'l';
+// Nutrient shares in per cent, e.g. 34.4-0-0 for ammonium nitrate.
+export type Npk = {n: number; p: number; k: number};
+export type MaterialUse = {
+  kind: MaterialKind;
+  name: string;
+  quantity: number | null;
+  unit: MaterialUnit;
+  pricePerUnitKopecks: number | null;
+  npk?: Npk;
+};
 
 export type RecordDetails = {
   costMode?: CostMode;
   ratePerHaKopecks?: number;
   performer?: Performer;
+  materials?: MaterialUse[];
   unitName?: string;
   kilogramsPerUnit?: number;
   enteredQuantity?: number;
@@ -53,6 +67,30 @@ export const workTypeLabels: Record<WorkType, string> = {
 export const performerLabels: Record<Performer, string> = {
   self: 'myself', family: 'family', neighbour: 'neighbour', hired: 'hiredMachinery',
 };
+
+export const materialKinds: MaterialKind[] = ['seed', 'fertilizer', 'protection', 'other'];
+
+export const materialKindLabels: Record<MaterialKind, string> = {
+  seed: 'materialSeed', fertilizer: 'materialFertilizer', protection: 'materialProtection', other: 'materialOther',
+};
+
+export const materialUnitLabels: Record<MaterialUnit, string> = {kg: 'kilogramUnit', t: 't', l: 'litreUnit'};
+
+// A material costs its quantity times the price per unit; without either the cost is unknown.
+export function materialCostKopecks(material: MaterialUse): number | null {
+  return material.quantity !== null && material.pricePerUnitKopecks !== null
+    ? Math.round(material.quantity * material.pricePerUnitKopecks) : null;
+}
+
+export function materialsCostKopecks(materials: MaterialUse[] = []): number {
+  return materials.reduce((sum, material) => sum + (materialCostKopecks(material) ?? 0), 0);
+}
+
+// «16-16-16»: the usual way a fertiliser's NPK is written.
+export function formatNpk(npk: Npk): string {
+  const part = (value: number) => new Intl.NumberFormat(localeTag(), {maximumFractionDigits: 1}).format(value);
+  return `${part(npk.n)}-${part(npk.p)}-${part(npk.k)}`;
+}
 
 const NBSP = ' ';
 const MONTHS = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня',

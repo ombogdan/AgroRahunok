@@ -14,16 +14,19 @@ import {useFields} from '../../../shared/core/fields/FieldsProvider';
 import {fieldTypeLabels, formatArea, formatHectares, selectedAreaM2} from '../../../shared/core/fields/model';
 import type {CostMode, NewRecord, Performer, WorkType} from '../../../shared/core/records/model';
 import {
-  formatDateInput, formatMoney, fromLocalIsoDate, parseDateInput, parseMoneyInput, performerLabels,
-  seasonFor, toLocalIsoDate, workCostKopecks, workTypeLabels, workTypes,
+  formatDateInput, formatMoney, fromLocalIsoDate, materialsCostKopecks, parseDateInput, parseMoneyInput,
+  performerLabels, seasonFor, toLocalIsoDate, workCostKopecks, workTypeLabels, workTypes,
 } from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
-import {fieldRotation, seasonOnField} from '../../../shared/core/rotation/model';
+import {fieldRotation, seasonCropOf, seasonOnField} from '../../../shared/core/rotation/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
+import {MaterialsSection} from './components/materials-section/materials-section.component';
+import type {MaterialDraft} from './components/material-sheet/material-draft';
+import {draftFrom, parseDraft} from './components/material-sheet/material-draft';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WorkRecord'>;
 type Step = 1 | 2 | 3;
@@ -55,10 +58,15 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const initialDate: DateChoice = !editing || editing.occurredOn === today ? 'today'
     : editing.occurredOn === yesterday ? 'yesterday' : 'other';
   const initialCostMode: CostMode = editing?.details.costMode ?? 'sum';
+  // The saved amount includes the materials, so the job's own cost is what is left without them.
+  const editingMaterialsCost = materialsCostKopecks(editing?.details.materials);
   const initialCost = editing
     ? initialCostMode === 'perHa' && editing.details.ratePerHaKopecks
       ? moneyInputValue(editing.details.ratePerHaKopecks)
-      : editing.amountKopecks !== null ? moneyInputValue(editing.amountKopecks) : ''
+      : editing.amountKopecks === null ? ''
+        : editingMaterialsCost === 0 ? moneyInputValue(editing.amountKopecks)
+          : Math.abs(editing.amountKopecks) > editingMaterialsCost
+            ? moneyInputValue(Math.abs(editing.amountKopecks) - editingMaterialsCost) : ''
     : '';
 
   const [step, setStep] = useState<Step>(editing ? 3 : singleField ? 2 : 1);
@@ -73,6 +81,8 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const [performer, setPerformer] = useState<Performer | null>(editing?.details.performer ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
+  const [materialDrafts, setMaterialDrafts] = useState<MaterialDraft[]>(() =>
+    (editing?.details.materials ?? []).map(draftFrom));
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
   const [saving, setSaving] = useState(false);
 
@@ -97,8 +107,15 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const valueKopecks = parseMoneyInput(costInput);
   const costInvalid = costInput.trim() !== '' && valueKopecks === null;
   const costKopecks = workCostKopecks(costMode, valueKopecks, areaM2);
+  const parsedMaterials = materialDrafts.map(parseDraft);
+  const materials = parsedMaterials.flatMap(item => item.material ?? []);
+  const materialsCost = materialsCostKopecks(materials);
+  // What the record adds to the season's expenses: the job itself and the priced materials.
+  const totalCostKopecks = costKopecks === null && materialsCost === 0 ? null : (costKopecks ?? 0) + materialsCost;
+  // New seed starts with the crop the rotation has on this plot for the season.
+  const seedName = field ? seasonCropOf(field, season, data.plantings, data.rows).label ?? '' : '';
   const canSave = !!field && !!workType && !!occurredOn && !costInvalid && !saving &&
-    (selectedRows.length === 0 || costMode === 'sum');
+    parsedMaterials.every(item => item.valid) && (selectedRows.length === 0 || costMode === 'sum');
   const firstStep: Step = showFieldStep ? 1 : 2;
   const visibleStep = showFieldStep ? step : step - 1;
   const visibleStepCount = showFieldStep ? 3 : 2;
@@ -118,13 +135,14 @@ export function WorkRecordScreen({route, navigation}: Props) {
       workType,
       occurredOn,
       season,
-      amountKopecks: costKopecks === null ? null : -costKopecks,
+      amountKopecks: totalCostKopecks === null ? null : -totalCostKopecks,
       quantityKg: null,
       note: note.trim() || null,
       details: {
         costMode,
         ...(costMode === 'perHa' && valueKopecks !== null ? {ratePerHaKopecks: valueKopecks} : {}),
         ...(performer ? {performer} : {}),
+        ...(materials.length > 0 ? {materials} : {}),
         ...(selectedGroup ? {
           rowPlantingIds: selectedRows.map(row => row.id),
           ...(selectedGroup.crop ? {cropSnapshot: selectedGroup.crop} : {}),
@@ -142,7 +160,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
       }
       const record = await addRecord(input);
       navigation.goBack();
-      const parts = [t(workTypeLabels[workType]), field.name, costKopecks ? formatMoney(costKopecks) : null];
+      const parts = [t(workTypeLabels[workType]), field.name, totalCostKopecks ? formatMoney(totalCostKopecks) : null];
       showToast({
         text: t("recordedValue", [parts.filter(Boolean).join(' · ')]),
         actionLabel: t("cancel"),
@@ -251,6 +269,9 @@ export function WorkRecordScreen({route, navigation}: Props) {
           {costInvalid && <Text style={styles.error}>{t("enterAnAmountSuchAs3000Or250")}</Text>}
           {selectedRows.length > 0 && costMode === 'perHa' && <Text style={styles.error}>{t("selectedRowsCostModeHint", [], "both")}</Text>}
         </View>
+
+        <MaterialsSection drafts={materialDrafts} onChange={setMaterialDrafts} seedName={seedName} season={season}
+          workCostKopecks={costKopecks} />
 
         {/* Always open: optional fields hidden behind a toggle were never filled in. */}
         <Text style={styles.detailsHeading} accessibilityRole="header">{t("detailsOptional")}</Text>

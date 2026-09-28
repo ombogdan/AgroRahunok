@@ -195,6 +195,44 @@ export function insertIntoNearestEdge(points: GeoPoint[], point: GeoPoint): GeoP
   return [...points.slice(0, nearest + 1), point, ...points.slice(nearest + 1)];
 }
 
+// Where a plot's name goes on the map: the contour's centre of area, or its first point if degenerate.
+export function polygonCentroid(points: GeoPoint[]): GeoPoint {
+  const origin = points[0];
+  const metres = points.map(point => toMetres(point, origin));
+  let doubleArea = 0;
+  let x = 0;
+  let y = 0;
+  metres.forEach((point, index) => {
+    const next = metres[(index + 1) % metres.length];
+    const cross = point.x * next.y - next.x * point.y;
+    doubleArea += cross;
+    x += (point.x + next.x) * cross;
+    y += (point.y + next.y) * cross;
+  });
+  if (Math.abs(doubleArea) < 1e-6) return origin;
+  const metresPerDegree = 111320;
+  return {
+    latitude: origin.latitude + y / (3 * doubleArea) / metresPerDegree,
+    longitude: origin.longitude + x / (3 * doubleArea) /
+      (metresPerDegree * Math.cos((origin.latitude * Math.PI) / 180)),
+  };
+}
+
+// Whether a tap on the map lands inside a contour (ray casting on the coordinates).
+export function polygonContains(points: GeoPoint[], point: GeoPoint): boolean {
+  let inside = false;
+  for (let index = 0, previous = points.length - 1; index < points.length; previous = index++) {
+    const a = points[index];
+    const b = points[previous];
+    if ((a.latitude > point.latitude) !== (b.latitude > point.latitude) &&
+      point.longitude < ((b.longitude - a.longitude) * (point.latitude - a.latitude)) /
+        (b.latitude - a.latitude) + a.longitude) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
 // A crossed contour is not a valid field boundary; reject it before saving.
 export function polygonHasCrossingEdges(points: GeoPoint[]): boolean {
   const cross = (a: GeoPoint, b: GeoPoint, c: GeoPoint) =>

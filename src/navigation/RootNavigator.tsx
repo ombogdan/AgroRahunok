@@ -16,6 +16,7 @@ import {TabBarWithDock} from '../screens/app-user/components/record-dock/record-
 import {WorkRecordScreen} from '../screens/app-user/work-record/work-record.screen';
 import {RowsSetupScreen} from '../screens/app-user/rows-setup/rows-setup.screen';
 import {PlantingFormScreen} from '../screens/app-user/planting-form/planting-form.screen';
+import {FarmMapScreen} from '../screens/app-user/farm-map/farm-map.screen';
 import {SignInScreen} from '../screens/app-auth/sign-in/sign-in.component';
 import {AppIcon} from '../shared/components/ui';
 import type {AppIconName} from '../shared/components/ui/app-icon/app-icon.component';
@@ -119,6 +120,7 @@ export function RootNavigator() {
               <Stack.Screen name="FieldDetail" component={FieldDetailScreen} />
               <Stack.Screen name="RowsSetup" component={RowsSetupScreen} />
               <Stack.Screen name="PlantingForm" component={PlantingFormScreen} />
+              <Stack.Screen name="FarmMap" component={FarmMapScreen} />
               <Stack.Screen name="WorkRecord" component={WorkRecordScreen} />
               <Stack.Screen name="QuantityRecord" component={QuantityRecordScreen} />
               <Stack.Screen name="OtherRecord" component={OtherRecordScreen} />
