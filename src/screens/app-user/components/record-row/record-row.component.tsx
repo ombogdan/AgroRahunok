@@ -13,7 +13,9 @@ const kindTitles = {harvest: 'harvestRecord', sale: 'sale', other: 'otherExpense
 const kindIcons = {harvest: 'basket', sale: 'cash', other: 'plusMinus'} as const;
 
 export function recordTitle(record: FarmRecord): string {
-  if (record.kind === 'work') return record.workType ? t(workTypeLabels[record.workType]) : t("work");
+  if (record.kind === 'work') {
+    return record.details.workName ?? (record.workType ? t(workTypeLabels[record.workType]) : t("work"));
+  }
   if (record.kind === 'other') return record.details.category ? t(({Податок: 'tax', Тара: 'packaging', Ремонт: 'repairs', Інше: 'other'} as Record<string, string>)[record.details.category] ?? record.details.category) : t(kindTitles.other);
   return t(kindTitles[record.kind]);
 }
@@ -47,7 +49,8 @@ export function RecordRow({record, field, first, detail, onPress}: {
     ? `${[record.details.cropSnapshot, record.details.varietySnapshot].filter(Boolean).join(' · ')}${record.details.rowNumbersSnapshot?.length
       ? t("rowNumbersSuffix", [record.details.rowNumbersSnapshot.join(', ')]) : ''}` : null;
   const materialsDetail = record.details.materials?.map(material => material.name).join(', ') || null;
-  const subtitle = [location, rowDetail, materialsDetail, quantityDetail,
+  const cropDetail = !record.details.varietySnapshot ? record.details.cropSnapshot ?? null : null;
+  const subtitle = [location, cropDetail, rowDetail, materialsDetail, quantityDetail,
     record.kind === 'sale' ? record.details.buyer : null].filter(Boolean).join(' · ');
   return <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress}
     style={[styles.row, !first && styles.divider]}>

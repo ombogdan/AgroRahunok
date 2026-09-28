@@ -33,6 +33,7 @@ const PATHS = {
   calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
   close: 'M18 6 6 18M6 6l12 12',
   pencil: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
+  repeat: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5',
   warning: 'M12 3 2 21h20zM12 10v5M12 18h.01',
   // Work types without their own drawing reuse the design's basket and dots.
   zbir: 'M3.5 10h17l-1.6 9.1a1 1 0 0 1-1 .9H6.1a1 1 0 0 1-1-.9zM8 10l3-6M16 10l-3-6M9 14v3M12 14v3M15 14v3',

@@ -11,11 +11,12 @@ type FieldRow = {
   measured_area_m2: number | null;
   area_source: AreaSource;
   polygon: GeoPoint[];
+  note: string | null;
   created_at: string;
 };
 
 // owner_id is filled in by the database from the signed-in user, and RLS limits every query to it.
-const COLUMNS = 'id, name, type, crop, variety, document_area_m2, measured_area_m2, area_source, polygon, created_at';
+const COLUMNS = 'id, name, type, crop, variety, document_area_m2, measured_area_m2, area_source, polygon, note, created_at';
 
 function fromRow(row: FieldRow): Field {
   return {
@@ -28,6 +29,7 @@ function fromRow(row: FieldRow): Field {
     measuredAreaM2: row.measured_area_m2,
     areaSource: row.area_source,
     polygon: row.polygon,
+    note: row.note ?? null,
     createdAt: row.created_at,
   };
 }
@@ -61,6 +63,7 @@ function toRow(input: NewField) {
     measured_area_m2: input.measuredAreaM2,
     area_source: input.areaSource,
     polygon: input.polygon,
+    note: input.note,
   };
 }
 

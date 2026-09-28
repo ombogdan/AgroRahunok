@@ -10,6 +10,9 @@ export type PlantingInput = {
   areaM2: number;
 };
 
+// One of several crops sharing a plot in a season, e.g. onions on 2 of 12 sotok.
+export type CropShare = {crop: string; variety: string | null; areaM2: number};
+
 // One line of the crop rotation: what grows on a plot in a harvest year and when.
 export type Planting = {
   id: string;
@@ -24,6 +27,8 @@ export type Planting = {
   harvestOn: string | null;
   plannedYieldKgPerHa: number | null;
   note: string | null;
+  // Other crops of the same plot and season; the planting's own crop, variety and area are the main one.
+  extraCrops: CropShare[];
 };
 
 export type NewPlanting = Omit<Planting, 'id'>;
@@ -32,6 +37,6 @@ export type NewPlanting = Omit<Planting, 'id'>;
 export function withRotationDefaults(planting: Pick<Planting, 'id' | 'fieldId' | 'season'> & Partial<Planting>): Planting {
   return {
     crop: null, variety: null, areaM2: null, workStartOn: null, sownOn: null, harvestOn: null,
-    plannedYieldKgPerHa: null, note: null, ...planting,
+    plannedYieldKgPerHa: null, note: null, extraCrops: [], ...planting,
   };
 }

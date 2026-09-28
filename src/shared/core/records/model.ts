@@ -23,6 +23,8 @@ export type RecordDetails = {
   costMode?: CostMode;
   ratePerHaKopecks?: number;
   performer?: Performer;
+  // A work type of the user's own; the record's work_type is then 'inshe'.
+  workName?: string;
   materials?: MaterialUse[];
   unitName?: string;
   kilogramsPerUnit?: number;

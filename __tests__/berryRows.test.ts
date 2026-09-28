@@ -19,7 +19,7 @@ beforeEach(() => disk.clear());
 
 const fieldInput = {
   name: 'Малинник', type: 'berries' as const, crop: 'Малина', variety: null,
-  documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document' as const, polygon: [],
+  documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document' as const, polygon: [], note: null,
 };
 
 test('rows keep their numbers and previous varieties after replanting', async () => {

@@ -1,7 +1,7 @@
 import {getSupabaseClient} from '../supabase/client';
-import type {Planting} from './planting';
+import type {CropShare, Planting} from './planting';
 
-export type {NewPlanting, Planting, PlantingInput} from './planting';
+export type {CropShare, NewPlanting, Planting, PlantingInput} from './planting';
 
 type PlantingRow = {
   id: string;
@@ -15,7 +15,19 @@ type PlantingRow = {
   harvest_on: string | null;
   planned_yield_kg_per_ha: number | null;
   note: string | null;
+  extra_crops: unknown;
 };
+
+// Only well-formed crops are kept from the JSON column.
+function cropShares(value: unknown): CropShare[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap(item => {
+    const share = item as Partial<CropShare>;
+    return typeof share.crop === 'string' && typeof share.areaM2 === 'number' && share.areaM2 > 0
+      ? [{crop: share.crop, variety: typeof share.variety === 'string' ? share.variety : null, areaM2: share.areaM2}]
+      : [];
+  });
+}
 
 function requireClient() {
   const supabase = getSupabaseClient();
@@ -28,7 +40,7 @@ export async function fetchPlantings(): Promise<Planting[]> {
   for (let offset = 0; ; offset += 1000) {
     const {data, error} = await requireClient().from('plantings')
       .select('id, field_id, season, crop, variety, area_m2, work_start_on, sown_on, harvest_on, ' +
-        'planned_yield_kg_per_ha, note')
+        'planned_yield_kg_per_ha, note, extra_crops')
       .order('id', {ascending: true}).range(offset, offset + 999);
     if (error) throw error;
     const page = data as unknown as PlantingRow[];
@@ -47,5 +59,6 @@ export async function fetchPlantings(): Promise<Planting[]> {
     harvestOn: row.harvest_on,
     plannedYieldKgPerHa: row.planned_yield_kg_per_ha,
     note: row.note,
+    extraCrops: cropShares(row.extra_crops),
   }));
 }

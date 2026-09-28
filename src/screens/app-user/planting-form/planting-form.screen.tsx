@@ -18,6 +18,9 @@ import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
 import {DateField} from './components/date-field/date-field.component';
 import {YearStepper} from '../components/year-stepper/year-stepper.component';
+import {ExtraCrops} from './components/extra-crops/extra-crops.component';
+import type {ExtraCropDraft} from './components/extra-crops/extra-crop-draft';
+import {extraDraftFrom, parseExtraDraft} from './components/extra-crops/extra-crop-draft';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlantingForm'>;
 type DateKey = 'workStartOn' | 'sownOn' | 'harvestOn';
@@ -56,6 +59,8 @@ export function PlantingFormScreen({route, navigation}: Props) {
   });
   const [picking, setPicking] = useState<DateKey | null>(null);
   const [note, setNote] = useState(original?.note ?? '');
+  const [extraDrafts, setExtraDrafts] = useState<ExtraCropDraft[]>(() =>
+    (original?.extraCrops ?? []).map(extraDraftFrom));
   const [saving, setSaving] = useState(false);
 
   if (!field) return <Page title={t("fieldNotFound")} onBack={() => navigation.goBack()} />;
@@ -66,18 +71,26 @@ export function PlantingFormScreen({route, navigation}: Props) {
   const previous = others.find(item => item.season === season - 1);
   const cropName = crop.trim();
   const repeat = rotatesCrops(field) ? repeatedFrom({season, crop: cropName || null}, others) : null;
-  const areaM2 = original?.areaM2 ?? selectedAreaM2(field);
+  // Other crops take their own areas; the main crop keeps the rest of the plot.
+  const plotAreaM2 = selectedAreaM2(field);
+  const parsedExtras = extraDrafts.map(parseExtraDraft);
+  const extraCrops = parsedExtras.flatMap(item => item.share ?? []);
+  const areaM2 = plotAreaM2 - extraCrops.reduce((sum, share) => sum + share.areaM2, 0);
+  const extrasValid = parsedExtras.every(item => item.valid) && areaM2 >= 1;
   const yieldValue = yieldInput.trim() === '' ? null : parsePositiveNumber(yieldInput);
   const yieldInvalid = yieldInput.trim() !== '' && (yieldValue === null || yieldValue >= MAX_YIELD);
   const sowingTooEarly = !!dates.workStartOn && !!dates.sownOn && dates.sownOn < dates.workStartOn;
   const harvestTooEarly = !!dates.harvestOn && ((!!dates.sownOn && dates.harvestOn < dates.sownOn) ||
     (!!dates.workStartOn && dates.harvestOn < dates.workStartOn));
   const canSave = !!store && cropName.length > 0 && !taken && !yieldInvalid && !sowingTooEarly &&
-    !harvestTooEarly && !saving;
+    !harvestTooEarly && extrasValid && !saving;
 
   // Earlier crops and varieties come first; the plots' current crops are offered too.
   const newestFirst = [...data.plantings].sort((a, b) => b.season - a.season);
   const cropSuggestions = matchSuggestions(crop, [...newestFirst.map(item => item.crop), ...fields.map(item => item.crop)]);
+  const extraCropSuggestions = (input: string) => matchSuggestions(input, [
+    ...newestFirst.flatMap(item => [item.crop, ...item.extraCrops.map(share => share.crop)]),
+    ...fields.map(item => item.crop)]);
   const varietySuggestions = cropName ? matchSuggestions(variety, [
     ...newestFirst.filter(item => item.crop && sameName(item.crop, cropName)).map(item => item.variety),
     ...fields.filter(item => item.crop && sameName(item.crop, cropName)).map(item => item.variety),
@@ -96,6 +109,7 @@ export function PlantingFormScreen({route, navigation}: Props) {
       workStartOn: dates.workStartOn, sownOn: dates.sownOn, harvestOn: dates.harvestOn,
       plannedYieldKgPerHa: yieldValue === null ? null : yieldValue * 100,
       note: note.trim() || null,
+      extraCrops,
     };
     try {
       await store.putPlanting(input, original?.season);
@@ -170,6 +184,9 @@ export function PlantingFormScreen({route, navigation}: Props) {
         <AutocompleteInput value={variety} onChangeText={setVariety} suggestions={varietySuggestions}
           placeholder={t("forExampleBohdana")} accessibilityLabel={t("variety")} />
       </View>
+
+      <ExtraCrops drafts={extraDrafts} onChange={setExtraDrafts} suggestionsFor={extraCropSuggestions}
+        mainCrop={cropName} plotAreaM2={plotAreaM2} keyboardBarId={NUMBER_KEYBOARD_BAR} />
 
       <View style={styles.section}>
         <Text style={styles.label}>{t("plannedYieldOptional")}</Text>

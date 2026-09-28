@@ -14,6 +14,7 @@ import {
   formatArea,
   formatHectares,
   formatSotky,
+  noticeableAreaError,
   parseAreaInput,
   rectangleAreaM2,
   selectedAreaM2 as plotAreaM2,
@@ -72,6 +73,7 @@ export function FieldFormScreen({route, navigation}: Props) {
   const [manualMethod, setManualMethod] = useState<ManualMethod>('document');
   const [lengthInput, setLengthInput] = useState('');
   const [widthInput, setWidthInput] = useState('');
+  const [note, setNote] = useState(editing?.note ?? '');
   const [saving, setSaving] = useState(false);
 
   // Crops are not asked here: fields and greenhouses get them in the crop rotation,
@@ -87,6 +89,7 @@ export function FieldFormScreen({route, navigation}: Props) {
   const areaSource: AreaSource = usesDimensions || hasContour ? 'measured' : 'document';
   const documentAreaM2 = asksTypedArea ? typedAreaM2 : editing?.documentAreaM2 ?? null;
   const selectedAreaM2 = areaSource === 'measured' ? measuredAreaM2 : documentAreaM2;
+  const areaError = hasContour && presetMeasuredM2 !== null ? noticeableAreaError(polygon, presetMeasuredM2) : null;
   const typedAreaValid = !asksTypedArea || areaInput.trim().length === 0 || typedAreaM2 !== null;
   const rowCount = Number(rowCountInput);
   const rowCountValid = !plotUsesRows || (/^\d+$/.test(rowCountInput) &&
@@ -100,7 +103,7 @@ export function FieldFormScreen({route, navigation}: Props) {
     // The plot keeps the crop its crop rotation gave it.
     const input = {
       name: name.trim(), type, crop: editing?.crop ?? null, variety: editing?.variety ?? null,
-      documentAreaM2, measuredAreaM2, areaSource, polygon,
+      documentAreaM2, measuredAreaM2, areaSource, polygon, note: note.trim() || null,
     };
     const rememberRows = async (fieldId: string): Promise<boolean> => {
       if (!plotUsesRows) return true;
@@ -228,7 +231,16 @@ export function FieldFormScreen({route, navigation}: Props) {
       {hasContour && presetMeasuredM2 !== null && <View style={styles.section}>
         <Text style={styles.label}>{measuredLabel}</Text>
         <Text style={styles.areaValue}>{formatArea(presetMeasuredM2)}</Text>
+        {areaError && <Text style={styles.note}>
+          {t("areaErrorHint", [formatArea(areaError.errorM2), Math.round(areaError.percent)])}. {t("areaErrorExplanation")}
+        </Text>}
       </View>}
+      <View style={styles.section}>
+        <Text style={styles.label}>{t("noteOptional")}</Text>
+        <TextInput value={note} onChangeText={setNote} multiline maxLength={500}
+          placeholder={t("fieldNotePlaceholder")} placeholderTextColor={theme.colors.textMuted}
+          accessibilityLabel={t("note")} style={[styles.input, styles.noteInput]} />
+      </View>
       <View style={styles.save}>
         <AppButton label={saving ? t("saving") : plotUsesRows ? t("nextRows")
           : editing ? t("saveChanges") : t("saveField")}

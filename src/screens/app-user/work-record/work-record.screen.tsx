@@ -11,7 +11,9 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
 import {AppButton, AppIcon, CalendarDatePicker, useToast} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
-import {fieldTypeLabels, formatArea, formatHectares, selectedAreaM2} from '../../../shared/core/fields/model';
+import {
+  fieldTypeLabels, formatArea, formatHectares, matchSuggestions, selectedAreaM2,
+} from '../../../shared/core/fields/model';
 import type {CostMode, NewRecord, Performer, WorkType} from '../../../shared/core/records/model';
 import {
   formatDateInput, formatMoney, fromLocalIsoDate, materialsCostKopecks, parseDateInput, parseMoneyInput,
@@ -20,7 +22,9 @@ import {
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
-import {fieldRotation, seasonCropOf, seasonOnField} from '../../../shared/core/rotation/model';
+import {
+  fieldRotation, plantingCrops, sameName, seasonCropOf, seasonOnField,
+} from '../../../shared/core/rotation/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
@@ -50,6 +54,11 @@ export function WorkRecordScreen({route, navigation}: Props) {
   const {records, addRecord, updateRecord, removeRecord} = useRecords();
   const {data} = useFarmData();
   const editing = route.params?.recordId ? records.find(item => item.id === route.params?.recordId) ?? null : null;
+  // Repeating copies an earlier job for today: plot, work, cost, materials and rows; not its date or note.
+  const repeated = !editing && route.params?.repeatOf
+    ? records.find(item => item.id === route.params?.repeatOf && fields.some(field => field.id === item.fieldId)) ?? null
+    : null;
+  const source = editing ?? repeated;
   const now = new Date();
   const today = toLocalIsoDate(now);
   const yesterday = toLocalIsoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
@@ -57,36 +66,46 @@ export function WorkRecordScreen({route, navigation}: Props) {
 
   const initialDate: DateChoice = !editing || editing.occurredOn === today ? 'today'
     : editing.occurredOn === yesterday ? 'yesterday' : 'other';
-  const initialCostMode: CostMode = editing?.details.costMode ?? 'sum';
+  const initialCostMode: CostMode = source?.details.costMode ?? 'sum';
   // The saved amount includes the materials, so the job's own cost is what is left without them.
-  const editingMaterialsCost = materialsCostKopecks(editing?.details.materials);
-  const initialCost = editing
-    ? initialCostMode === 'perHa' && editing.details.ratePerHaKopecks
-      ? moneyInputValue(editing.details.ratePerHaKopecks)
-      : editing.amountKopecks === null ? ''
-        : editingMaterialsCost === 0 ? moneyInputValue(editing.amountKopecks)
-          : Math.abs(editing.amountKopecks) > editingMaterialsCost
-            ? moneyInputValue(Math.abs(editing.amountKopecks) - editingMaterialsCost) : ''
+  const sourceMaterialsCost = materialsCostKopecks(source?.details.materials);
+  const initialCost = source
+    ? initialCostMode === 'perHa' && source.details.ratePerHaKopecks
+      ? moneyInputValue(source.details.ratePerHaKopecks)
+      : source.amountKopecks === null ? ''
+        : sourceMaterialsCost === 0 ? moneyInputValue(source.amountKopecks)
+          : Math.abs(source.amountKopecks) > sourceMaterialsCost
+            ? moneyInputValue(Math.abs(source.amountKopecks) - sourceMaterialsCost) : ''
     : '';
 
-  const [step, setStep] = useState<Step>(editing ? 3 : singleField ? 2 : 1);
+  const [step, setStep] = useState<Step>(source ? 3 : singleField ? 2 : 1);
   const [showFieldStep, setShowFieldStep] = useState(!singleField);
-  const [fieldId, setFieldId] = useState<string | null>(editing?.fieldId ?? singleField?.id ?? null);
-  const [workType, setWorkType] = useState<WorkType | null>(editing?.workType ?? null);
+  const [fieldId, setFieldId] = useState<string | null>(source?.fieldId ?? singleField?.id ?? null);
+  const [workType, setWorkType] = useState<WorkType | null>(source?.workType ?? null);
+  // A work type of the user's own, saved as «Інше» with its name.
+  const [workName, setWorkName] = useState<string | null>(source?.details.workName ?? null);
+  const [namingWork, setNamingWork] = useState(false);
+  const [workNameInput, setWorkNameInput] = useState('');
   const [dateChoice, setDateChoice] = useState<DateChoice>(initialDate);
   const [otherDate, setOtherDate] = useState(editing && initialDate === 'other' ? formatDateInput(editing.occurredOn) : '');
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [costMode, setCostMode] = useState<CostMode>(initialCostMode);
   const [costInput, setCostInput] = useState(initialCost);
-  const [performer, setPerformer] = useState<Performer | null>(editing?.details.performer ?? null);
+  const [performer, setPerformer] = useState<Performer | null>(source?.details.performer ?? null);
   const [note, setNote] = useState(editing?.note ?? '');
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>(source?.details.rowPlantingIds ?? []);
   const [materialDrafts, setMaterialDrafts] = useState<MaterialDraft[]>(() =>
-    (editing?.details.materials ?? []).map(draftFrom));
+    (source?.details.materials ?? []).map(draftFrom));
   const [seasonOverride, setSeasonOverride] = useState<number | null>(editing?.season ?? null);
+  // With several crops on the plot this season, the job may be for one of them.
+  const [cropChoice, setCropChoice] = useState<string | null>(source?.details.cropSnapshot ?? null);
   const [saving, setSaving] = useState(false);
 
   const field = fields.find(item => item.id === fieldId) ?? null;
+  const workLabel = workName ?? (workType ? t(workTypeLabels[workType]) : '');
+  // Own work types typed before, newest first, so a repeated one is a single tap.
+  const ownWorkNames = matchSuggestions('', records.map(record =>
+    (record.kind === 'work' ? record.details.workName ?? null : null)), 8);
   const occurredOn = dateChoice === 'today' ? today : dateChoice === 'yesterday' ? yesterday : parseDateInput(otherDate);
   const occurredDate = fromLocalIsoDate(occurredOn ?? today);
   // The crop rotation's start of works decides when autumn jobs already count for next year.
@@ -95,6 +114,10 @@ export function WorkRecordScreen({route, navigation}: Props) {
     : seasonFor(occurredDate, null);
   const season = seasonOverride ?? defaultSeason;
   const seasonRows = field ? rowsForSeason(data.rows, field.id, season) : [];
+  const seasonPlanting = field ? data.plantings.find(item => item.fieldId === field.id && item.season === season) : undefined;
+  const cropChoices = field && seasonPlanting && seasonPlanting.extraCrops.length > 0 && seasonRows.length === 0
+    ? plantingCrops(seasonPlanting, selectedAreaM2(field)).map(share => share.crop) : [];
+  const chosenCrop = cropChoices.find(name => cropChoice !== null && sameName(name, cropChoice)) ?? null;
   const rowGroups = varietyGroups(seasonRows);
   const selectedRows = seasonRows.filter(row => selectedRowIds.includes(row.id));
   const selectedGroups = varietyGroups(selectedRows);
@@ -142,7 +165,9 @@ export function WorkRecordScreen({route, navigation}: Props) {
         costMode,
         ...(costMode === 'perHa' && valueKopecks !== null ? {ratePerHaKopecks: valueKopecks} : {}),
         ...(performer ? {performer} : {}),
+        ...(workName ? {workName} : {}),
         ...(materials.length > 0 ? {materials} : {}),
+        ...(chosenCrop ? {cropSnapshot: chosenCrop} : {}),
         ...(selectedGroup ? {
           rowPlantingIds: selectedRows.map(row => row.id),
           ...(selectedGroup.crop ? {cropSnapshot: selectedGroup.crop} : {}),
@@ -160,7 +185,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
       }
       const record = await addRecord(input);
       navigation.goBack();
-      const parts = [t(workTypeLabels[workType]), field.name, totalCostKopecks ? formatMoney(totalCostKopecks) : null];
+      const parts = [workLabel, field.name, totalCostKopecks ? formatMoney(totalCostKopecks) : null];
       showToast({
         text: t("recordedValue", [parts.filter(Boolean).join(' · ')]),
         actionLabel: t("cancel"),
@@ -193,9 +218,9 @@ export function WorkRecordScreen({route, navigation}: Props) {
 
   return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
     <View style={styles.header}>
-      <FieldFlowHeader title={editing ? t("editRecord") : undefined} onBack={goBack}
-        rightLabel={t("cancel")} onRight={() => navigation.goBack()} />
-      {!editing && <>
+      <FieldFlowHeader title={editing ? t("editRecord") : repeated ? t("repeatRecordTitle") : undefined}
+        onBack={goBack} rightLabel={t("cancel")} onRight={() => navigation.goBack()} />
+      {!editing && !repeated && <>
         <Text style={styles.stepLabel}>{t("workStep", [], "after")}{visibleStep}{t("of", [], "both")}{visibleStepCount}</Text>
         <View style={styles.progress}>
           {Array.from({length: visibleStepCount}, (_, index) => <View key={index}
@@ -222,12 +247,35 @@ export function WorkRecordScreen({route, navigation}: Props) {
       {step === 2 && <>
         <View style={styles.grid}>
           {workTypes.map(type => <Pressable key={type} accessibilityRole="button"
-            onPress={() => { setWorkType(type); setStep(3); }}
-            style={[styles.workTile, type === workType && styles.tileSelected]}>
+            onPress={() => { setWorkType(type); setWorkName(null); setStep(3); }}
+            style={[styles.workTile, type === workType && !workName && styles.tileSelected]}>
             <AppIcon name={type} color={theme.colors.primary} size={34} strokeWidth={1.8} />
             <Text style={styles.workLabel}>{t(workTypeLabels[type])}</Text>
           </Pressable>)}
+          {ownWorkNames.map(name => <Pressable key={`own-${name}`} accessibilityRole="button"
+            onPress={() => { setWorkType('inshe'); setWorkName(name); setStep(3); }}
+            style={[styles.workTile, workName === name && styles.tileSelected]}>
+            <AppIcon name="spade" color={theme.colors.primary} size={34} strokeWidth={1.8} />
+            <Text style={styles.workLabel}>{name}</Text>
+          </Pressable>)}
+          <Pressable accessibilityRole="button" onPress={() => setNamingWork(true)}
+            style={[styles.workTile, namingWork && styles.tileSelected]}>
+            <AppIcon name="plus" color={theme.colors.primary} size={34} strokeWidth={1.8} />
+            <Text style={styles.workLabel}>{t("ownWorkType")}</Text>
+          </Pressable>
         </View>
+        {namingWork && <View style={styles.section}>
+          <Text style={styles.label}>{t("workNameLabel")}</Text>
+          <TextInput value={workNameInput} onChangeText={setWorkNameInput} maxLength={40} autoFocus
+            returnKeyType="done" placeholder={t("forExampleWorkName")} placeholderTextColor={theme.colors.textMuted}
+            accessibilityLabel={t("workNameLabel")} style={styles.input} />
+          <AppButton label={t("continue")} disabled={!workNameInput.trim()} onPress={() => {
+            setWorkType('inshe');
+            setWorkName(workNameInput.trim());
+            setNamingWork(false);
+            setStep(3);
+          }} />
+        </View>}
       </>}
 
       {step === 3 && field && workType && <>
@@ -235,7 +283,7 @@ export function WorkRecordScreen({route, navigation}: Props) {
           <Pressable accessibilityRole="button" accessibilityHint={t("editField")} style={styles.pill}
             onPress={() => { setShowFieldStep(true); setStep(1); }}><Text style={styles.pillText}>{field.name}</Text></Pressable>
           <Pressable accessibilityRole="button" accessibilityHint={t("editWorkRecord")} style={styles.pill}
-            onPress={() => setStep(2)}><Text style={styles.pillText}>{t(workTypeLabels[workType])}</Text></Pressable>
+            onPress={() => setStep(2)}><Text style={styles.pillText}>{workLabel}</Text></Pressable>
         </View>
 
         <View style={styles.section}>
@@ -293,6 +341,14 @@ export function WorkRecordScreen({route, navigation}: Props) {
           </View>
           <Text style={styles.note}>{t("automatically", [], "after")}{season}{t("winterCropSeasonHint")}</Text>
         </View>
+        {cropChoices.length > 0 && <View style={styles.section}>
+          <Text style={styles.label}>{t("forWhichCropOptional")}</Text>
+          <View style={styles.chips}>
+            <Chip label={t("wholeField")} selected={chosenCrop === null} onPress={() => setCropChoice(null)} />
+            {cropChoices.map(name => <Chip key={name} label={name} selected={chosenCrop === name}
+              onPress={() => setCropChoice(name)} />)}
+          </View>
+        </View>}
         {rowGroups.length > 0 && <RowSelection groups={rowGroups} selectedIds={selectedRowIds}
           onChange={setSelectedRowIds} mode="work" />}
         <View style={styles.section}>
@@ -309,6 +365,8 @@ export function WorkRecordScreen({route, navigation}: Props) {
             style={[styles.input, styles.noteInput]} />
         </View>
 
+        {editing && <AppButton label={t("repeatToday")} variant="secondary"
+          onPress={() => navigation.replace('WorkRecord', {repeatOf: editing.id})} />}
         {editing && <AppButton label={t("deleteRecord")} variant="danger" onPress={confirmDelete} />}
       </>}
     </ScrollView>

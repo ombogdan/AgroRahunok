@@ -1,7 +1,8 @@
 // The config itself, not the i18n index, which also brings the React provider: models stay plain.
 import {localeTag, t} from '../../config/i18n/i18n.config';
 import type {Field} from '../fields/model';
-import type {Planting} from '../fields/planting';
+import {formatArea, selectedAreaM2} from '../fields/model';
+import type {CropShare, Planting} from '../fields/planting';
 import type {FarmRecord} from '../records/model';
 import {seasonFor, toLocalIsoDate} from '../records/model';
 import type {RowPlanting} from '../rows/model';
@@ -64,11 +65,31 @@ export function formatYield(kgPerHa: number, areaM2: number): string {
   return `${value} ${yieldUnit(areaM2)}`;
 }
 
-// Harvest records of the plot and season turned into kilograms per hectare.
-export function actualYieldKgPerHa(records: FarmRecord[], fieldId: string, season: number, areaM2: number): number | null {
+// Harvest records of the plot and season turned into kilograms per hectare. With several crops on the plot,
+// `crop` limits them to one; harvests saved without a crop count for the main one.
+export function actualYieldKgPerHa(records: FarmRecord[], fieldId: string, season: number, areaM2: number,
+  crop?: {name: string; isMain: boolean}): number | null {
   const harvestedKg = records.filter(record => record.kind === 'harvest' && record.fieldId === fieldId &&
-    record.season === season).reduce((sum, record) => sum + (record.quantityKg ?? 0), 0);
+    record.season === season && (!crop || (record.details.cropSnapshot
+      ? sameName(record.details.cropSnapshot, crop.name) : crop.isMain)))
+    .reduce((sum, record) => sum + (record.quantityKg ?? 0), 0);
   return harvestedKg > 0 && areaM2 > 0 ? (harvestedKg * 10000) / areaM2 : null;
+}
+
+// Every crop of a season's planting with its area: the main one first, then those sharing the plot.
+export function plantingCrops(planting: Planting, plotAreaM2: number): CropShare[] {
+  const main = planting.crop
+    ? [{crop: planting.crop, variety: planting.variety, areaM2: planting.areaM2 ?? plotAreaM2}] : [];
+  return [...main, ...planting.extraCrops];
+}
+
+// «Озима пшениця · Богдана», or «Картопля 10 соток, Цибуля 2 сотки» when several crops share the plot.
+export function plantingLabel(planting: Planting, plotAreaM2: number): string | null {
+  if (planting.extraCrops.length === 0) {
+    return planting.crop ? [planting.crop, planting.variety].filter(Boolean).join(' · ') : null;
+  }
+  return plantingCrops(planting, plotAreaM2)
+    .map(share => `${[share.crop, share.variety].filter(Boolean).join(' · ')} ${formatArea(share.areaM2)}`).join(', ');
 }
 
 // What a plot grows in a season, as the home screen and the farm map show it. Berry plots and orchards
@@ -80,6 +101,9 @@ export function seasonCropOf(field: Field, season: number, plantings: Planting[]
     return {crop: groups.find(group => group.crop)?.crop ?? field.crop, label: rowsSummary(groups) || null};
   }
   const planting = plantings.find(item => item.fieldId === field.id && item.season === season);
+  if (planting && planting.extraCrops.length > 0) {
+    return {crop: planting.crop, label: plantingLabel(planting, selectedAreaM2(field))};
+  }
   const isCurrent = season === seasonOnField(today, fieldRotation(plantings, field.id), field.crop);
   const crop = planting ? planting.crop : isCurrent ? field.crop : null;
   const variety = groups.length > 0 ? groups.map(group => group.variety).join(', ') : planting?.variety;

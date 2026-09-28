@@ -10,7 +10,9 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
 import {AppButton} from '../../../shared/components/ui';
 import type {GeoPoint} from '../../../shared/core/fields/model';
-import {formatHectares, formatSotky, polygonAreaM2} from '../../../shared/core/fields/model';
+import {
+  formatArea, formatHectares, formatSotky, noticeableAreaError, polygonAreaM2,
+} from '../../../shared/core/fields/model';
 import {TRACK_MAX_ACCURACY_M, distanceM, nextTrackPoint, trackLengthM} from '../../../shared/core/fields/track';
 import {useScale, useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
@@ -73,6 +75,7 @@ export function FieldWalkScreen({route, navigation}: Props) {
   const handingOver = useRef(false);
   const areaM2 = useMemo(() => polygonAreaM2(track), [track]);
   const lengthM = useMemo(() => trackLengthM(track), [track]);
+  const areaError = useMemo(() => noticeableAreaError(track, areaM2), [track, areaM2]);
   const canFinish = track.length >= 3 && areaM2 >= 1;
   const nearStart = phase === 'tracking' && track.length >= 10 && lengthM >= 20 && position !== null &&
     distanceM(position, track[0]) <= Math.max(RETURN_RADIUS_M, accuracy ?? RETURN_RADIUS_M);
@@ -185,6 +188,9 @@ export function FieldWalkScreen({route, navigation}: Props) {
       <Text style={styles.area}>
         {track.length >= 3 ? `${formatHectares(areaM2, {exact: true})} · ${formatSotky(areaM2)}` : formatHectares(0)}
       </Text>
+      {areaError && <Text style={styles.hint}>
+        {t("areaErrorHint", [formatArea(areaError.errorM2), Math.round(areaError.percent)])}
+      </Text>}
       <Text style={hintStyle} accessibilityLiveRegion="polite">{hint.text}</Text>
     </View>
     <View style={styles.map}>

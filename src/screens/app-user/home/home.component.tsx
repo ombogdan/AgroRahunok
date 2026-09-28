@@ -20,6 +20,7 @@ import {seasonCropOf} from '../../../shared/core/rotation/model';
 import {useTheme} from '../../../shared/theme';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
 import {RecordRow} from '../components/record-row/record-row.component';
+import {openRecord} from '../components/record-row/open-record';
 import {YearStepper} from '../components/year-stepper/year-stepper.component';
 
 
@@ -189,14 +190,7 @@ export function HomeScreen() {
                   detail={record.fieldId === null ? t("wholeFarm")
                     : [fieldById.get(record.fieldId)?.name, seasonPlantings.get(record.fieldId)?.crop]
                       .filter(Boolean).join(' · ')}
-                  onPress={record.kind === 'work' ? () => navigation.navigate('WorkRecord', {recordId: record.id})
-                    : record.kind === 'harvest' || record.kind === 'sale'
-                      ? () => navigation.navigate('QuantityRecord', {
-                        kind: record.kind as 'harvest' | 'sale',
-                        recordId: record.id
-                      })
-                      : record.kind === 'other' ? () => navigation.navigate('OtherRecord', {recordId: record.id})
-                        : undefined}/>)}
+                  onPress={() => openRecord(navigation, record)}/>)}
             </View>
           </InfoCard>}
       </>}

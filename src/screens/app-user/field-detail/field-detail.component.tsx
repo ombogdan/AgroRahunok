@@ -6,15 +6,18 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
 import {AppButton, InfoCard, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
-import {fieldTypeLabels, formatArea, selectedAreaM2} from '../../../shared/core/fields/model';
+import {fieldTypeLabels, formatArea, noticeableAreaError, selectedAreaM2} from '../../../shared/core/fields/model';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {formatKilograms} from '../../../shared/core/records/model';
+import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useSeason} from '../../../shared/core/records/SeasonProvider';
 import {currentRows, rowsForSeason, rowsSummary, usesRows, varietyGroups, varietyLabel} from '../../../shared/core/rows/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {FieldMapPreview} from '../../../shared/components/field-map-preview/field-map-preview.component';
 import {fieldRotation, rotatesCrops, sameName} from '../../../shared/core/rotation/model';
+import {openRecord} from '../components/record-row/open-record';
 import {RotationCard} from './components/rotation-card/rotation-card.component';
+import {SeasonCard} from './components/season-card/season-card.component';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldDetail'>;
 
@@ -32,7 +35,8 @@ export function FieldDetailScreen({route, navigation}: Props) {
   const styles = useStyles();
   const {fields, removeField} = useFields();
   const {data} = useFarmData();
-  const {selectedSeason} = useSeason();
+  const {records} = useRecords();
+  const {selectedSeason, setSelectedSeason} = useSeason();
   const field = fields.find(item => item.id === route.params.fieldId);
   const rows = currentRows(data.rows, route.params.fieldId);
   const season = selectedSeason ?? new Date().getFullYear();
@@ -53,6 +57,9 @@ export function FieldDetailScreen({route, navigation}: Props) {
       }},
     ]);
 
+  // Small contours can be several per cent off; the plan promised to say so next to the area.
+  const areaError = field.areaSource === 'measured' && field.measuredAreaM2 !== null
+    ? noticeableAreaError(field.polygon, field.measuredAreaM2) : null;
   // Berry plots and orchards are described by their rows, other plots by their current crop.
   const rowsDescription = rowsSummary(varietyGroups(rows));
   const subtitle = [t(fieldTypeLabels[field.type]), rowsDescription || field.crop,
@@ -70,7 +77,14 @@ export function FieldDetailScreen({route, navigation}: Props) {
         selected={field.areaSource === 'document'} />}
       {field.measuredAreaM2 !== null && <AreaRow label={t("measuredArea")} areaM2={field.measuredAreaM2}
         selected={field.areaSource === 'measured'} />}
+      {areaError && <Text style={styles.hint}>
+        {t("areaErrorHint", [formatArea(areaError.errorM2), Math.round(areaError.percent)])}
+      </Text>}
     </InfoCard>
+    {field.note ? <InfoCard>
+      <Text style={styles.label}>{t("note")}</Text>
+      <Text style={styles.note}>{field.note}</Text>
+    </InfoCard> : null}
     {/* The current crop is the rotation line marked «Іде зараз»; perennials have rows instead. */}
     {rotatesCrops(field) && <RotationCard field={field} rotation={fieldRotation(data.plantings, field.id)}
       records={data.records}
@@ -100,6 +114,9 @@ export function FieldDetailScreen({route, navigation}: Props) {
       <AppButton label={rows.length ? t("editRowsAndVarieties") : t("addRows")} variant="secondary"
         onPress={() => navigation.navigate('RowsSetup', {fieldId: field.id})} />
     </InfoCard>}
+    <SeasonCard field={field} season={season} onSeasonChange={setSelectedSeason} records={records}
+      onOpenRecord={record => openRecord(navigation, record)}
+      onShowAll={() => navigation.navigate('Tabs', {screen: 'Journal', params: {fieldId: field.id}})} />
     {!usesRows(field) && rows.length === 0 && field.type !== 'field' &&
       <AppButton label={t("trackVarietiesByRow")} variant="quiet"
         onPress={() => navigation.navigate('RowsSetup', {fieldId: field.id})} />}

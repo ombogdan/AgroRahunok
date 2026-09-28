@@ -80,16 +80,18 @@ export function visibleData(snapshot: FarmSnapshot): FarmData {
   return snapshot.pending.reduce(applyChange, snapshot.base);
 }
 
-// Fills in what older versions of the app did not store yet: rotation details and row crops.
+// Fills in what older versions of the app did not store yet: plot notes, rotation details and row crops.
 function withDefaults(snapshot: FarmSnapshot): FarmSnapshot {
   return {
     ...snapshot,
     base: {
       ...snapshot.base,
+      fields: snapshot.base.fields.map(field => ({...field, note: field.note ?? null})),
       plantings: snapshot.base.plantings.map(withRotationDefaults),
       rows: snapshot.base.rows.map(withRowDefaults),
     },
     pending: snapshot.pending.map(change => {
+      if (change.table === 'fields' && change.action === 'put') return {...change, value: {...change.value, note: change.value.note ?? null}};
       if (change.table === 'plantings' && change.action === 'put') return {...change, value: withRotationDefaults(change.value)};
       if (change.table === 'plot_rows' && change.action === 'put') return {...change, value: withRowDefaults(change.value)};
       return change;

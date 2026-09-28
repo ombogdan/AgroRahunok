@@ -16,6 +16,7 @@ export type Field = {
   measuredAreaM2: number | null;
   areaSource: AreaSource;
   polygon: GeoPoint[];
+  note: string | null;
   createdAt: string;
 };
 
@@ -193,6 +194,31 @@ export function insertIntoNearestEdge(points: GeoPoint[], point: GeoPoint): GeoP
     }
   });
   return [...points.slice(0, nearest + 1), point, ...points.slice(nearest + 1)];
+}
+
+// GPS and satellite images place each corner of a contour a few metres off. The corners' errors are
+// independent, so the area error grows with the sides rather than the area: about ±10 % on 20 sotok
+// but only ±3 % on 2 ha.
+const CORNER_ERROR_M = 3;
+
+export function areaErrorM2(points: GeoPoint[], cornerErrorM = CORNER_ERROR_M): number {
+  const corners = simplifyPolygon(points, EDIT_TOLERANCE_M);
+  if (corners.length < 3) return 0;
+  const metres = corners.map(point => toMetres(point, corners[0]));
+  const sum = metres.reduce((total, _, index) => {
+    const previous = metres[(index - 1 + metres.length) % metres.length];
+    const next = metres[(index + 1) % metres.length];
+    return total + (next.x - previous.x) ** 2 + (next.y - previous.y) ** 2;
+  }, 0);
+  return (cornerErrorM * Math.sqrt(sum)) / 2;
+}
+
+// Shown only where it matters: on small plots the possible error reaches 5 % of the area or more.
+export function noticeableAreaError(points: GeoPoint[], areaM2: number): {errorM2: number; percent: number} | null {
+  if (points.length < 3 || areaM2 <= 0) return null;
+  const errorM2 = areaErrorM2(points);
+  const percent = (errorM2 / areaM2) * 100;
+  return percent >= 5 ? {errorM2, percent} : null;
 }
 
 // Where a plot's name goes on the map: the contour's centre of area, or its first point if degenerate.

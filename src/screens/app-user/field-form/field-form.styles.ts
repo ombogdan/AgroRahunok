@@ -13,6 +13,7 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   input: {minHeight: scale(58), paddingHorizontal: scale(16), borderRadius: scale(12), borderWidth: scale(1),
     borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceAlt,
     color: theme.colors.text, fontSize: scale(19)},
+  noteInput: {minHeight: scale(88), paddingTop: scale(14), textAlignVertical: 'top' as const},
   dimensions: {flexDirection: 'row' as const, alignItems: 'center' as const, gap: scale(10)},
   dimensionInput: {flex: 1},
   times: {color: theme.colors.textMuted, fontSize: scale(22), fontWeight: '600' as const},

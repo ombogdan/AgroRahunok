@@ -10,6 +10,7 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   option: {minHeight: scale(76), borderRadius: scale(20), paddingHorizontal: scale(14), flexDirection: 'row' as const,
     alignItems: 'center' as const, gap: scale(14), backgroundColor: theme.colors.background},
   disabled: {opacity: 0.45},
+  repeat: {borderWidth: scale(2), borderColor: theme.colors.primarySoft},
   circle: {width: scale(52), height: scale(52), borderRadius: scale(26), backgroundColor: theme.colors.primarySoft,
     alignItems: 'center' as const, justifyContent: 'center' as const},
   body: {flex: 1, gap: scale(2)},

@@ -21,6 +21,7 @@ import type {NewRecord} from '../../../shared/core/records/model';
 import type {QuantityUnit} from '../../../shared/core/records/quantityUnitsRepository';
 import {useFarmData} from '../../../shared/core/offline/FarmDataProvider';
 import {rowsForSeason, varietyGroups} from '../../../shared/core/rows/model';
+import {plantingCrops, sameName} from '../../../shared/core/rotation/model';
 import {logSupabaseError} from '../../../shared/core/supabase/errors';
 import {useTheme} from '../../../shared/theme';
 import {FieldFlowHeader} from '../../../shared/components/field-flow-header/field-flow-header.component';
@@ -73,6 +74,8 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const [buyer, setBuyer] = useState(editing?.details.buyer ?? '');
   const [note, setNote] = useState(editing?.note ?? '');
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>(editing?.details.rowPlantingIds ?? []);
+  // With several crops on the plot this season, which one was harvested or sold.
+  const [cropChoice, setCropChoice] = useState<string | null>(editing?.details.cropSnapshot ?? null);
   const customUnits = data.units;
   const [addingUnit, setAddingUnit] = useState(false);
   const [newUnitName, setNewUnitName] = useState('');
@@ -99,6 +102,10 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const selectedRows = seasonRows.filter(row => selectedRowIds.includes(row.id));
   const selectedGroups = varietyGroups(selectedRows);
   const selectedGroup = selectedGroups.length === 1 ? selectedGroups[0] : null;
+  const seasonPlanting = field ? data.plantings.find(item => item.fieldId === field.id && item.season === season) : undefined;
+  const cropChoices = field && seasonPlanting && seasonPlanting.extraCrops.length > 0 && rowGroups.length === 0
+    ? plantingCrops(seasonPlanting, selectedAreaM2(field)).map(share => share.crop) : [];
+  const chosenCrop = cropChoices.find(name => cropChoice !== null && sameName(name, cropChoice)) ?? null;
   const seasonOptions = [...new Set([dateYear, dateYear + 1, season, ...records.map(item => item.season)])]
     .filter(year => year >= 2000 && year <= 2100).sort((a, b) => b - a);
   const quantity = parsePositiveNumber(quantityInput);
@@ -106,7 +113,8 @@ export function QuantityRecordScreen({route, navigation}: Props) {
   const priceKopecks = parseMoneyInput(priceInput);
   const saleTotal = quantity !== null && priceKopecks !== null ? saleAmountKopecks(quantity, priceKopecks) : null;
   const canSave = !!field && !!occurredOn && season >= 2000 && season <= 2100 &&
-    quantityKg !== null && quantityKg > 0 && (!isSale || saleTotal !== null) && !saving;
+    quantityKg !== null && quantityKg > 0 && (!isSale || saleTotal !== null) &&
+    (cropChoices.length === 0 || chosenCrop !== null) && !saving;
   const newUnitKgRaw = parsePositiveNumber(newUnitWeight);
   const newUnitKg = newUnitKgRaw === null ? null : Math.round(newUnitKgRaw * 1000) / 1000;
   const newUnitValid = newUnitName.trim().length > 0 && newUnitKg !== null && newUnitKg > 0 &&
@@ -141,6 +149,7 @@ export function QuantityRecordScreen({route, navigation}: Props) {
         unitName: unit.name,
         kilogramsPerUnit: unit.kilogramsPerUnit,
         enteredQuantity: quantity,
+        ...(chosenCrop ? {cropSnapshot: chosenCrop} : {}),
         ...(selectedGroup ? {
           rowPlantingIds: selectedRows.map(row => row.id),
           ...(selectedGroup.crop ? {cropSnapshot: selectedGroup.crop} : {}),
@@ -211,6 +220,13 @@ export function QuantityRecordScreen({route, navigation}: Props) {
         </View>
       </View>}
       {field && <Text style={styles.note}>{field.name} · {formatArea(selectedAreaM2(field))}</Text>}
+      {cropChoices.length > 0 && <View style={styles.section}>
+        <Text style={styles.label}>{t("whichCrop")}</Text>
+        <View style={styles.chips}>
+          {cropChoices.map(name => <Chip key={name} label={name} selected={chosenCrop === name}
+            onPress={() => setCropChoice(name)} />)}
+        </View>
+      </View>}
 
       <View style={styles.section}>
         <Text style={styles.label}>{t("howMuch", [], "after")}{isSale ? t("soldVerb") : t("harvestedVerb")}</Text>

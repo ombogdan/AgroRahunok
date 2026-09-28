@@ -9,7 +9,7 @@ import type {Planting} from '../../../../../shared/core/fields/plantingsReposito
 import type {FarmRecord} from '../../../../../shared/core/records/model';
 import {calendarDateLabel} from '../../../../../shared/core/records/model';
 import {
-  actualYieldKgPerHa, formatYield, repeatedFrom, rotatesCrops, seasonOnField,
+  actualYieldKgPerHa, formatYield, plantingCrops, plantingLabel, repeatedFrom, rotatesCrops, seasonOnField,
 } from '../../../../../shared/core/rotation/model';
 import {useTheme} from '../../../../../shared/theme';
 
@@ -31,22 +31,31 @@ export function RotationCard({field, rotation, records, onOpen, onAdd}: Props) {
     <Text style={styles.title}>{t("cropRotation")}</Text>
     {rotation.length === 0 && <Text style={styles.hint}>{t("rotationEmpty")}</Text>}
     {rotation.map(planting => {
-      const areaM2 = planting.areaM2 ?? selectedAreaM2(field);
-      const actual = actualYieldKgPerHa(records, field.id, planting.season, areaM2);
+      const plotAreaM2 = selectedAreaM2(field);
+      const areaM2 = planting.areaM2 ?? plotAreaM2;
+      const label = plantingLabel(planting, plotAreaM2);
+      // Several crops on the plot: each one's harvest is counted over its own area.
+      const shares = planting.extraCrops.length > 0 ? plantingCrops(planting, plotAreaM2) : [];
+      const facts = shares.length > 0
+        ? shares.flatMap((share, index) => {
+          const fact = actualYieldKgPerHa(records, field.id, planting.season, share.areaM2,
+            {name: share.crop, isMain: index === 0});
+          return fact ? [`${share.crop} ${formatYield(fact, share.areaM2)}`] : [];
+        })
+        : [actualYieldKgPerHa(records, field.id, planting.season, areaM2)].flatMap(fact =>
+          (fact ? [formatYield(fact, areaM2)] : []));
       const repeat = rotatesCrops(field) ? repeatedFrom(planting, rotation) : null;
       const details = [
         planting.sownOn ? t("sownOnValue", [calendarDateLabel(planting.sownOn)]) : null,
         planting.harvestOn ? t("harvestOnValue", [calendarDateLabel(planting.harvestOn)]) : null,
         planting.plannedYieldKgPerHa ? t("planValue", [formatYield(planting.plannedYieldKgPerHa, areaM2)]) : null,
-        actual ? t("factValue", [formatYield(actual, areaM2)]) : null,
+        facts.length > 0 ? t("factValue", [facts.join(', ')]) : null,
       ].filter(Boolean).join(' · ');
       return <Pressable key={planting.season} accessibilityRole="button" onPress={() => onOpen(planting.season)}
         style={({pressed}) => [styles.row, pressed && styles.pressed]}>
         <Text style={styles.season}>{planting.season}</Text>
         <View style={styles.body}>
-          <Text style={planting.crop ? styles.crop : styles.cropMissing}>
-            {planting.crop ? [planting.crop, planting.variety].filter(Boolean).join(' · ') : t("cropNotSet")}
-          </Text>
+          <Text style={label ? styles.crop : styles.cropMissing}>{label ?? t("cropNotSet")}</Text>
           {planting.season === currentSeason && <View style={styles.badge}>
             <Text style={styles.badgeText}>{t("inProgress")}</Text>
           </View>}

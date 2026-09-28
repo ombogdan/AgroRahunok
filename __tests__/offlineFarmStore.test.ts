@@ -4,7 +4,7 @@ import type {NewField} from '../src/shared/core/fields/model';
 
 const fieldInput: NewField = {
   name: 'Малинник', type: 'berries', crop: 'Малина', variety: null,
-  documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document', polygon: [],
+  documentAreaM2: 2000, measuredAreaM2: null, areaSource: 'document', polygon: [], note: null,
 };
 const empty = (): FarmData => ({fields: [], records: [], plantings: [], units: [], rows: []});
 

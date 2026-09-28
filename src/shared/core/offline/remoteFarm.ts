@@ -25,6 +25,7 @@ async function push(change: Change): Promise<void> {
       id: field.id, created_at: field.createdAt, name: field.name, type: field.type,
       crop: field.crop, variety: field.variety, document_area_m2: field.documentAreaM2,
       measured_area_m2: field.measuredAreaM2, area_source: field.areaSource, polygon: field.polygon,
+      note: field.note ?? null,
     }, {onConflict: 'id'});
     if (error) throw error;
     return;
@@ -43,6 +44,7 @@ async function push(change: Change): Promise<void> {
       variety: planting.variety, area_m2: planting.areaM2, work_start_on: planting.workStartOn,
       sown_on: planting.sownOn, harvest_on: planting.harvestOn,
       planned_yield_kg_per_ha: planting.plannedYieldKgPerHa, note: planting.note,
+      extra_crops: planting.extraCrops ?? [],
     }, {onConflict: 'field_id,season'});
     if (error) throw error;
     return;

@@ -16,11 +16,12 @@ const options: {kind: RecordKind; title: string; detail: string; icon: AppIconNa
 ];
 
 
-// «Що записати?» bottom sheet from the design.
-export function RecordSheet({visible, onClose, onChoose}: {
+// «Що записати?» bottom sheet from the design; the last job can be repeated from its top.
+export function RecordSheet({visible, onClose, onChoose, repeat}: {
   visible: boolean;
   onClose: () => void;
   onChoose: (kind: RecordKind) => void;
+  repeat?: {title: string; detail: string; onPress: () => void} | null;
 }) {
   const styles = useStyles();
   const {theme} = useTheme();
@@ -31,6 +32,13 @@ export function RecordSheet({visible, onClose, onChoose}: {
       <Pressable style={[styles.sheet, {paddingBottom: Math.max(insets.bottom, scale(20))}]} onPress={() => undefined}>
         <View style={styles.handle} />
         <Text style={styles.title}>{t("whatWouldYouLikeToRecord")}</Text>
+        {repeat && <Pressable accessibilityRole="button" onPress={repeat.onPress} style={[styles.option, styles.repeat]}>
+          <View style={styles.circle}><AppIcon name="repeat" color={theme.colors.primary} size={26} /></View>
+          <View style={styles.body}>
+            <Text style={styles.optionTitle} numberOfLines={1}>{repeat.title}</Text>
+            <Text style={styles.optionDetail} numberOfLines={1}>{repeat.detail}</Text>
+          </View>
+        </Pressable>}
         {options.map(option => <Pressable key={option.kind} accessibilityRole="button" disabled={!option.ready}
           accessibilityState={{disabled: !option.ready}} onPress={() => onChoose(option.kind)}
           style={[styles.option, !option.ready && styles.disabled]}>

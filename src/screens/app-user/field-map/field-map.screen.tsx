@@ -11,9 +11,11 @@ import {AppButton, AppIcon} from '../../../shared/components/ui';
 import type {GeoPoint} from '../../../shared/core/fields/model';
 import {
   editablePolygon,
+  formatArea,
   formatHectares,
   formatSotky,
   insertIntoNearestEdge,
+  noticeableAreaError,
   polygonAreaM2,
   polygonHasCrossingEdges,
   regionForPoints,
@@ -70,6 +72,7 @@ export function FieldMapScreen({route, navigation}: Props) {
   const [showLocation, setShowLocation] = useState(false);
   const areaM2 = useMemo(() => polygonAreaM2(points), [points]);
   const crossing = useMemo(() => polygonHasCrossingEdges(points), [points]);
+  const areaError = useMemo(() => noticeableAreaError(points, areaM2), [points, areaM2]);
 
   useEffect(() => {
     // Show the user's position as soon as the map opens. The button can retry if access was denied.
@@ -167,6 +170,9 @@ export function FieldMapScreen({route, navigation}: Props) {
       <Text style={styles.area}>
         {points.length >= 3 ? `${formatHectares(areaM2, {exact: true})} · ${formatSotky(areaM2)}` : formatHectares(0)}
       </Text>
+      {areaError && <Text style={styles.hint}>
+        {t("areaErrorHint", [formatArea(areaError.errorM2), Math.round(areaError.percent)])}
+      </Text>}
       <Text style={styles.hint}>{mapHint(points.length, crossing, adjusting && !contour.appendPoints)}</Text>
     </View>
     <View style={styles.map}>

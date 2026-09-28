@@ -1,7 +1,11 @@
 import {t} from '../../../shared/config/i18n';
 import {useStyles} from './journal.styles';
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {ActivityIndicator, Pressable, ScrollView, Text, View} from 'react-native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import type {RouteProp} from '@react-navigation/native';
+import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import type {MainTabParamList} from '../../../navigation/types';
 import {useRootNavigation} from '../../../navigation/useRootNavigation';
 import {AppButton, EmptyFeature, InfoCard, Page} from '../../../shared/components/ui';
 import {useFields} from '../../../shared/core/fields/FieldsProvider';
@@ -10,6 +14,7 @@ import {dateLabel} from '../../../shared/core/records/model';
 import {useRecords} from '../../../shared/core/records/RecordsProvider';
 import {useTheme} from '../../../shared/theme';
 import {RecordRow} from '../components/record-row/record-row.component';
+import {openRecord} from '../components/record-row/open-record';
 
 
 function groupByDay(records: FarmRecord[]): {day: string; items: FarmRecord[]}[] {
@@ -29,6 +34,14 @@ export function JournalScreen() {
   const {fields} = useFields();
   const {records, loadState, reload} = useRecords();
   const [fieldFilter, setFieldFilter] = useState<string | null>(null);
+  // A plot's card opens the journal filtered to it; the request is cleared so the next one applies again.
+  const tabNavigation = useNavigation<BottomTabNavigationProp<MainTabParamList, 'Journal'>>();
+  const requestedFieldId = useRoute<RouteProp<MainTabParamList, 'Journal'>>().params?.fieldId;
+  useEffect(() => {
+    if (!requestedFieldId) return;
+    setFieldFilter(requestedFieldId);
+    tabNavigation.setParams({fieldId: undefined});
+  }, [requestedFieldId, tabNavigation]);
   const fieldById = useMemo(() => new Map(fields.map(field => [field.id, field])), [fields]);
   const visible = fieldFilter ? records.filter(record => record.fieldId === fieldFilter) : records;
   const groups = useMemo(() => groupByDay(visible), [visible]);
@@ -63,11 +76,7 @@ export function JournalScreen() {
         <View style={[styles.card, !isDark && styles.cardShadow]}>
           {group.items.map((record, index) => <RecordRow key={record.id} record={record} first={index === 0}
             field={record.fieldId === null ? undefined : fieldById.get(record.fieldId)}
-            onPress={record.kind === 'work' ? () => navigation.navigate('WorkRecord', {recordId: record.id})
-              : record.kind === 'harvest' || record.kind === 'sale'
-                ? () => navigation.navigate('QuantityRecord', {kind: record.kind as 'harvest' | 'sale', recordId: record.id})
-                : record.kind === 'other' ? () => navigation.navigate('OtherRecord', {recordId: record.id})
-                  : undefined} />)}
+            onPress={() => openRecord(navigation, record)} />)}
         </View>
       </View>)}
     </>}
