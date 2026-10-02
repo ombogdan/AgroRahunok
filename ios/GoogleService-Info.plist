@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>740798943877-u2lpkg7mi29t2k3d2191tbfoc9nrb3de.apps.googleusercontent.com</string>
+	<string>740798943877-6s9jai57s27s8ittfa3m1fmg9jncbo69.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.740798943877-u2lpkg7mi29t2k3d2191tbfoc9nrb3de</string>
+	<string>com.googleusercontent.apps.740798943877-6s9jai57s27s8ittfa3m1fmg9jncbo69</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>740798943877-57to556li4as3e5q3pd801co0sfvjrq6.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.agrorahunok.mobile</string>
+	<string>com.laro.fields</string>
 	<key>PROJECT_ID</key>
 	<string>agrocalc-855b9</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:740798943877:ios:c0369a2214de0825544fec</string>
+	<string>1:740798943877:ios:90f136680f15f324544fec</string>
 </dict>
 </plist>

@@ -7,17 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:740798943877:android:4ccaf8404aaf2c39544fec",
+        "mobilesdk_app_id": "1:740798943877:android:ef34f019b61eef1b544fec",
         "android_client_info": {
-          "package_name": "com.agrorahunok.mobile"
+          "package_name": "com.laro.fields"
         }
       },
       "oauth_client": [
         {
-          "client_id": "740798943877-57to556li4as3e5q3pd801co0sfvjrq6.apps.googleusercontent.com",
+          "client_id": "740798943877-v803m24r1sqhafmuihv62u6hpssv8129.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.agrorahunok.mobile",
+            "package_name": "com.laro.fields",
             "certificate_hash": "cf6aa13bc5a569c29695c7e249a3ff710e0057a1"
           }
         },
@@ -37,6 +37,13 @@
             {
               "client_id": "740798943877-dbl7u1agfrfo5o7t9s8u1n7ho8hltbjs.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "740798943877-jlp9ijrbl1brjftkd5e412mc2h927nb3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.land.in.hand"
+              }
             }
           ]
         }

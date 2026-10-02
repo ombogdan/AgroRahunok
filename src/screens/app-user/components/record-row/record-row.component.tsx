@@ -16,7 +16,12 @@ export function recordTitle(record: FarmRecord): string {
   if (record.kind === 'work') {
     return record.details.workName ?? (record.workType ? t(workTypeLabels[record.workType]) : t("work"));
   }
-  if (record.kind === 'other') return record.details.category ? t(({Податок: 'tax', Тара: 'packaging', Ремонт: 'repairs', Інше: 'other'} as Record<string, string>)[record.details.category] ?? record.details.category) : t(kindTitles.other);
+  if (record.kind === 'other') return record.details.category ? t(({
+    Податок: 'tax',
+    Тара: 'packaging',
+    Ремонт: 'repairs',
+    Інше: 'other'
+  } as Record<string, string>)[record.details.category] ?? record.details.category) : t(kindTitles.other);
   return t(kindTitles[record.kind]);
 }
 
@@ -30,7 +35,6 @@ export function signedMoney(kopecks: number): string {
   return `${kopecks < 0 ? '−' : '+'}${formatMoney(kopecks)}`;
 }
 
-
 export function RecordRow({record, field, first, detail, onPress}: {
   record: FarmRecord;
   field?: Field;
@@ -43,25 +47,33 @@ export function RecordRow({record, field, first, detail, onPress}: {
   const quantityDetail = record.details.enteredQuantity && record.details.unitName
     ? `${new Intl.NumberFormat(localeTag(), {maximumFractionDigits: 3}).format(record.details.enteredQuantity)} × ${record.details.unitName === 'кг' ? t('kilogramUnit') : record.details.unitName === 'ц' ? `100 ${t('kilogramUnit')}` : record.details.unitName === 'т' ? 't' : record.details.unitName}`
     : null;
-  const location = detail ?? (record.fieldId === null ? t("wholeFarm")
-    : [field?.name, record.details.varietySnapshot ? null : field?.crop].filter(Boolean).join(' · '));
+  const location = detail ?? (record.fieldId === null ? t("wholeFarm") : [field?.name, record.details.varietySnapshot ? null : field?.crop].filter(Boolean).join(' · '));
   const rowDetail = record.details.varietySnapshot
     ? `${[record.details.cropSnapshot, record.details.varietySnapshot].filter(Boolean).join(' · ')}${record.details.rowNumbersSnapshot?.length
       ? t("rowNumbersSuffix", [record.details.rowNumbersSnapshot.join(', ')]) : ''}` : null;
   const materialsDetail = record.details.materials?.map(material => material.name).join(', ') || null;
   const cropDetail = !record.details.varietySnapshot ? record.details.cropSnapshot ?? null : null;
-  const subtitle = [location, cropDetail, rowDetail, materialsDetail, quantityDetail,
-    record.kind === 'sale' ? record.details.buyer : null].filter(Boolean).join(' · ');
-  return <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress}
-    style={[styles.row, !first && styles.divider]}>
-    <View style={styles.circle}><AppIcon name={recordIcon(record)} color={theme.colors.primary} size={24} /></View>
-    <View style={styles.body}>
-      <Text style={styles.title}>{recordTitle(record)}</Text>
-      {subtitle ? <Text style={styles.detail} numberOfLines={2}>{subtitle}</Text> : null}
-    </View>
-    {record.amountKopecks !== null && record.amountKopecks !== 0 &&
-      <Text style={record.amountKopecks < 0 ? styles.expense : styles.income}>{signedMoney(record.amountKopecks)}</Text>}
-    {record.kind === 'harvest' && record.quantityKg !== null &&
-      <Text style={styles.quantity}>{formatKilograms(record.quantityKg)}</Text>}
-  </Pressable>;
+  const subtitle = [location, cropDetail, rowDetail, materialsDetail, quantityDetail, record.kind === 'sale' ? record.details.buyer : null].filter(Boolean).join(' · ');
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={!onPress}
+      onPress={onPress}
+      style={[styles.row, !first && styles.divider]}>
+      <View style={styles.circle}><AppIcon name={recordIcon(record)} color={theme.colors.primary} size={24}/></View>
+      <View style={styles.body}>
+        <Text style={styles.title}>{recordTitle(record)}</Text>
+        {subtitle ? <Text style={styles.detail} numberOfLines={2}>{subtitle}</Text> : null}
+      </View>
+      {record.amountKopecks !== null && record.amountKopecks !== 0 &&
+        <Text style={record.amountKopecks < 0 ? styles.expense : styles.income}>
+          {signedMoney(record.amountKopecks)}
+        </Text>
+      }
+      {record.kind === 'harvest' && record.quantityKg !== null &&
+        <Text style={styles.quantity}>{formatKilograms(record.quantityKg)}</Text>
+      }
+    </Pressable>
+  );
 }

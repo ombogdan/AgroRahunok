@@ -10,7 +10,7 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, '17.0'
 prepare_react_native_project!
 
-target 'AgroRahunok' do
+target 'LaroFields' do
   config = use_native_modules!
 
   use_frameworks! :linkage => :static

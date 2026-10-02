@@ -13,7 +13,6 @@ const createStyles = (theme: AppTheme, scale: Scale) => ({
   title: {color: theme.colors.text, fontSize: scale(34), lineHeight: scale(41), fontWeight: '700' as const},
   subtitle: {color: theme.colors.textMuted, fontSize: scale(17), lineHeight: scale(24)},
   cardTitle: {color: theme.colors.text, fontSize: scale(22), lineHeight: scale(28), fontWeight: '700' as const},
-  fine: {color: theme.colors.textMuted, fontSize: scale(15), lineHeight: scale(20)},
   error: {color: theme.colors.danger, fontSize: scale(15), lineHeight: scale(20)},
 });
 

@@ -1,7 +1,7 @@
 {
   "ukrainianLanguage": "Ucraineană",
   "appLanguage": "Limba aplicației",
-  "appName": "AgroRahunok",
+  "appName": "Laro Fields",
   "home": "Acasă",
   "fields": "Parcele",
   "logbook": "Jurnal",
@@ -361,7 +361,6 @@
   "forExampleSeed450Kg": "De exemplu, semințe 450 kg",
   "couldNotOpenDataOnThePhoneRestartTheApp": "Nu s-au putut deschide datele de pe telefon. Repornește aplicația.",
   "addFieldMethodsDescription": "Traseaz-o pe hartă, mergi pe contur cu telefonul sau introdu suprafața din acte. Durează aproximativ un minut.",
-  "startWithAGoogleAccountAppleSignInIsComingLater": "Începe cu un cont Google. Autentificarea cu Apple va fi adăugată ulterior.",
   "previewOfQuickEntryInAFewTaps": "Previzualizare a înregistrării rapide în câteva atingeri",
   "wheatField": "Lan de grâu",
   "fillField": "Completează câmpul",

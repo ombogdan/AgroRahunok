@@ -1,7 +1,17 @@
 import {t} from '../../../shared/config/i18n';
 import {useStyles} from './field-form.styles';
 import React, {useState} from 'react';
-import {Alert, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View} from 'react-native';
+import {
+  Alert,
+  InputAccessoryView,
+  Keyboard,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../navigation/types';
@@ -127,10 +137,12 @@ export function FieldFormScreen({route, navigation}: Props) {
       }
       const field = await addField(input);
       const rowsSaved = await rememberRows(field.id);
-      navigation.reset({index: plotUsesRows ? 2 : 0, routes: plotUsesRows
-        ? [{name: 'Tabs', params: {screen: 'Home'}}, {name: 'FieldDetail', params: {fieldId: field.id}},
-          {name: 'RowsSetup', params: {fieldId: field.id}}]
-        : [{name: 'Tabs', params: {screen: 'Home'}}]});
+      navigation.reset({
+        index: plotUsesRows ? 2 : 0, routes: plotUsesRows
+          ? [{name: 'Tabs', params: {screen: 'Home'}}, {name: 'FieldDetail', params: {fieldId: field.id}},
+            {name: 'RowsSetup', params: {fieldId: field.id}}]
+          : [{name: 'Tabs', params: {screen: 'Home'}}]
+      });
       if (plotUsesRows) {
         showToast({text: rowsSaved ? t("rowsCreatedNowAssignCrops") : t("fieldSavedAddRowsOnThisScreen")});
         return;
@@ -161,98 +173,133 @@ export function FieldFormScreen({route, navigation}: Props) {
   const typedAreaForm = <View style={styles.section}>
     <Text style={styles.label}>{isManual ? t("documentedAreaLabel") : t("plotAreaLabel")}</Text>
     <TextInput {...numberInputProps} value={areaInput} onChangeText={setAreaInput}
-      placeholder={unit === 'sotka' ? t("forExample20") : t("forExample22")} style={styles.input} />
+               placeholder={unit === 'sotka' ? t("forExample20") : t("forExample22")} style={styles.input}/>
     {!typedAreaValid && <Text style={styles.note}>{t("enterAPositiveNumberSuchAs20Or05")}</Text>}
     <View style={styles.chips}>
-      <Chip label={t("ares")} selected={unit === 'sotka'} onPress={() => setUnit('sotka')} />
-      <Chip label={t("hectares")} selected={unit === 'hectare'} onPress={() => setUnit('hectare')} />
+      <Chip label={t("ares")} selected={unit === 'sotka'} onPress={() => setUnit('sotka')}/>
+      <Chip label={t("hectares")} selected={unit === 'hectare'} onPress={() => setUnit('hectare')}/>
     </View>
   </View>;
 
-  return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-    <View style={styles.header}>
-      <FieldFlowHeader backLabel={backLabel} onBack={() => navigation.goBack()} />
-      <Text style={styles.title} accessibilityRole="header">{editing ? t("editField") : t("aboutTheField")}</Text>
-    </View>
-    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
-      automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
-      <View style={styles.section}>
-        <Text style={styles.label}>{t("name")}</Text>
-        <TextInput value={name} onChangeText={setName} placeholder={t("forExampleRaspberryPlot")}
-          placeholderTextColor={theme.colors.textMuted} style={styles.input} maxLength={60} returnKeyType="done" />
+  return (
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+      <View style={styles.header}>
+        <FieldFlowHeader backLabel={backLabel} onBack={() => navigation.goBack()}/>
+        <Text style={styles.title} accessibilityRole="header">{editing ? t("editField") : t("aboutTheField")}</Text>
       </View>
-      <View style={styles.section}>
-        <Text style={styles.label}>{t("type")}</Text>
-        <View style={styles.chips}>
-          {types.map(value => <Chip key={value} label={t(fieldTypeLabels[value])} selected={type === value}
-            onPress={() => setType(value)} />)}
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={styles.content}>
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("name")}</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder={t("forExampleRaspberryPlot")}
+            placeholderTextColor={theme.colors.textMuted}
+            style={styles.input}
+            maxLength={60}
+            returnKeyType="done"/>
         </View>
-      </View>
-      {plotUsesRows && <View style={styles.section}>
-        <Text style={styles.label}>{t("rowsAndVarieties")}</Text>
-        <Text style={styles.note}>{t("rowCountDescription")}</Text>
-        <TextInput value={rowCountInput} onChangeText={setRowCountInput} keyboardType="number-pad"
-          inputAccessoryViewID={NUMBER_KEYBOARD_BAR} placeholder={t("forExample6")}
-          placeholderTextColor={theme.colors.textMuted} accessibilityLabel={t("numberOfRows")}
-          style={styles.input} />
-        {rowCountInput !== '' && !rowCountValid && <Text style={styles.note}>
-          {existingRowCount > 0 ? t("rowCountRangeError", [existingRowCount])
-            : t("enterBetween1And200Rows")}
-        </Text>}
-        {existingRowCount > 0 && <Text style={styles.note}>{t("currentlyThereAre", [], "both")}{existingRowCount}{t("rowsYouCanChangeTheirVarietiesOnTheNextScreen", [], "both")}</Text>}
-      </View>}
-      {isManual && <View style={styles.section}>
-        <Text style={styles.label}>{t("howDoYouKnowTheArea")}</Text>
-        <View style={styles.chips}>
-          <Chip label={t("fromDocuments")} selected={manualMethod === 'document'} onPress={() => setManualMethod('document')} />
-          <Chip label={t("lengthWidth")} selected={manualMethod === 'dimensions'}
-            onPress={() => setManualMethod('dimensions')} />
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("type")}</Text>
+          <View style={styles.chips}>
+            {types.map(value =>
+              <Chip key={value}
+                    label={t(fieldTypeLabels[value])}
+                    selected={type === value}
+                    onPress={() => setType(value)}/>
+            )}
+          </View>
         </View>
-      </View>}
-      {usesDimensions ? <View style={styles.section}>
-        <Text style={styles.label}>{t("lengthAndWidthMetres")}</Text>
-        <View style={styles.dimensions}>
-          <TextInput {...numberInputProps} value={lengthInput} onChangeText={setLengthInput}
-            placeholder={t("length")} accessibilityLabel={t("lengthInMetres")} style={[styles.input, styles.dimensionInput]} />
-          <Text style={styles.times}>×</Text>
-          <TextInput {...numberInputProps} value={widthInput} onChangeText={setWidthInput}
-            placeholder={t("width")} accessibilityLabel={t("widthInMetres")} style={[styles.input, styles.dimensionInput]} />
-        </View>
-        {dimensionsAreaM2 !== null && <View style={styles.calcLine}>
-          <Text style={styles.calcText}>
-            {t("rectangleAreaFormula", [lengthInput.trim(), widthInput.trim(), formatSotky(dimensionsAreaM2), formatHectares(dimensionsAreaM2, {exact: true})])}
-          </Text>
+        {plotUsesRows && <View style={styles.section}>
+          <Text style={styles.label}>{t("rowsAndVarieties")}</Text>
+          <Text style={styles.note}>{t("rowCountDescription")}</Text>
+          <TextInput
+            value={rowCountInput}
+            onChangeText={setRowCountInput}
+            keyboardType="number-pad"
+            inputAccessoryViewID={NUMBER_KEYBOARD_BAR}
+            placeholder={t("forExample6")}
+            placeholderTextColor={theme.colors.textMuted}
+            accessibilityLabel={t("numberOfRows")}
+            style={styles.input}/>
+          {rowCountInput !== '' && !rowCountValid && <Text style={styles.note}>
+            {existingRowCount > 0 ? t("rowCountRangeError", [existingRowCount]) : t("enterBetween1And200Rows")}
+          </Text>}
+          {existingRowCount > 0 &&
+            <Text style={styles.note}>
+              {t("currentlyThereAre", [], "both")}{existingRowCount}{t("rowsYouCanChangeTheirVarietiesOnTheNextScreen", [], "both")}
+            </Text>
+          }
         </View>}
-        <Text style={styles.note}>{t("rectangleAreaHint")}</Text>
-      </View> : asksTypedArea && typedAreaForm}
-      {editing && <FieldBoundary polygon={polygon}
-        onDraw={() => navigation.navigate('FieldMap', {fieldId: editing.id, polygon})}
-        onWalk={() => navigation.navigate('FieldWalk', {fieldId: editing.id})} />}
-      {hasContour && presetMeasuredM2 !== null && <View style={styles.section}>
-        <Text style={styles.label}>{measuredLabel}</Text>
-        <Text style={styles.areaValue}>{formatArea(presetMeasuredM2)}</Text>
-        {areaError && <Text style={styles.note}>
-          {t("areaErrorHint", [formatArea(areaError.errorM2), Math.round(areaError.percent)])}. {t("areaErrorExplanation")}
-        </Text>}
-      </View>}
-      <View style={styles.section}>
-        <Text style={styles.label}>{t("noteOptional")}</Text>
-        <TextInput value={note} onChangeText={setNote} multiline maxLength={500}
-          placeholder={t("fieldNotePlaceholder")} placeholderTextColor={theme.colors.textMuted}
-          accessibilityLabel={t("note")} style={[styles.input, styles.noteInput]} />
-      </View>
-      <View style={styles.save}>
-        <AppButton label={saving ? t("saving") : plotUsesRows ? t("nextRows")
-          : editing ? t("saveChanges") : t("saveField")}
-          disabled={!canSave} onPress={() => { save(); }} />
-      </View>
-    </ScrollView>
-    {Platform.OS === 'ios' && <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
-      <View style={styles.keyboardBar}>
-        <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>
-          <Text style={styles.keyboardDoneText}>{t("done")}</Text>
-        </Pressable>
-      </View>
-    </InputAccessoryView>}
-  </SafeAreaView>;
+        {isManual && <View style={styles.section}>
+          <Text style={styles.label}>{t("howDoYouKnowTheArea")}</Text>
+          <View style={styles.chips}>
+            <Chip label={t("fromDocuments")} selected={manualMethod === 'document'}
+                  onPress={() => setManualMethod('document')}/>
+            <Chip label={t("lengthWidth")} selected={manualMethod === 'dimensions'}
+                  onPress={() => setManualMethod('dimensions')}/>
+          </View>
+        </View>}
+        {usesDimensions ? <View style={styles.section}>
+          <Text style={styles.label}>{t("lengthAndWidthMetres")}</Text>
+          <View style={styles.dimensions}>
+            <TextInput {...numberInputProps} value={lengthInput} onChangeText={setLengthInput}
+                       placeholder={t("length")} accessibilityLabel={t("lengthInMetres")}
+                       style={[styles.input, styles.dimensionInput]}/>
+            <Text style={styles.times}>×</Text>
+            <TextInput {...numberInputProps} value={widthInput} onChangeText={setWidthInput}
+                       placeholder={t("width")} accessibilityLabel={t("widthInMetres")}
+                       style={[styles.input, styles.dimensionInput]}/>
+          </View>
+          {dimensionsAreaM2 !== null && <View style={styles.calcLine}>
+            <Text style={styles.calcText}>
+              {t("rectangleAreaFormula", [lengthInput.trim(), widthInput.trim(), formatSotky(dimensionsAreaM2), formatHectares(dimensionsAreaM2, {exact: true})])}
+            </Text>
+          </View>}
+          <Text style={styles.note}>{t("rectangleAreaHint")}</Text>
+        </View> : asksTypedArea && typedAreaForm}
+        {editing && <FieldBoundary polygon={polygon}
+                                   onDraw={() => navigation.navigate('FieldMap', {fieldId: editing.id, polygon})}
+                                   onWalk={() => navigation.navigate('FieldWalk', {fieldId: editing.id})}/>}
+        {hasContour && presetMeasuredM2 !== null && <View style={styles.section}>
+          <Text style={styles.label}>{measuredLabel}</Text>
+          <Text style={styles.areaValue}>{formatArea(presetMeasuredM2)}</Text>
+          {areaError && <Text style={styles.note}>
+            {t("areaErrorHint", [formatArea(areaError.errorM2), Math.round(areaError.percent)])}. {t("areaErrorExplanation")}
+          </Text>}
+        </View>}
+        <View style={styles.section}>
+          <Text style={styles.label}>{t("noteOptional")}</Text>
+          <TextInput
+            value={note}
+            onChangeText={setNote}
+            multiline
+            maxLength={500}
+            placeholder={t("fieldNotePlaceholder")}
+            placeholderTextColor={theme.colors.textMuted}
+            accessibilityLabel={t("note")}
+            style={[styles.input, styles.noteInput]}/>
+        </View>
+        <View style={styles.save}>
+          <AppButton
+            label={saving ? t("saving") : plotUsesRows ? t("nextRows") : editing ? t("saveChanges") : t("saveField")}
+            disabled={!canSave}
+            onPress={save}/>
+        </View>
+      </ScrollView>
+      {Platform.OS === 'ios' &&
+        <InputAccessoryView nativeID={NUMBER_KEYBOARD_BAR}>
+          <View style={styles.keyboardBar}>
+            <Pressable accessibilityRole="button" onPress={Keyboard.dismiss} style={styles.keyboardDone}>
+              <Text style={styles.keyboardDoneText}>{t("done")}</Text>
+            </Pressable>
+          </View>
+        </InputAccessoryView>
+      }
+    </SafeAreaView>
+  );
 }

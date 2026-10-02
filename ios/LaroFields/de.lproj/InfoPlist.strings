@@ -1,0 +1,2 @@
+CFBundleDisplayName = "Laro Fields";
+NSLocationWhenInUseUsageDescription = "Dein Standort wird beim Anlegen einer Fläche auf der Karte angezeigt.";

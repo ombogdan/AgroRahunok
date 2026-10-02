@@ -1,7 +1,7 @@
 {
   "ukrainianLanguage": "Ucraniano",
   "appLanguage": "Idioma de la aplicación",
-  "appName": "AgroRahunok",
+  "appName": "Laro Fields",
   "home": "Inicio",
   "fields": "Parcelas",
   "logbook": "Diario",
@@ -361,7 +361,6 @@
   "forExampleSeed450Kg": "Por ejemplo, semillas 450 kg",
   "couldNotOpenDataOnThePhoneRestartTheApp": "No se pudieron abrir los datos del teléfono. Reinicia la aplicación.",
   "addFieldMethodsDescription": "Dibújala en el mapa, recorre el perímetro con el teléfono o introduce la superficie documentada. Se tarda alrededor de un minuto.",
-  "startWithAGoogleAccountAppleSignInIsComingLater": "Empieza con una cuenta de Google. Añadiremos el inicio de sesión con Apple más adelante.",
   "previewOfQuickEntryInAFewTaps": "Vista previa de un registro rápido en pocos toques",
   "wheatField": "Campo de trigo",
   "fillField": "Rellenar campo",

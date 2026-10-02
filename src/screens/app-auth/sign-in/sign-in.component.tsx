@@ -1,9 +1,10 @@
 import {t} from '../../../shared/config/i18n';
 import {useStyles} from './sign-in.styles';
 import React, {useState} from 'react';
-import {ActivityIndicator, ScrollView, Text, View} from 'react-native';
+import {ScrollView, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {AppButton, AppIcon, InfoCard} from '../../../shared/components/ui';
+import {AppIcon, InfoCard} from '../../../shared/components/ui';
+import {GoogleSignInButton} from './components/google-sign-in-button/google-sign-in-button.component';
 import {useAuth} from '../../../shared/core/providers/auth/AuthProvider';
 import {signInErrorMessage} from '../../../shared/core/services/auth/googleAuth';
 import {useTheme} from '../../../shared/theme';
@@ -42,9 +43,11 @@ export function SignInScreen() {
         </View>
         <InfoCard>
           <Text style={styles.cardTitle}>{t("signInToYourFarm")}</Text>
-          <Text style={styles.fine}>{t("startWithAGoogleAccountAppleSignInIsComingLater")}</Text>
-          <AppButton label={busy ? t("signingIn") : t("continueWithGoogle")} onPress={handleGoogleSignIn} disabled={busy} />
-          {busy && <ActivityIndicator color={theme.colors.primary} />}
+          <GoogleSignInButton
+            label={busy ? t("signingIn") : t("continueWithGoogle")}
+            onPress={handleGoogleSignIn}
+            busy={busy}
+          />
           {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
         </InfoCard>
       </ScrollView>

@@ -1,5 +1,5 @@
 {
-  "appName": "АгроРахунок",
+  "appName": "Laro Fields",
   "home": "Головна",
   "fields": "Ділянки",
   "logbook": "Журнал",
@@ -354,7 +354,6 @@
   "forExampleSeed450Kg": "Наприклад, насіння 450 кг",
   "couldNotOpenDataOnThePhoneRestartTheApp": "Не вдалося відкрити дані на телефоні. Перезапустіть застосунок.",
   "addFieldMethodsDescription": "Обведіть її на карті, обійдіть з телефоном або введіть площу з документів. Це займе хвилину.",
-  "startWithAGoogleAccountAppleSignInIsComingLater": "Почніть з акаунта Google. Вхід Apple додамо згодом.",
   "previewOfQuickEntryInAFewTaps": "Приклад майбутнього вводу за кілька дотиків",
   "wheatField": "Пшеничне поле",
   "fillField": "Підставити в поле",
